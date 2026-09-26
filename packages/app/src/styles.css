@@ -1,0 +1,334 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/fraunces';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-der: var(--der);
+  --color-die: var(--die);
+  --color-das: var(--das);
+  --color-pl: var(--pl);
+  --color-again: var(--again);
+  --color-hard: var(--hard);
+  --color-good: var(--good);
+  --color-easy: var(--easy);
+}
+
+:root {
+  --bg: #f6f3ee;
+  --surface: #ffffff;
+  --surface-2: #efebe4;
+  --surface-3: #e5dfd5;
+  --line: rgba(40, 32, 20, 0.1);
+  --ink: #1c1f26;
+  --muted: #5d626e;
+  --faint: #9197a2;
+  --accent: #d4922a;
+  --accent-strong: #a8691a;
+  --accent-soft: rgba(212, 146, 42, 0.14);
+  --accent-ink: #231602;
+  --der: #2f6fdf;
+  --die: #d9364f;
+  --das: #14935d;
+  --pl: #8455e8;
+  --again: #e5484d;
+  --hard: #d98a14;
+  --good: #2b9a57;
+  --easy: #3572d9;
+  --shadow: 0 1px 2px rgba(30, 22, 10, 0.05), 0 8px 24px rgba(30, 22, 10, 0.06);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #0e1116;
+  --surface: #161a21;
+  --surface-2: #1d222b;
+  --surface-3: #272d38;
+  --line: rgba(255, 255, 255, 0.08);
+  --ink: #eceef2;
+  --muted: #a4aab6;
+  --faint: #6d7481;
+  --accent: #e8a94a;
+  --accent-strong: #f4c06f;
+  --accent-soft: rgba(232, 169, 74, 0.15);
+  --accent-ink: #1b1204;
+  --der: #6fa3ff;
+  --die: #ff7086;
+  --das: #45d394;
+  --pl: #b69cff;
+  --again: #ff6b6f;
+  --hard: #f2b24a;
+  --good: #52c784;
+  --easy: #6fa3ff;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.25);
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+.shadow-card {
+  box-shadow: var(--shadow);
+}
+
+.pt-safe {
+  padding-top: var(--safe-top);
+}
+.pb-safe {
+  padding-bottom: var(--safe-bottom);
+}
+
+/* Electron: draggable title area (macOS traffic lights live at top-left) */
+.drag {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Scrollbars */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-3) transparent;
+}
+
+/* Rendered card content */
+.card-html {
+  overflow-wrap: anywhere;
+}
+.card-html b,
+.card-html strong {
+  font-weight: 650;
+}
+.card-html img {
+  max-width: 100%;
+  max-height: 40vh;
+  border-radius: 12px;
+  margin: 0.5rem auto;
+  display: block;
+}
+.card-html ul,
+.card-html ol {
+  text-align: left;
+  padding-left: 1.2em;
+  list-style: disc;
+}
+.card-html .cloze {
+  display: inline-block;
+  padding: 0 0.45em;
+  border-radius: 0.4em;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 650;
+}
+.card-html .cloze-answer {
+  color: var(--accent-strong);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* Markdown (AI answers) */
+.md {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.md p {
+  margin: 0.45em 0;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  font-weight: 650;
+  margin: 0.9em 0 0.35em;
+  line-height: 1.3;
+}
+.md h1 {
+  font-size: 1.2em;
+}
+.md h2 {
+  font-size: 1.1em;
+}
+.md h3,
+.md h4 {
+  font-size: 1em;
+}
+.md ul,
+.md ol {
+  padding-left: 1.3em;
+  margin: 0.4em 0;
+}
+.md ul {
+  list-style: disc;
+}
+.md ol {
+  list-style: decimal;
+}
+.md li {
+  margin: 0.15em 0;
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-2);
+  padding: 0.1em 0.35em;
+  border-radius: 0.35em;
+}
+.md pre {
+  background: var(--surface-2);
+  padding: 0.8em;
+  border-radius: 0.7em;
+  overflow-x: auto;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+}
+.md table {
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 0.93em;
+  display: block;
+  overflow-x: auto;
+}
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 0.35em 0.6em;
+  text-align: left;
+}
+.md th {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.md blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.8em;
+  color: var(--muted);
+  margin: 0.5em 0;
+}
+.md a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1em 0;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.anim-in {
+  animation: pop-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.anim-fade {
+  animation: fade-in 0.18s ease-out both;
+}
+@keyframes shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-4px);
+  }
+  40%,
+  60% {
+    transform: translateX(4px);
+  }
+}
+.anim-shake {
+  animation: shake 0.4s both;
+}
+@keyframes flame {
+  0%,
+  100% {
+    transform: scale(1) rotate(-2deg);
+  }
+  50% {
+    transform: scale(1.08) rotate(2deg);
+  }
+}
+.anim-flame {
+  animation: flame 1.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
