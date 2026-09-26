@@ -1,0 +1,21 @@
+node_modules/
+dist/
+release/
+out/
+*.log
+.DS_Store
+.env
+.env.*
+coverage/
+*.tsbuildinfo
+.anker-dev/
+# Android
+packages/app/android/.gradle/
+packages/app/android/build/
+packages/app/android/app/build/
+packages/app/android/local.properties
+packages/app/android/keystore.properties
+*.jks
+*.keystore
+*.p12
+!packages/app/android/app/debug.keystore

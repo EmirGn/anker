@@ -1,0 +1,33 @@
+{
+  "name": "anker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Anker — a spaced-repetition flashcard app for learning German, with Claude & Codex agents that manage your decks over MCP.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/core",
+    "packages/hub",
+    "packages/app",
+    "packages/desktop"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:app": "npm run dev -w @anker/app",
+    "hub": "npm run start -w @anker/hub",
+    "build": "npm run build -w @anker/app && npm run build -w @anker/hub && npm run build -w @anker/desktop",
+    "build:mac": "npm run build && npm run dist -w @anker/desktop",
+    "build:android": "npm run build -w @anker/app && npm run android:build -w @anker/app",
+    "typecheck": "tsc -p packages/core && tsc -p packages/hub && tsc -p packages/app && tsc -p packages/desktop",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}
