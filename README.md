@@ -35,7 +35,7 @@
 - **Anki import** (`.apkg` / `.colpkg`, old and new formats): decks, tags, images — and your **review history replayed through FSRS**, so your progress comes with you. CSV/TSV word lists and JSON backups too.
 
 **Made for German**
-- Nouns are colour-coded by gender everywhere: **der** blue, **die** red, **das** green, plural purple — and the colour only appears after you answer on EN→DE cards, so it never gives the answer away.
+- Nouns are colour-coded by gender everywhere: **der** blue, **die** red, **das** green, plural in grey — and the colour only appears after you answer on EN→DE cards, so it never gives the answer away.
 - Word cards show the plural, **Stammformen** (*fährt · fuhr · ist gefahren*), comparative forms and an example sentence with translation.
 - **Pronunciation**: every German word and sentence can be read aloud (macOS voices on the Mac, the Android TTS engine on the phone), automatically if you like.
 - Type **"der Tisch"** in the editor and the article is split off into the gender field; get a gender guess from the ending (*-ung → die*); one-tap **AI auto-fill** of gender, plural, forms and an example.

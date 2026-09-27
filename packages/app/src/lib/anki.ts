@@ -105,7 +105,7 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 export async function parseAnkiPackage(file: File, onStatus: (s: string) => void): Promise<AnkiPackage> {
-  onStatus('Opening package…');
+  onStatus('Paket wird geöffnet …');
   const zip = await JSZip.loadAsync(file);
   let bytes: Uint8Array;
   let format: string;
@@ -121,9 +121,9 @@ export async function parseAnkiPackage(file: File, onStatus: (s: string) => void
   } else if (f2) {
     bytes = await f2.async('uint8array');
     format = 'Anki 2.0';
-  } else throw new Error('This is not an Anki package (.apkg / .colpkg).');
+  } else throw new Error('Das ist kein Anki-Paket (.apkg / .colpkg).');
 
-  onStatus('Reading collection…');
+  onStatus('Sammlung wird gelesen …');
   const SQL = await initSqlJs({ locateFile: () => wasmUrl });
   const sdb = new SQL.Database(bytes);
   const rows = (sql: string): unknown[][] => {
@@ -156,7 +156,7 @@ export async function parseAnkiPackage(file: File, onStatus: (s: string) => void
   for (const [id, name] of rows('SELECT id, name FROM notetypes')) if (/cloze|lückentext/i.test(String(name))) clozeModels.add(Number(id));
 
   // Media
-  onStatus('Reading media…');
+  onStatus('Medien werden gelesen …');
   let media = new Map<string, string>();
   const mediaFile = zip.file('media');
   if (mediaFile) {
@@ -207,7 +207,7 @@ export async function parseAnkiPackage(file: File, onStatus: (s: string) => void
     return out.trim();
   };
 
-  onStatus('Converting notes…');
+  onStatus('Notizen werden umgewandelt …');
   const cards = rows('SELECT id, nid, did, ord, queue FROM cards').map(([id, nid, did, ord, queue]) => ({
     id: Number(id),
     nid: Number(nid),
@@ -263,7 +263,7 @@ export async function importAnkiPackage(
     deckIdFor.set(name, deck.id);
   }
 
-  onStatus('Creating notes…');
+  onStatus('Notizen werden angelegt …');
   const notes: Note[] = [];
   const cardsById = new Map<string, Card>();
   const noteIdForAnki = new Map<number, string>();
@@ -291,7 +291,7 @@ export async function importAnkiPackage(
   }
 
   if (opts.keepHistory && pkg.revlog.length) {
-    onStatus(`Replaying ${pkg.revlog.length} reviews through FSRS…`);
+    onStatus(`${pkg.revlog.length} Wiederholungen werden mit FSRS nachgerechnet …`);
     const byCard = new Map<number, typeof pkg.revlog>();
     for (const r of pkg.revlog) {
       if (r.ease < 1 || r.ease > 4 || r.type > 2) continue;
@@ -313,7 +313,7 @@ export async function importAnkiPackage(
     }
   }
 
-  onStatus('Saving…');
+  onStatus('Wird gespeichert …');
   if (newDecks.length) await commit([{ table: 'decks', put: newDecks }]);
   const allCards = [...cardsById.values()];
   for (let i = 0; i < notes.length; i += 400) {

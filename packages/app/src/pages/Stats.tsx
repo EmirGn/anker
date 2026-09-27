@@ -4,7 +4,6 @@ import {
   dayKey,
   addDaysKey,
   forecast,
-  formatDuration,
   hourlyBreakdown,
   knownNoteCount,
   noteTitle,
@@ -13,12 +12,13 @@ import {
   streak,
   DAY,
 } from '@anker/core';
-import { Flame, Sparkles } from 'lucide-react';
+import { Flame, Sparkles } from '../components/icons';
 import { useMemo, useState } from 'react';
 import { Bars, Heatmap, StackedBar } from '../components/charts';
 import { GenderWord } from '../components/CardView';
-import { Button, PageHeader, Panel, Section, Segmented, Spinner } from '../components/ui';
+import { Button, PageHeader, Panel, Section, Segmented, Spinner, cx } from '../components/ui';
 import { db } from '../lib/db';
+import { dauer } from '../lib/format';
 import { useHub, useLiveQuery, usePrefs } from '../lib/hooks';
 import { Link, navigate } from '../lib/router';
 
@@ -90,140 +90,142 @@ export function Stats() {
   const totalButtons = s.buttons.reduce((a, b) => a + b, 0) || 1;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-10">
+    <div className="mx-auto max-w-5xl px-5 pt-8 pb-16 md:px-8 md:pt-10">
       <PageHeader
         title="Statistik"
-        subtitle="How your German memory is doing."
+        subtitle="So geht es deinem deutschen Gedächtnis."
         actions={
           <Segmented
             value={range}
             onChange={setRange}
             options={[
-              { value: '30', label: '30 days' },
-              { value: '90', label: '90 days' },
-              { value: '365', label: 'Year' },
+              { value: '30', label: '30 Tage' },
+              { value: '90', label: '90 Tage' },
+              { value: '365', label: 'Jahr' },
             ]}
           />
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Panel className="px-4 py-3">
-          <div className="text-[12px] text-faint">Streak</div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[22px] font-semibold tabular-nums">
-            <Flame className="size-5 text-hard" /> {s.streak.current}
+      <div className="mb-6 grid grid-cols-2 overflow-hidden rounded-md border border-line bg-paper-raised text-center md:grid-cols-4">
+        {[
+          {
+            v: (
+              <span className="flex items-center justify-center gap-0.5 text-koralle-ink">
+                <Flame weight="fill" className="size-[18px]" />
+                {s.streak.current}
+              </span>
+            ),
+            l: 'Tage in Folge',
+            d: `Rekord: ${s.streak.longest}`,
+          },
+          { v: s.retention.rate == null ? '–' : `${Math.round(s.retention.rate * 100)} %`, l: 'Behalten', d: `${s.retention.reviews} gefestigte Wiederholungen` },
+          { v: s.totalReviews.toLocaleString('de-DE'), l: 'Wiederholungen', d: `${dauer(s.totalTime)} · ${s.activeDays} aktive Tage` },
+          { v: <span className="text-hafen">{s.known.toLocaleString('de-DE')}</span>, l: 'Wörter gelernt', d: `${s.breakdown.mature} gefestigte Karten` },
+        ].map((x, i) => (
+          <div key={x.l} className={cx('px-2 py-3', i % 2 === 1 && 'border-l border-line', i > 1 && 'border-t border-line md:border-t-0', i === 2 && 'md:border-l')}>
+            <div className="t-stat">{x.v}</div>
+            <div className="t-caption text-ink">{x.l}</div>
+            <div className="t-caption text-ink-muted">{x.d}</div>
           </div>
-          <div className="text-[11.5px] text-faint">best {s.streak.longest}</div>
-        </Panel>
-        <Panel className="px-4 py-3">
-          <div className="text-[12px] text-faint">Retention</div>
-          <div className="mt-0.5 text-[22px] font-semibold tabular-nums">{s.retention.rate == null ? '—' : `${Math.round(s.retention.rate * 100)}%`}</div>
-          <div className="text-[11.5px] text-faint">{s.retention.reviews} mature reviews</div>
-        </Panel>
-        <Panel className="px-4 py-3">
-          <div className="text-[12px] text-faint">Reviews</div>
-          <div className="mt-0.5 text-[22px] font-semibold tabular-nums">{s.totalReviews}</div>
-          <div className="text-[11.5px] text-faint">
-            {formatDuration(s.totalTime)} · {s.activeDays} active days
-          </div>
-        </Panel>
-        <Panel className="px-4 py-3">
-          <div className="text-[12px] text-faint">Words known</div>
-          <div className="mt-0.5 text-[22px] font-semibold tabular-nums">{s.known}</div>
-          <div className="text-[11.5px] text-faint">{s.breakdown.mature} mature cards</div>
-        </Panel>
+        ))}
       </div>
 
-      <Section title="Calendar">
+      <Section title="Kalender">
         <Panel className="p-4 md:p-5">
           <Heatmap days={s.days} weeks={53} rolloverHour={prefs.rolloverHour} />
         </Panel>
       </Section>
 
       <div className="grid gap-x-6 md:grid-cols-2">
-        <Section title="Reviews per day">
-          <Panel className="p-5">
-            <Bars values={s.perDay} labels={s.labels} format={(v) => `${v} reviews`} />
+        <Section title="Wiederholungen pro Tag">
+          <Panel className="p-4">
+            <Bars values={s.perDay} labels={s.labels} format={(v) => `${v} Wiederholungen`} />
           </Panel>
         </Section>
-        <Section title="Due in the next 30 days">
-          <Panel className="p-5">
-            <Bars values={s.forecast} labels={s.forecast.map((_, i) => (i === 0 ? 'Heute' : i % 5 === 0 ? `+${i}` : null))} color="var(--good)" format={(v) => `${v} due`} />
+        <Section title="Fällig in den nächsten 30 Tagen">
+          <Panel className="p-4">
+            <Bars values={s.forecast} labels={s.forecast.map((_, i) => (i === 0 ? 'Heute' : i % 5 === 0 ? `+${i}` : null))} color="var(--wiese)" format={(v) => `${v} fällig`} />
           </Panel>
         </Section>
       </div>
 
-      <Section title="Your cards">
-        <Panel className="p-5">
+      <Section title="Deine Karten">
+        <Panel className="p-4">
           <StackedBar
             parts={[
-              { label: 'New', value: s.breakdown.new, color: 'var(--easy)' },
-              { label: 'Learning', value: s.breakdown.learning, color: 'var(--again)' },
-              { label: 'Young', value: s.breakdown.young, color: 'color-mix(in srgb, var(--good) 55%, var(--surface-3))' },
-              { label: 'Mature (21d+)', value: s.breakdown.mature, color: 'var(--good)' },
-              { label: 'Suspended', value: s.breakdown.suspended, color: 'var(--hard)' },
+              { label: 'Neu', value: s.breakdown.new, color: 'var(--hafen)' },
+              { label: 'In Arbeit', value: s.breakdown.learning, color: 'var(--koralle-ink)' },
+              { label: 'Jung', value: s.breakdown.young, color: 'color-mix(in srgb, var(--wiese) 55%, var(--line))' },
+              { label: 'Gefestigt (21+ Tage)', value: s.breakdown.mature, color: 'var(--wiese)' },
+              { label: 'Ausgesetzt', value: s.breakdown.suspended, color: 'var(--ink-muted)' },
             ]}
           />
         </Panel>
       </Section>
 
       <div className="grid gap-x-6 md:grid-cols-2">
-        <Section title="Answer buttons">
-          <Panel className="space-y-2.5 p-5">
-            {(['Again', 'Hard', 'Good', 'Easy'] as const).map((label, i) => (
+        <Section title="Antworten">
+          <Panel className="space-y-3 p-4">
+            {(
+              [
+                ['Nochmal', 'var(--koralle-ink)'],
+                ['Schwer', 'var(--sonne-ink)'],
+                ['Gut', 'var(--wiese)'],
+                ['Leicht', 'var(--hafen)'],
+              ] as const
+            ).map(([label, color], i) => (
               <div key={label} className="flex items-center gap-3 text-[13px]">
-                <span className="w-12 font-medium" style={{ color: `var(--${label.toLowerCase()})` }}>
-                  {label}
-                </span>
-                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2">
-                  <div className="h-full rounded-full" style={{ width: `${(s.buttons[i]! / totalButtons) * 100}%`, background: `var(--${label.toLowerCase()})` }} />
+                <span className="w-16 font-semibold">{label}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-paper-sunk">
+                  <div className="h-full rounded-full" style={{ width: `${(s.buttons[i]! / totalButtons) * 100}%`, background: color }} />
                 </div>
-                <span className="w-16 text-right text-muted tabular-nums">
-                  {s.buttons[i]} · {Math.round((s.buttons[i]! / totalButtons) * 100)}%
+                <span className="w-20 text-right text-ink-muted tabular-nums">
+                  {s.buttons[i]} · {Math.round((s.buttons[i]! / totalButtons) * 100)} %
                 </span>
               </div>
             ))}
           </Panel>
         </Section>
-        <Section title="Time of day">
-          <Panel className="p-5">
-            <Bars values={s.hours.map((h) => h.reviews)} labels={s.hours.map((_, i) => (i % 6 === 0 ? `${i}h` : null))} height={90} format={(v) => `${v} reviews`} />
-            <p className="text-[13px] text-muted">
+        <Section title="Tageszeit">
+          <Panel className="p-4">
+            <Bars values={s.hours.map((h) => h.reviews)} labels={s.hours.map((_, i) => (i % 6 === 0 ? `${i} Uhr` : null))} height={90} format={(v) => `${v} Wiederholungen`} />
+            <p className="t-caption text-ink-muted">
               {s.bestHour
-                ? `You remember best around ${s.bestHour.i}:00 (${Math.round(s.bestHour.rate * 100)}% correct).`
-                : 'Review a bit more to find your best time of day.'}
+                ? `Am besten merkst du dir Wörter gegen ${s.bestHour.i} Uhr (${Math.round(s.bestHour.rate * 100)} % richtig).`
+                : 'Wiederhol noch etwas mehr, dann zeigt sich deine beste Tageszeit.'}
             </p>
           </Panel>
         </Section>
       </div>
 
       <Section
-        title="Hardest words"
+        title="Schwierigste Wörter"
         action={
           hub &&
           s.hardest.length > 0 && (
             <Button
               size="sm"
               variant="ghost"
-              icon={<Sparkles className="size-4 text-accent" />}
-              onClick={() => navigate(`/tutor?q=${encodeURIComponent('Look at my most difficult cards (get_study_stats) and add a short, vivid mnemonic to the notes field of the 10 hardest ones. Keep existing notes.')}`)}
+              icon={<Sparkles className="size-4" />}
+              onClick={() => navigate(`/tutor?q=${encodeURIComponent('Sieh dir meine schwierigsten Karten an (get_study_stats) und ergänze bei den 10 schwersten eine kurze, anschauliche Eselsbrücke im Notizfeld. Behalte vorhandene Notizen.')}`)}
             >
-              Ask AI for mnemonics
+              Eselsbrücken von der KI
             </Button>
           )
         }
       >
         {s.hardest.length === 0 ? (
-          <Panel className="p-5 text-sm text-muted">No troublemakers yet. 🎈</Panel>
+          <Panel className="p-4 text-[15px] text-ink-muted">Noch keine Sorgenkinder.</Panel>
         ) : (
           <Panel className="divide-y divide-line">
             {s.hardest.map(({ note, lapses }) => (
-              <Link key={note.id} to={`/edit/${note.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2/50">
-                <span className="min-w-0 flex-1 truncate font-medium">
+              <Link key={note.id} to={`/edit/${note.id}`} className="flex min-h-12 items-center gap-3 px-4 py-2.5 hover:bg-paper-sunk">
+                <span className="t-label min-w-0 flex-1 truncate">
                   {note.type === 'word' ? <GenderWord word={note.fields.german ?? ''} gender={note.fields.gender} /> : noteTitle(note)}
                 </span>
-                <span className="truncate text-[13px] text-muted">{note.fields.english ?? note.fields.back ?? ''}</span>
-                <span className="w-20 shrink-0 text-right text-[12.5px] font-semibold text-again">{lapses} lapses</span>
+                <span className="t-caption truncate text-ink-muted">{note.fields.english ?? note.fields.back ?? ''}</span>
+                <span className="w-20 shrink-0 text-right text-[13px] font-bold text-koralle-ink">{lapses} Fehler</span>
               </Link>
             ))}
           </Panel>

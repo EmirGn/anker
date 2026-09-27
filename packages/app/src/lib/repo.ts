@@ -162,7 +162,7 @@ export async function updateNote(
   patch: { fields?: Record<string, unknown>; tags?: string[]; deckId?: string; type?: NoteType },
 ): Promise<Note> {
   const note = await db.notes.get(id);
-  if (!note) throw new Error('Note not found');
+  if (!note) throw new Error('Notiz nicht gefunden');
   const now = Date.now();
   const next = patchNote(note, { ...patch, tags: patch.tags ? cleanTags(patch.tags) : undefined }, now);
   const existing = await db.cards.where('noteId').equals(id).toArray();

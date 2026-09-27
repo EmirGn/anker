@@ -1,5 +1,5 @@
 import { plainText, type Note } from '@anker/core';
-import { Brain, Lightbulb, ListPlus, MessageCircle, Sparkles } from 'lucide-react';
+import { Brain, Lightbulb, ListPlus, MessageCircle, Sparkles } from './icons';
 import { useEffect, useRef, useState } from 'react';
 import { streamTask, type TaskKind } from '../lib/ai';
 import { useHub } from '../lib/hooks';
@@ -17,7 +17,8 @@ export function cardContext(note: Note): string {
 const cache = new Map<string, string>();
 
 export function Markdown({ text, className }: { text: string; className?: string }) {
-  return <div className={`md ${className ?? ''}`} dangerouslySetInnerHTML={{ __html: renderMarkdown(text) }} />;
+  // The tutor marks corrections with a pencil emoji; the UI shows no emoji.
+  return <div className={`md ${className ?? ''}`} dangerouslySetInnerHTML={{ __html: renderMarkdown(text.replace(/\u270F\uFE0F?\s*/gu, '')) }} />;
 }
 
 export function AISheet({ note, open, onClose, initial = 'explain' }: { note: Note | null; open: boolean; onClose: () => void; initial?: TaskKind }) {
@@ -71,7 +72,7 @@ export function AISheet({ note, open, onClose, initial = 'explain' }: { note: No
       }}
       title={
         <span className="flex items-center gap-2">
-          <Sparkles className="size-[18px] text-accent" /> AI help
+          <Sparkles className="size-5" /> KI-Hilfe
         </span>
       }
       wide
@@ -84,13 +85,13 @@ export function AISheet({ note, open, onClose, initial = 'explain' }: { note: No
               navigate(`/tutor?note=${note.id}`);
             }}
           >
-            Discuss with tutor
+            Mit dem Tutor besprechen
           </Button>
         )
       }
     >
       {!hub ? (
-        <p className="text-sm text-muted">Connect this device to your Mac hub (Settings → Sync) to use Claude or Codex.</p>
+        <p className="text-[15px] text-ink-muted">Verbinde dieses Gerät mit deinem Mac (Einstellungen → Sync), um Claude oder Codex zu nutzen.</p>
       ) : (
         <>
           <Segmented
@@ -98,17 +99,17 @@ export function AISheet({ note, open, onClose, initial = 'explain' }: { note: No
             onChange={setKind}
             className="mb-4"
             options={[
-              { value: 'explain', label: <span className="flex items-center gap-1.5"><Lightbulb className="size-3.5" />Explain</span> },
-              { value: 'examples', label: <span className="flex items-center gap-1.5"><ListPlus className="size-3.5" />Examples</span> },
-              { value: 'mnemonic', label: <span className="flex items-center gap-1.5"><Brain className="size-3.5" />Mnemonic</span> },
+              { value: 'explain', label: <span className="flex items-center gap-1.5"><Lightbulb className="size-4" />Erklären</span> },
+              { value: 'examples', label: <span className="flex items-center gap-1.5"><ListPlus className="size-4" />Beispiele</span> },
+              { value: 'mnemonic', label: <span className="flex items-center gap-1.5"><Brain className="size-4" />Eselsbrücke</span> },
             ]}
           />
           {error ? (
-            <div className="rounded-xl bg-again/10 px-4 py-3 text-sm text-again">{error}</div>
+            <div className="rounded-md bg-koralle-soft px-4 py-3 text-[15px] text-koralle-ink">{error}</div>
           ) : text ? (
             <Markdown text={text} className="text-[15px]" />
           ) : (
-            <div className="flex items-center gap-3 py-6 text-sm text-muted">
+            <div className="flex items-center gap-3 py-6 text-[15px] text-ink-muted">
               <Spinner /> Thinking…
             </div>
           )}

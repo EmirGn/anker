@@ -1,8 +1,8 @@
-import { X } from 'lucide-react';
+import { X } from './icons';
 import { useState } from 'react';
 import { cx } from './ui';
 
-export function TagInput({ value, onChange, placeholder = 'Add tags…', className }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string; className?: string }) {
+export function TagInput({ value, onChange, placeholder = 'Tags hinzufügen …', className }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string; className?: string }) {
   const [draft, setDraft] = useState('');
   const commit = (raw: string) => {
     const parts = raw
@@ -16,14 +16,14 @@ export function TagInput({ value, onChange, placeholder = 'Add tags…', classNa
   return (
     <div
       className={cx(
-        'flex min-h-11 flex-wrap items-center gap-1.5 rounded-xl border border-line bg-surface px-2.5 py-1.5 focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15',
+        'flex min-h-11 flex-wrap items-center gap-1.5 rounded-md border border-transparent bg-paper-sunk px-2.5 py-1.5 focus-within:border-hafen focus-within:bg-paper-raised',
         className,
       )}
     >
       {value.map((t) => (
-        <span key={t} className="inline-flex items-center gap-1 rounded-lg bg-surface-2 py-0.5 pr-1 pl-2 text-[13px] font-medium">
+        <span key={t} className="inline-flex items-center gap-1 rounded-sm bg-paper-sunk py-0.5 pr-1 pl-2 text-[13px] font-medium">
           {t}
-          <button type="button" onClick={() => onChange(value.filter((x) => x !== t))} className="rounded p-0.5 text-faint hover:text-ink" aria-label={`Remove ${t}`}>
+          <button type="button" onClick={() => onChange(value.filter((x) => x !== t))} className="rounded-xs p-0.5 text-ink-muted hover:text-ink" aria-label={`${t} entfernen`}>
             <X className="size-3" />
           </button>
         </span>
@@ -43,7 +43,7 @@ export function TagInput({ value, onChange, placeholder = 'Add tags…', classNa
         }}
         onBlur={() => commit(draft)}
         placeholder={value.length ? '' : placeholder}
-        className="h-7 min-w-24 flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint"
+        className="h-7 min-w-24 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink-muted"
       />
     </div>
   );

@@ -1,5 +1,6 @@
-import { explainGender, type Gender, type PoolNoun } from '@anker/core';
-import { Plus } from 'lucide-react';
+import { type Gender, type PoolNoun } from '@anker/core';
+import { erklaereGenus } from '../lib/de';
+import { Flame, Plus } from '../components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { GENDER_VAR } from '../components/CardView';
 import { Button, cx, toast } from '../components/ui';
@@ -91,7 +92,7 @@ export function ArtikelBlitz() {
       setStreak(0);
       void haptic('error');
       setMissed((m) => (m.some((x) => x.word === noun.word) ? m : [...m, noun]));
-      setFeedback({ ok: false, gender: noun.gender, hint: explainGender(noun.word, noun.gender) });
+      setFeedback({ ok: false, gender: noun.gender, hint: erklaereGenus(noun.word, noun.gender) });
       void speak(`${noun.gender} ${noun.word}`);
       locked.current = true;
       setTimeout(() => {
@@ -120,9 +121,9 @@ export function ArtikelBlitz() {
   if (phase === 'start')
     return (
       <GameShell title="Artikel-Blitz">
-        <StartScreen emoji="⚡" title="Artikel-Blitz" onStart={() => void start()} best={best}>
-          60 seconds. A noun appears — tap <b style={{ color: GENDER_VAR.der }}>der</b>, <b style={{ color: GENDER_VAR.die }}>die</b> or <b style={{ color: GENDER_VAR.das }}>das</b>. Miss one and
-          you'll get the rule that explains it. Keys: 1 · 2 · 3.
+        <StartScreen game="artikel" title="Artikel-Blitz" onStart={() => void start()} best={best}>
+          60 Sekunden. Ein Nomen erscheint – tipp auf <b style={{ color: GENDER_VAR.der }}>der</b>, <b style={{ color: GENDER_VAR.die }}>die</b> oder <b style={{ color: GENDER_VAR.das }}>das</b>. Bei einem Fehler
+          zeigt Otto dir die passende Regel. Tasten: 1 · 2 · 3.
         </StartScreen>
       </GameShell>
     );
@@ -131,34 +132,34 @@ export function ArtikelBlitz() {
     return (
       <GameShell title="Artikel-Blitz">
         <Results score={score} prevBest={prevBest} onAgain={() => void start()}>
-          <div className="mb-3 text-center text-[14px] text-muted">
-            {answered} answered · {answered ? Math.round((score / answered) * 100) : 0}% correct
+          <div className="mb-3 text-center text-[15px] text-ink-muted">
+            {answered} beantwortet · {answered ? Math.round((score / answered) * 100) : 0} % richtig
           </div>
           {missed.length > 0 && (
-            <div className="rounded-2xl border border-line bg-surface p-4">
+            <div className="rounded-md border border-line bg-paper-raised p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-[12px] font-semibold tracking-wide text-faint uppercase">Missed</span>
+                <span className="t-overline text-ink-muted">Verpasst</span>
                 {missed.some((m) => !m.own) && (
                   <Button
                     size="sm"
                     icon={<Plus className="size-4" />}
                     onClick={async () => {
-                      const deck = await createDeckPath('Deutsch::Artikel-Blitz', { emoji: '⚡' });
+                      const deck = await createDeckPath('Deutsch::Artikel-Blitz');
                       const r = await addNotes(
                         missed.filter((m) => !m.own).map((m) => ({ deckId: deck.id, type: 'word' as const, fields: { german: m.word, gender: m.gender, plural: m.plural, english: m.meaning, pos: 'noun' }, tags: ['artikel-blitz'] })),
                       );
-                      toast.success(`Added ${r.added} words to “Artikel-Blitz”`);
+                      toast.success(`${r.added} Wörter zu „Artikel-Blitz“ hinzugefügt`);
                     }}
                   >
-                    Add as cards
+                    Als Karten speichern
                   </Button>
                 )}
               </div>
               <div className="space-y-1.5">
                 {missed.map((m) => (
-                  <div key={m.word} className="text-[14.5px]">
-                    <b style={{ color: GENDER_VAR[m.gender] }}>{m.gender}</b> {m.word} <span className="text-muted">— {m.meaning}</span>
-                    {explainGender(m.word, m.gender) && <div className="text-[12.5px] text-faint">{explainGender(m.word, m.gender)}</div>}
+                  <div key={m.word} className="text-[15px]">
+                    <b style={{ color: GENDER_VAR[m.gender] }}>{m.gender}</b> {m.word} <span className="text-ink-muted">– {m.meaning}</span>
+                    {erklaereGenus(m.word, m.gender) && <div className="t-caption text-ink-muted">{erklaereGenus(m.word, m.gender)}</div>}
                   </div>
                 ))}
               </div>
@@ -169,20 +170,24 @@ export function ArtikelBlitz() {
     );
 
   return (
-    <GameShell title="Artikel-Blitz" right={<span className={cx(left < 10_000 && 'text-again')}>{Math.ceil(left / 1000)}s</span>} progress={1 - left / DURATION}>
-      <div className="flex items-center justify-between text-[14px] font-semibold">
+    <GameShell title="Artikel-Blitz" right={<span className={cx(left < 10_000 && 'text-koralle-ink')}>{Math.ceil(left / 1000)} s</span>} progress={1 - left / DURATION}>
+      <div className="flex items-center justify-between text-[15px] font-semibold">
         <span>
-          Score <span className="tabular-nums">{score}</span>
+          Punkte <span className="tabular-nums">{score}</span>
         </span>
-        {streak >= 3 && <span className="anim-in text-hard">🔥 {streak} in a row</span>}
-        <button onClick={() => setShowMeaning((v) => !v)} className="text-[12.5px] font-medium text-faint hover:text-ink">
-          {showMeaning ? 'Hide' : 'Show'} meaning
+        {streak >= 3 && (
+          <span className="anim-in inline-flex h-7 items-center gap-1 rounded-full bg-sonne px-2.5 text-[13px] font-bold text-on-sonne">
+            <Flame weight="fill" className="size-4" /> {streak} in Folge
+          </span>
+        )}
+        <button onClick={() => setShowMeaning((v) => !v)} className="h-9 text-[13px] font-semibold text-ink-muted hover:text-ink">
+          Bedeutung {showMeaning ? 'ausblenden' : 'zeigen'}
         </button>
       </div>
       <div className="flex flex-1 flex-col items-center justify-center py-10">
         {noun && (
           <div key={idx} className={cx('anim-in text-center', feedback && !feedback.ok && 'anim-shake')}>
-            <div className="font-display text-[52px] leading-tight font-semibold md:text-[64px]">
+            <div className="t-word md:text-[64px] md:leading-[66px]" lang="de">
               {feedback && (
                 <span className="anim-in" style={{ color: GENDER_VAR[feedback.gender] }}>
                   {feedback.gender}{' '}
@@ -190,8 +195,8 @@ export function ArtikelBlitz() {
               )}
               {noun.word}
             </div>
-            {(showMeaning || feedback) && <div className="mt-2 text-[16px] text-muted">{noun.meaning}</div>}
-            {feedback?.hint && <div className="mx-auto mt-4 max-w-sm rounded-xl bg-surface-2 px-4 py-2 text-[13.5px] text-muted">💡 {feedback.hint}</div>}
+            {(showMeaning || feedback) && <div className="mt-2 text-[17px] text-ink-muted">{noun.meaning}</div>}
+            {feedback?.hint && <div className="t-caption mx-auto mt-4 max-w-sm rounded-md bg-paper-raised px-4 py-2.5 text-ink-muted">{feedback.hint}</div>}
           </div>
         )}
       </div>
@@ -201,13 +206,13 @@ export function ArtikelBlitz() {
             key={g}
             onClick={() => answer(g)}
             className={cx(
-              'h-20 rounded-3xl text-[24px] font-bold text-white shadow-sm transition-transform active:scale-95 md:h-24',
-              feedback?.ok && feedback.gender === g && 'ring-4 ring-good/50',
+              'h-20 rounded-md border bg-paper-raised text-[28px] font-bold transition-transform duration-[120ms] active:scale-95 md:h-24',
+              feedback?.ok && feedback.gender === g ? 'border-wiese ring-2 ring-wiese' : 'border-line hover:bg-paper-sunk',
             )}
-            style={{ background: GENDER_VAR[g] }}
+            style={{ color: GENDER_VAR[g] }}
           >
             {g}
-            <span className="ml-2 hidden text-[12px] font-medium opacity-70 md:inline">{i + 1}</span>
+            <span className="ml-2 hidden text-[13px] font-medium text-ink-muted md:inline">{i + 1}</span>
           </button>
         ))}
       </div>

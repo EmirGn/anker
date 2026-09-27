@@ -26,11 +26,11 @@ export function Heatmap({ days, weeks = 20, rolloverHour = 4 }: { days: Map<stri
   }, [days, weeks, rolloverHour]);
   const max = Math.max(10, ...[...days.values()].map((d) => d.count));
   const level = (c: number) => (c === 0 ? 0 : c < max * 0.25 ? 1 : c < max * 0.5 ? 2 : c < max * 0.75 ? 3 : 4);
-  const fills = ['var(--surface-2)', 'color-mix(in srgb, var(--accent) 30%, var(--surface-2))', 'color-mix(in srgb, var(--accent) 55%, var(--surface-2))', 'color-mix(in srgb, var(--accent) 80%, var(--surface-2))', 'var(--accent)'];
+  const fills = ['var(--paper-sunk)', 'color-mix(in srgb, var(--wiese) 30%, var(--paper-sunk))', 'color-mix(in srgb, var(--wiese) 55%, var(--paper-sunk))', 'color-mix(in srgb, var(--wiese) 80%, var(--paper-sunk))', 'var(--wiese)'];
   return (
     <div className="w-full">
       <div className="flex gap-[3px]">
-        <div className="mr-1 flex flex-col gap-[3px] pt-[18px] text-[9.5px] text-faint">
+        <div className="mr-1 flex flex-col gap-[3px] pt-[18px] text-[11px] text-ink-muted">
           {WEEKDAYS.map((w, i) => (
             <div key={i} className="flex h-[var(--cell)] items-center leading-none" style={{ ['--cell' as string]: 'clamp(9px, 2.1vw, 13px)' }}>
               {w}
@@ -43,13 +43,13 @@ export function Heatmap({ days, weeks = 20, rolloverHour = 4 }: { days: Map<stri
             const showMonth = ci === 0 || first.slice(8) <= '07';
             return (
               <div key={ci} className="flex flex-col gap-[3px]">
-                <div className="h-[15px] text-[9.5px] leading-none whitespace-nowrap text-faint">{showMonth ? MONTHS[Number(first.slice(5, 7)) - 1] : ''}</div>
+                <div className="h-[15px] text-[11px] leading-none whitespace-nowrap text-ink-muted">{showMonth ? MONTHS[Number(first.slice(5, 7)) - 1] : ''}</div>
                 {col.map((cell) => (
                   <div
                     key={cell.key}
                     onMouseEnter={() => setHover(cell)}
                     onMouseLeave={() => setHover(null)}
-                    className={cx('rounded-[3px]', cell.key === grid.today && 'ring-1 ring-accent-strong ring-offset-1 ring-offset-surface')}
+                    className={cx('rounded-[3px]', cell.key === grid.today && 'ring-1 ring-hafen ring-offset-1 ring-offset-paper-raised')}
                     style={{
                       width: 'var(--cell)',
                       height: 'var(--cell)',
@@ -62,8 +62,8 @@ export function Heatmap({ days, weeks = 20, rolloverHour = 4 }: { days: Map<stri
           })}
         </div>
       </div>
-      <div className="mt-2 h-4 text-[11.5px] text-faint">
-        {hover ? `${new Date(`${hover.key}T12:00`).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}: ${hover.count} reviews` : ''}
+      <div className="mt-2 h-4 text-[11px] text-ink-muted">
+        {hover ? `${new Date(`${hover.key}T12:00`).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}: ${hover.count} Wiederholungen` : ''}
       </div>
     </div>
   );
@@ -73,7 +73,7 @@ export function Bars({
   values,
   labels,
   height = 120,
-  color = 'var(--accent)',
+  color = 'var(--hafen)',
   highlightFirst,
   format = (v: number) => String(v),
 }: {
@@ -101,7 +101,7 @@ export function Bars({
               className="w-full rounded-t-[4px] transition-opacity"
               style={{
                 height: `${Math.max(v ? 3 : 1, (v / max) * 100)}%`,
-                background: v ? color : 'var(--surface-3)',
+                background: v ? color : 'var(--line)',
                 opacity: hover === null || hover === i ? (highlightFirst && i > 0 ? 0.75 : 1) : 0.45,
               }}
             />
@@ -109,7 +109,7 @@ export function Bars({
         ))}
       </div>
       {labels && (
-        <div className="mt-1.5 flex gap-[3px] text-[10px] text-faint">
+        <div className="mt-1.5 flex gap-[3px] text-[11px] text-ink-muted">
           {labels.map((l, i) => (
             <div key={i} className="flex-1 text-center whitespace-nowrap">
               {l ?? ''}
@@ -117,7 +117,7 @@ export function Bars({
           ))}
         </div>
       )}
-      <div className="mt-1 h-4 text-[11.5px] text-muted">{hover !== null ? `${labels?.[hover] ?? `#${hover + 1}`}: ${format(values[hover]!)}` : ''}</div>
+      <div className="mt-1 h-4 text-[11px] text-ink-muted">{hover !== null ? `${labels?.[hover] ?? `#${hover + 1}`}: ${format(values[hover]!)}` : ''}</div>
     </div>
   );
 }
@@ -126,16 +126,16 @@ export function StackedBar({ parts }: { parts: { label: string; value: number; c
   const total = parts.reduce((s, p) => s + p.value, 0) || 1;
   return (
     <div>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-surface-2">
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-paper-sunk">
         {parts.map((p) =>
           p.value ? <div key={p.label} style={{ width: `${(p.value / total) * 100}%`, background: p.color }} title={`${p.label}: ${p.value}`} /> : null,
         )}
       </div>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
         {parts.map((p) => (
-          <div key={p.label} className="flex items-center gap-1.5 text-[12.5px]">
+          <div key={p.label} className="flex items-center gap-1.5 text-[13px]">
             <span className="size-2.5 rounded-full" style={{ background: p.color }} />
-            <span className="text-muted">{p.label}</span>
+            <span className="text-ink-muted">{p.label}</span>
             <span className="font-semibold tabular-nums">{p.value}</span>
           </div>
         ))}

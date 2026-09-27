@@ -70,7 +70,7 @@ export async function hubFetch<T = any>(
   init: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<T> {
   const c = conn;
-  if (!c) throw new HubError(0, 'Not connected to a hub');
+  if (!c) throw new HubError(0, 'Nicht mit einem Mac verbunden');
   const candidates = [c.url, ...(c.urls ?? []).filter((u) => u !== c.url)];
   let lastErr: unknown = null;
   for (const base of candidates) {
@@ -95,7 +95,7 @@ export async function hubFetch<T = any>(
     if (!res.ok) throw new HubError(res.status, (data as { error?: string }).error ?? res.statusText);
     return data as T;
   }
-  throw new HubError(0, lastErr instanceof Error && lastErr.name === 'TimeoutError' ? 'Hub timed out' : 'Hub unreachable');
+  throw new HubError(0, lastErr instanceof Error && lastErr.name === 'TimeoutError' ? 'Der Mac antwortet nicht' : 'Mac nicht erreichbar');
 }
 
 /** Minimal SSE client over fetch (EventSource can't send auth headers). */
@@ -105,9 +105,9 @@ export async function sseStream(
   signal: AbortSignal,
 ): Promise<void> {
   const c = conn;
-  if (!c) throw new HubError(0, 'Not connected');
+  if (!c) throw new HubError(0, 'Nicht verbunden');
   const res = await fetch(c.url + path, { headers: { Authorization: `Bearer ${c.token}`, Accept: 'text/event-stream' }, signal });
-  if (!res.ok || !res.body) throw new HubError(res.status, `Stream failed (${res.status})`);
+  if (!res.ok || !res.body) throw new HubError(res.status, `Stream fehlgeschlagen (${res.status})`);
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
   let buf = '';
   for (;;) {
@@ -159,7 +159,7 @@ export async function pairWithHub(url: string, code: string, deviceName: string)
     throw new HubError(0, `Can't reach ${base}. Same Wi‑Fi (or Tailscale)? Is Anker running on the Mac?`);
   }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new HubError(res.status, data.error ?? 'Pairing failed');
+  if (!res.ok) throw new HubError(res.status, data.error ?? 'Kopplung fehlgeschlagen');
   const c: HubConn = { url: base, token: data.token, hubId: data.hubId, name: data.name, urls: [base] };
   await setHub(c);
   try {

@@ -1,7 +1,7 @@
 import { GENDER_ARTICLE, parseGender, parseVerbForms, pluralDisplay, renderCloze, withArticle, type Gender, type Note } from '@anker/core';
-import { Volume2 } from 'lucide-react';
 import { renderField } from '../lib/sanitize';
 import { speak } from '../lib/tts';
+import { Volume2 } from './icons';
 import { cx } from './ui';
 
 export const POS_LABEL: Record<string, string> = {
@@ -16,14 +16,18 @@ export const POS_LABEL: Record<string, string> = {
   other: '',
 };
 
-export const GENDER_VAR: Record<Gender, string> = { der: 'var(--der)', die: 'var(--die)', das: 'var(--das)', pl: 'var(--pl)' };
+// Grammatical gender is a colour system: only ever on vocabulary. Plural is ink-muted, never "die" red.
+export const GENDER_VAR: Record<Gender, string> = { der: 'var(--der)', die: 'var(--die)', das: 'var(--das)', pl: 'var(--ink-muted)' };
+export const GENDER_SOFT: Record<Gender, string> = { der: 'var(--der-soft)', die: 'var(--die-soft)', das: 'var(--das-soft)', pl: 'var(--paper-raised)' };
+const GENDER_NAME: Record<Gender, string> = { der: 'maskulin', die: 'feminin', das: 'neutrum', pl: 'Plural' };
 
+/** Inline noun: the article alone takes the gender colour in weight 700, the noun stays ink. */
 export function GenderWord({ word, gender, className }: { word: string; gender?: string; className?: string }) {
   const g = parseGender(gender);
   return (
-    <span className={className}>
+    <span className={className} lang="de">
       {g && (
-        <span style={{ color: GENDER_VAR[g] }} className="font-semibold">
+        <span style={{ color: GENDER_VAR[g] }} className="font-bold">
           {GENDER_ARTICLE[g]}{' '}
         </span>
       )}
@@ -32,20 +36,23 @@ export function GenderWord({ word, gender, className }: { word: string; gender?:
   );
 }
 
-export function GenderTag({ gender, className }: { gender?: string; className?: string }) {
+/** The gender chip: a pill in der/die/das with on-gender text ("das · neutrum"). */
+export function GenderTag({ gender, long, className }: { gender?: string; long?: boolean; className?: string }) {
   const g = parseGender(gender);
   if (!g) return null;
   return (
     <span
-      className={cx('inline-flex items-center rounded-md px-1.5 py-px text-[11px] font-bold tracking-wide', className)}
-      style={{ color: GENDER_VAR[g], background: `color-mix(in srgb, ${GENDER_VAR[g]} 14%, transparent)` }}
+      className={cx('inline-flex shrink-0 items-center rounded-full font-bold', long ? 'h-[26px] px-2.5 text-[13px]' : 'h-5 px-2 text-[11px]', className)}
+      style={g === 'pl' ? { background: 'var(--paper-sunk)', color: 'var(--ink-muted)' } : { background: GENDER_VAR[g], color: 'var(--on-gender)' }}
     >
-      {g === 'pl' ? 'pl.' : g}
+      {GENDER_ARTICLE[g]}
+      {long && ` · ${GENDER_NAME[g]}`}
     </span>
   );
 }
 
-export function SpeakButton({ text, className, slow }: { text: string; className?: string; slow?: boolean }) {
+export function SpeakButton({ text, className, slow, tint }: { text: string; className?: string; slow?: boolean; tint?: Gender | null }) {
+  const g = tint && tint !== 'pl' ? tint : null;
   return (
     <button
       type="button"
@@ -53,11 +60,16 @@ export function SpeakButton({ text, className, slow }: { text: string; className
         e.stopPropagation();
         void speak(text, { rate: slow ? 0.7 : 1 });
       }}
-      className={cx('inline-flex size-9 items-center justify-center rounded-full text-faint transition-colors hover:bg-surface-2 hover:text-accent-strong', className)}
-      aria-label={`Listen: ${text}`}
-      title="Listen (R)"
+      className={cx(
+        'inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors duration-[120ms]',
+        g ? 'hover:brightness-95' : 'bg-paper-sunk text-ink hover:text-hafen',
+        className,
+      )}
+      style={g ? { background: GENDER_SOFT[g], color: GENDER_VAR[g] } : undefined}
+      aria-label={`Anhören: ${text}`}
+      title="Anhören (R)"
     >
-      <Volume2 className="size-[18px]" />
+      <Volume2 className="size-5" />
     </button>
   );
 }
@@ -89,70 +101,40 @@ export function autoSpeech(note: Note, ord: number, side: 'question' | 'answer')
 
 function WordDetails({ note }: { note: Note }) {
   const f = note.fields;
+  const g = parseGender(f.gender);
   const pl = pluralDisplay(f.plural);
   const forms = f.forms?.trim();
   const verb = f.pos === 'verb' ? parseVerbForms(forms) : null;
+  const stamm = verb?.present3 ? [verb.present3, verb.preterite, verb.perfect].filter(Boolean).join(' · ') : null;
   return (
-    <div className="mx-auto mt-6 w-full max-w-md space-y-4 text-left">
-      {(pl || forms) && (
-        <div className="flex flex-wrap gap-2">
-          {pl && (
-            <div className="rounded-xl bg-surface-2 px-3 py-2">
-              <div className="text-[10.5px] font-semibold tracking-wider text-faint uppercase">Plural</div>
-              <div className="mt-0.5 text-[15px] font-medium">
-                {pl.startsWith('die ') ? (
-                  <>
-                    <span style={{ color: 'var(--pl)' }} className="font-semibold">
-                      die
-                    </span>{' '}
-                    {pl.slice(4)}
-                  </>
-                ) : (
-                  pl
-                )}
-              </div>
-            </div>
-          )}
-          {verb?.present3 ? (
-            <div className="flex flex-wrap gap-2">
-              {[
-                ['Präsens', verb.present3],
-                ['Präteritum', verb.preterite],
-                ['Perfekt', verb.perfect],
-              ]
-                .filter(([, v]) => v)
-                .map(([k, v]) => (
-                  <div key={k} className="rounded-xl bg-surface-2 px-3 py-2">
-                    <div className="text-[10.5px] font-semibold tracking-wider text-faint uppercase">{k}</div>
-                    <div className="mt-0.5 text-[15px] font-medium">{v}</div>
-                  </div>
-                ))}
-            </div>
-          ) : (
-            forms && (
-              <div className="rounded-xl bg-surface-2 px-3 py-2">
-                <div className="text-[10.5px] font-semibold tracking-wider text-faint uppercase">Forms</div>
-                <div className="mt-0.5 text-[15px] font-medium">{forms}</div>
-              </div>
-            )
-          )}
+    <>
+      {pl && <div className="t-caption mt-0.5 text-ink-muted">Plural: {pl}</div>}
+      {stamm ? (
+        <div className="t-caption mt-0.5 text-ink-muted" lang="de">
+          Stammformen: <span className="font-bold text-ink">{stamm}</span>
         </div>
+      ) : (
+        forms && (
+          <div className="t-caption mt-0.5 text-ink-muted" lang="de">
+            Formen: <span className="font-bold text-ink">{forms}</span>
+          </div>
+        )
       )}
       {f.example && (
-        <div className="rounded-2xl border border-line px-4 py-3">
-          <div className="flex items-start gap-2">
-            <Html html={renderField(f.example)} className="flex-1 font-display text-[17px] leading-snug italic" />
-            <SpeakButton text={f.example} className="-mt-1 -mr-2 size-8 shrink-0" />
+        <div className="mt-6 flex items-center gap-3 rounded-md bg-paper-raised px-4 py-3">
+          <SpeakButton text={f.example} tint={g} className="size-10" />
+          <div className="min-w-0 flex-1">
+            <Html html={renderField(f.example)} className="t-body-lg" />
+            {f.exampleTranslation && <Html html={renderField(f.exampleTranslation)} className="t-caption text-ink-muted" />}
           </div>
-          {f.exampleTranslation && <Html html={renderField(f.exampleTranslation)} className="mt-1 text-[14px] text-muted" />}
         </div>
       )}
-      {f.notes && <Html html={renderField(f.notes)} className="rounded-xl bg-accent-soft px-3.5 py-2.5 text-[14px] leading-relaxed" />}
-    </div>
+      {f.notes && <Html html={renderField(f.notes)} className="t-caption mt-4 text-ink-muted" />}
+    </>
   );
 }
 
-/** Renders one side of a card. The answer side includes the question on top (like Anki). */
+/** Renders one side of a card. The answer side includes the question (like Anki). */
 export function CardView({ note, ord, side, hideProductionHint }: { note: Note; ord: number; side: 'question' | 'answer'; hideProductionHint?: boolean }) {
   const f = note.fields;
   const answer = side === 'answer';
@@ -161,50 +143,30 @@ export function CardView({ note, ord, side, hideProductionHint }: { note: Note; 
     const g = parseGender(f.gender);
     const pos = POS_LABEL[f.pos ?? ''] ?? '';
     const de = withArticle(f.german ?? '', f.gender);
-    const germanBlock = (
-      <div className="flex flex-col items-center">
-        {pos && <div className="mb-2 text-[11px] font-semibold tracking-[0.16em] text-faint uppercase">{pos}</div>}
-        <div className="flex items-center gap-1">
-          <h2 className="font-display text-[40px] leading-tight font-semibold tracking-tight md:text-[52px]">
-            <GenderWord word={f.german ?? ''} gender={f.gender} />
-          </h2>
-          <SpeakButton text={de} className="ml-1" />
-        </div>
-      </div>
-    );
-    const meaningBlock = (big: boolean) => (
-      <Html html={renderField(f.english)} className={cx(big ? 'font-display text-[30px] leading-tight font-medium md:text-[36px]' : 'text-[19px] text-muted')} />
-    );
-    if (ord === 0) {
+    if (ord === 1 && !answer) {
+      // English → German: the prompt carries no gender colour.
       return (
-        <div className="flex w-full flex-col items-center text-center">
-          {germanBlock}
-          {answer && (
-            <>
-              <div className="my-5 h-px w-16 bg-line" />
-              {meaningBlock(true)}
-              <WordDetails note={note} />
-            </>
+        <div className="w-full text-left">
+          {pos && <div className="t-overline text-ink-muted">{pos}</div>}
+          <Html html={renderField(f.english)} className="t-title mt-3" />
+          {!hideProductionHint && (
+            <div className="t-caption mt-3 text-ink-muted">{f.pos === 'noun' || g ? 'Sag es auf Deutsch – mit Artikel.' : 'Sag es auf Deutsch.'}</div>
           )}
         </div>
       );
     }
     return (
-      <div className="flex w-full flex-col items-center text-center">
-        {!answer && (
-          <>
-            {pos && <div className="mb-2 text-[11px] font-semibold tracking-[0.16em] text-faint uppercase">{pos}</div>}
-            {meaningBlock(true)}
-            {!hideProductionHint && (
-              <div className="mt-3 text-[13px] text-faint">{f.pos === 'noun' || g ? 'Say it in German — with the article' : 'Say it in German'}</div>
-            )}
-          </>
-        )}
+      <div className="w-full text-left">
+        {g ? <GenderTag gender={f.gender} long /> : pos && <div className="t-overline text-ink-muted">{pos}</div>}
+        <div className="mt-3 flex items-start justify-between gap-3">
+          <h2 className="t-word min-w-0 break-words" lang="de">
+            {f.german}
+          </h2>
+          <SpeakButton text={de} tint={g} />
+        </div>
         {answer && (
           <>
-            {meaningBlock(false)}
-            <div className="my-4 h-px w-16 bg-line" />
-            {germanBlock}
+            <Html html={renderField(f.english)} className="t-body-lg mt-2" />
             <WordDetails note={note} />
           </>
         )}
@@ -215,12 +177,12 @@ export function CardView({ note, ord, side, hideProductionHint }: { note: Note; 
   if (note.type === 'cloze') {
     const html = renderField(renderCloze(f.text ?? '', ord + 1, side));
     return (
-      <div className="flex w-full flex-col items-center text-center">
-        <div className="flex items-start gap-1">
-          <Html html={html} className="font-display text-[26px] leading-snug md:text-[30px]" />
-          {answer && <SpeakButton text={renderCloze(f.text ?? '', ord + 1, 'answer')} className="mt-1 shrink-0" />}
+      <div className="w-full text-left">
+        <div className="flex items-start gap-3">
+          <Html html={html} className="min-w-0 flex-1 text-[22px] leading-8 font-medium" />
+          {answer && <SpeakButton text={renderCloze(f.text ?? '', ord + 1, 'answer')} />}
         </div>
-        {answer && f.extra && <Html html={renderField(f.extra)} className="mt-5 max-w-lg text-[15px] text-muted" />}
+        {answer && f.extra && <Html html={renderField(f.extra)} className="t-body mt-5 text-ink-muted" />}
       </div>
     );
   }
@@ -229,30 +191,30 @@ export function CardView({ note, ord, side, hideProductionHint }: { note: Note; 
   const back = note.type === 'reversed' && ord === 1 ? f.front : f.back;
   const frontIsGerman = !(note.type === 'reversed' && ord === 1) && note.type !== 'typing';
   return (
-    <div className="flex w-full flex-col items-center text-center">
-      <div className="flex items-start gap-1">
-        <Html html={renderField(front)} className="font-display text-[28px] leading-snug md:text-[34px]" />
-        {frontIsGerman && front && <SpeakButton text={front} className="mt-1 shrink-0" />}
+    <div className="w-full text-left">
+      <div className="flex items-start gap-3">
+        <Html html={renderField(front)} className="t-title min-w-0 flex-1" />
+        {frontIsGerman && front && <SpeakButton text={front} />}
       </div>
       {answer && (
         <>
-          <div className="my-5 h-px w-16 bg-line" />
-          <div className="flex items-start gap-1">
-            <Html html={renderField(back)} className="text-[22px] leading-snug md:text-[24px]" />
-            {!frontIsGerman && back && <SpeakButton text={back} className="shrink-0" />}
+          <div className="my-5 h-px bg-line" />
+          <div className="flex items-start gap-3">
+            <Html html={renderField(back)} className="min-w-0 flex-1 text-[20px] leading-7 font-medium" />
+            {!frontIsGerman && back && <SpeakButton text={back} />}
           </div>
-          {note.type === 'typing' && f.extra && <Html html={renderField(f.extra)} className="mt-4 max-w-lg text-[15px] text-muted" />}
+          {note.type === 'typing' && f.extra && <Html html={renderField(f.extra)} className="t-body mt-4 text-ink-muted" />}
         </>
       )}
     </div>
   );
 }
 
-/** Colored accent for the card frame (gender of nouns, once it's no secret). */
-export function cardAccent(note: Note, ord: number, side: 'question' | 'answer'): string | null {
+/** Background tint of the card: the noun's gender, once it's no secret. */
+export function cardTint(note: Note, ord: number, side: 'question' | 'answer'): string | null {
   if (note.type !== 'word') return null;
   const g = parseGender(note.fields.gender);
-  if (!g) return null;
+  if (!g || g === 'pl') return null;
   if (ord === 1 && side === 'question') return null;
-  return GENDER_VAR[g];
+  return GENDER_SOFT[g];
 }

@@ -1,9 +1,11 @@
 import { builtinNouns, builtinSentences, builtinVerbs, parseGender, parseVerbForms, plainText, type Gender, type PoolNoun, type PoolVerb } from '@anker/core';
-import { Trophy, X } from 'lucide-react';
+import { Trophy, X } from '../components/icons';
 import { useEffect, useState, type ReactNode } from 'react';
+import { OttoBadge } from '../components/Otto';
 import { Button, cx, IconButton } from '../components/ui';
 import { db, getMeta, setMeta } from '../lib/db';
 import { navigate } from '../lib/router';
+import { DRILLS } from '../pages/Today';
 
 export function shuffle<T>(a: T[]): T[] {
   const arr = [...a];
@@ -82,39 +84,45 @@ export function useBest(game: string) {
 export function GameShell({ title, right, children, progress }: { title: string; right?: ReactNode; children: ReactNode; progress?: number }) {
   return (
     <div className="flex min-h-full flex-col">
-      <div className="pt-safe sticky top-0 z-10 bg-bg/85 backdrop-blur-xl">
+      <div className="pt-safe sticky top-0 z-10 bg-paper/90 backdrop-blur-xl">
         <div className="drag mx-auto flex h-14 max-w-3xl items-center gap-2 px-3 md:h-16 md:px-6">
-          <IconButton label="Exit" onClick={() => navigate('/practice')} className="no-drag">
-            <X className="size-5" />
+          <IconButton label="Beenden" onClick={() => navigate('/practice')} className="no-drag">
+            <X className="size-6" />
           </IconButton>
-          <div className="min-w-0 flex-1 truncate text-center font-display text-[17px] font-semibold">{title}</div>
-          <div className="no-drag min-w-9 text-right text-[14px] font-semibold tabular-nums">{right}</div>
+          <div className="t-label min-w-0 flex-1 truncate text-center">{title}</div>
+          <div className="no-drag min-w-11 text-right text-[15px] font-bold tabular-nums">{right}</div>
         </div>
         {progress !== undefined && (
-          <div className="h-[3px] bg-surface-2">
-            <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${Math.min(1, progress) * 100}%` }} />
+          <div className="h-[3px] bg-paper-sunk">
+            <div className="h-full bg-hafen transition-[width] duration-300 ease-out" style={{ width: `${Math.min(1, progress) * 100}%` }} />
           </div>
         )}
       </div>
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6 md:py-10">{children}</div>
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-6 md:py-10">{children}</div>
     </div>
   );
 }
 
-export function StartScreen({ emoji, title, children, onStart, best, bestLabel }: { emoji: string; title: string; children: ReactNode; onStart: () => void; best: number | null; bestLabel?: string }) {
+export function StartScreen({ game, title, children, onStart, best, bestLabel }: { game: string; title: string; children: ReactNode; onStart: () => void; best: number | null; bestLabel?: string }) {
+  const d = DRILLS.find((x) => x.id === game);
+  const Icon = d?.icon;
   return (
     <div className="anim-in flex flex-1 flex-col items-center justify-center text-center">
-      <div className="text-6xl">{emoji}</div>
-      <h1 className="mt-4 font-display text-[32px] font-semibold">{title}</h1>
-      <div className="mt-2 max-w-md text-[15px] text-muted">{children}</div>
+      {Icon && (
+        <div className="flex size-20 items-center justify-center rounded-lg" style={{ background: d.tint.bg, color: d.tint.fg }}>
+          <Icon className="size-10" />
+        </div>
+      )}
+      <h1 className="t-title mt-5">{title}</h1>
+      <div className="mt-2 max-w-md text-[15px] text-ink-muted">{children}</div>
       {best !== null && (
-        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-[13px] font-medium text-muted">
-          <Trophy className="size-3.5 text-hard" /> Best: {best}
+        <div className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-full bg-sonne px-3 text-[13px] font-bold text-on-sonne tabular-nums">
+          <Trophy weight="fill" className="size-4" /> Rekord: {best}
           {bestLabel}
         </div>
       )}
-      <Button variant="primary" size="lg" className="mt-8 min-w-44" onClick={onStart} autoFocus>
-        Start
+      <Button variant="primary" size="lg" className="mt-8 w-full max-w-sm" onClick={onStart} autoFocus>
+        Los geht’s
       </Button>
     </div>
   );
@@ -137,26 +145,27 @@ export function Results({
 }) {
   const record = prevBest === null || score > prevBest;
   const ratio = total ? score / total : null;
-  const msg = ratio === null ? (record ? 'Neuer Rekord!' : 'Gut gemacht!') : ratio >= 0.9 ? 'Ausgezeichnet!' : ratio >= 0.7 ? 'Sehr gut!' : ratio >= 0.5 ? 'Nicht schlecht!' : 'Übung macht den Meister!';
+  const msg = ratio === null ? (record ? 'Neuer Rekord!' : 'Gut gemacht!') : ratio >= 0.9 ? 'Ausgezeichnet!' : ratio >= 0.7 ? 'Sehr gut!' : ratio >= 0.5 ? 'Nicht schlecht.' : 'Übung macht den Meister.';
+  const mood = record && score > 0 ? 'proud' : ratio !== null && ratio >= 0.7 ? 'happy' : 'thinking';
   return (
     <div className="anim-in flex flex-1 flex-col items-center text-center">
-      <div className="text-6xl">{record && score > 0 ? '🏆' : ratio !== null && ratio >= 0.7 ? '🎉' : '💪'}</div>
-      <h1 className="mt-4 font-display text-[32px] font-semibold">{msg}</h1>
-      <div className="mt-2 font-display text-[56px] leading-none font-semibold tabular-nums">
+      <OttoBadge size={120} mood={mood} />
+      <h1 className="t-title mt-5">{msg}</h1>
+      <div className="mt-2 font-display text-[44px] leading-[46px] font-bold tabular-nums">
         {score}
-        {total !== undefined && <span className="text-[28px] text-faint">/{total}</span>}
+        {total !== undefined && <span className="text-[28px] text-ink-muted">/{total}</span>}
         {unit}
       </div>
-      <div className={cx('mt-2 text-[14px]', record && score > 0 ? 'font-semibold text-hard' : 'text-muted')}>
-        {record && score > 0 ? (prevBest === null ? 'Your first score!' : `New best (was ${prevBest})`) : `Best: ${prevBest}`}
+      <div className={cx('mt-2 text-[15px]', record && score > 0 ? 'font-bold text-sonne-ink' : 'text-ink-muted')}>
+        {record && score > 0 ? (prevBest === null ? 'Dein erstes Ergebnis' : `Neuer Rekord (vorher ${prevBest})`) : `Rekord: ${prevBest}`}
       </div>
       {children && <div className="mt-8 w-full text-left">{children}</div>}
       <div className="mt-8 flex w-full max-w-sm flex-col gap-2">
         <Button variant="primary" size="lg" onClick={onAgain} autoFocus>
-          Play again
+          Noch mal spielen
         </Button>
         <Button size="lg" variant="ghost" onClick={() => navigate('/practice')}>
-          Other games
+          Andere Spiele
         </Button>
       </div>
     </div>

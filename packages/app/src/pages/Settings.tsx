@@ -1,10 +1,11 @@
 import type { AIProvider, Prefs } from '@anker/core';
-import { CheckCircle2, Code2, Copy, ExternalLink, Laptop, Loader2, LogIn, Monitor, Moon, Plug, RefreshCw, Smartphone, Sun, Trash2, Volume2, XCircle } from 'lucide-react';
+import { CheckCircle2, Code2, Copy, ExternalLink, Laptop, Loader2, LogIn, Monitor, Moon, Plug, RefreshCw, Smartphone, Sun, Trash2, Volume2, XCircle } from '../components/icons';
 import QRCode from 'qrcode';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Chip, cx, Input, Modal, PageHeader, Panel, Section, Segmented, Select, Spinner, toast, Toggle, useConfirm } from '../components/ui';
 import { aiLogin, aiStatus, type ProviderStatus } from '../lib/ai';
 import { db } from '../lib/db';
+import { uhrzeit } from '../lib/format';
 import { desktop } from '../lib/desktop';
 import { useIsAdmin, usePrefs, useHub, useSyncState, useTheme } from '../lib/hooks';
 import { hubFetch, setHub } from '../lib/hub';
@@ -20,10 +21,10 @@ const REPO_URL = 'https://github.com/EmirGn/anker';
 
 function Row({ title, desc, children }: { title: ReactNode; desc?: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
+    <div className="flex min-h-16 flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
       <div className="min-w-0 flex-1 basis-56">
-        <div className="text-[14.5px] font-medium">{title}</div>
-        {desc && <div className="text-[12.5px] text-muted">{desc}</div>}
+        <div className="t-label">{title}</div>
+        {desc && <div className="t-caption mt-0.5 text-ink-muted">{desc}</div>}
       </div>
       <div className="flex shrink-0 items-center gap-2">{children}</div>
     </div>
@@ -35,27 +36,27 @@ function StudyPrefs({ prefs }: { prefs: Prefs }) {
   const save = (patch: Partial<Prefs>) => void savePrefs(patch);
   return (
     <Panel className="divide-y divide-line">
-      <Row title="Your name" desc="Used for the greeting on the Today page.">
+      <Row title="Dein Name" desc="Für die Begrüßung auf „Heute“.">
         <Input defaultValue={prefs.name ?? ''} placeholder="Optional" className="w-44" onBlur={(e) => save({ name: e.target.value.trim() || undefined })} />
       </Row>
-      <Row title="German level" desc="The AI tutor adapts examples and explanations to it.">
+      <Row title="Deutschniveau" desc="Der KI-Tutor passt Beispiele und Erklärungen daran an.">
         <Select value={prefs.level} onChange={(e) => save({ level: e.target.value as Prefs['level'] })} className="w-28">
           {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map((l) => (
             <option key={l}>{l}</option>
           ))}
         </Select>
       </Row>
-      <Row title="Explanations in" desc="Language for meanings, translations and grammar notes.">
+      <Row title="Erklärungen auf" desc="Sprache für Bedeutungen, Übersetzungen und Grammatikhinweise.">
         <Select value={prefs.nativeLanguage} onChange={(e) => save({ nativeLanguage: e.target.value })} className="w-40">
           {['English', 'Türkçe', 'Español', 'Français', 'Italiano', 'Português', 'Polski', 'Русский', 'Українська', 'العربية', 'فارسی', '中文', '日本語', 'Deutsch'].map((l) => (
             <option key={l}>{l}</option>
           ))}
         </Select>
       </Row>
-      <Row title="Daily goal" desc="Reviews per day for the progress ring.">
+      <Row title="Tagesziel" desc="Wiederholungen pro Tag für deine Tagesmission.">
         <Input type="number" min={5} max={2000} defaultValue={prefs.dailyGoal} className="w-24" onBlur={(e) => save({ dailyGoal: Math.max(5, Number(e.target.value) || 50) })} />
       </Row>
-      <Row title="Next day starts at" desc="Late-night reviews still count for the previous day.">
+      <Row title="Neuer Tag beginnt um" desc="Späte Wiederholungen zählen noch zum Vortag.">
         <Select value={prefs.rolloverHour} onChange={(e) => save({ rolloverHour: Number(e.target.value) })} className="w-28">
           {[0, 1, 2, 3, 4, 5, 6].map((h) => (
             <option key={h} value={h}>
@@ -64,14 +65,14 @@ function StudyPrefs({ prefs }: { prefs: Prefs }) {
           ))}
         </Select>
       </Row>
-      <Row title="Daily reminder" desc={isNative || isDesktop ? 'A gentle notification if you have cards due.' : 'Available in the Mac and Android apps.'}>
+      <Row title="Tägliche Erinnerung" desc={isNative || isDesktop ? 'Eine sanfte Mitteilung, wenn Karten fällig sind.' : 'In der Mac- und Android-App verfügbar.'}>
         <Toggle
           checked={!!prefs.reminderTime}
           disabled={!isNative && !isDesktop}
           onChange={async (on) => {
             const time = on ? prefs.reminderTime || '19:00' : null;
             const ok = await scheduleDailyReminder(time);
-            if (on && !ok) toast.error('Notifications are not allowed for Anker.');
+            if (on && !ok) toast.error('Anker darf keine Mitteilungen senden.');
             save({ reminderTime: time });
           }}
         />
@@ -101,11 +102,11 @@ function VoicePrefs() {
     const t = setTimeout(() => setVoices(germanVoices()), 600);
     return () => clearTimeout(t);
   }, []);
-  if (!ttsAvailable()) return <Panel className="p-4 text-sm text-muted">Text-to-speech isn't available on this device.</Panel>;
+  if (!ttsAvailable()) return <Panel className="p-4 text-[15px] text-ink-muted">Text-to-speech isn't available on this device.</Panel>;
   return (
     <Panel className="divide-y divide-line">
       {!isNative && (
-        <Row title="German voice" desc={voices.length ? 'macOS: install more natural voices in System Settings → Accessibility → Spoken Content.' : 'No German voice found — install one in your system settings.'}>
+        <Row title="Deutsche Stimme" desc={voices.length ? 'macOS: Natürlichere Stimmen gibt es unter Systemeinstellungen → Bedienungshilfen → Gesprochene Inhalte.' : 'Keine deutsche Stimme gefunden – installier eine in den Systemeinstellungen.'}>
           <Select
             value={voice}
             onChange={(e) => {
@@ -114,7 +115,7 @@ function VoicePrefs() {
             }}
             className="w-56"
           >
-            <option value="">Automatic</option>
+            <option value="">Automatisch</option>
             {voices.map((v) => (
               <option key={v.name} value={v.name}>
                 {v.name} ({v.lang})
@@ -123,7 +124,7 @@ function VoicePrefs() {
           </Select>
         </Row>
       )}
-      <Row title="Speaking speed" desc={`${Math.round(rate * 100)}%`}>
+      <Row title="Sprechtempo" desc={`${Math.round(rate * 100)} %`}>
         <input
           type="range"
           min={0.6}
@@ -134,10 +135,10 @@ function VoicePrefs() {
             setRate(Number(e.target.value));
             setSpeechRate(Number(e.target.value));
           }}
-          className="w-40 accent-[var(--accent)]"
+          className="w-40 accent-[var(--hafen)]"
         />
         <Button size="sm" icon={<Volume2 className="size-4" />} onClick={() => void speak('Eichhörnchen essen gern Nüsse im Herbst.')}>
-          Test
+          Testen
         </Button>
       </Row>
     </Panel>
@@ -149,45 +150,45 @@ function ProviderCard({ p, prefs, admin, onLogin }: { p: ProviderStatus; prefs: 
   const model = p.id === 'claude' ? prefs.claudeModel ?? '' : prefs.codexModel ?? '';
   const isDefault = prefs.defaultProvider === p.id;
   return (
-    <Panel className={cx('p-5', isDefault && 'ring-2 ring-accent/40')}>
+    <Panel className={cx('p-4', isDefault && 'border-hafen')}>
       <div className="flex items-start gap-3">
-        <div className={cx('flex size-11 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white', p.id === 'claude' ? 'bg-[#d97757]' : 'bg-[#10a37f]')}>
+        <div className={cx('flex size-11 shrink-0 items-center justify-center rounded-md text-[17px] font-bold text-white', p.id === 'claude' ? 'bg-[#d97757]' : 'bg-[#10a37f]')}>
           {p.id === 'claude' ? 'C' : '⌘'}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[16px] font-semibold">{p.name}</span>
-            {isDefault && <Chip color="var(--accent-strong)">default</Chip>}
+            <span className="t-label">{p.name}</span>
+            {isDefault && <Chip color="var(--hafen)">Standard</Chip>}
           </div>
-          <div className="mt-0.5 text-[13px] text-muted">
+          <div className="mt-0.5 text-[13px] text-ink-muted">
             {!p.installed ? (
-              'CLI not installed on the hub'
+              'CLI ist auf dem Mac nicht installiert'
             ) : p.loggedIn ? (
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5 text-good" />
-                {p.plan ?? 'Signed in'}
+                <CheckCircle2 weight="fill" className="size-4 text-wiese" />
+                {p.plan ?? 'Angemeldet'}
                 {p.account ? ` · ${p.account}` : ''}
               </span>
             ) : (
               <span className="flex items-center gap-1.5">
-                <XCircle className="size-3.5 text-again" /> Not signed in
+                <XCircle className="size-4 text-koralle-ink" /> Nicht angemeldet
               </span>
             )}
           </div>
-          {p.detail && <div className="mt-1 text-[12px] text-hard">{p.detail}</div>}
+          {p.detail && <div className="mt-1 text-[13px] text-sonne-ink">{p.detail}</div>}
         </div>
       </div>
       {!p.installed ? (
-        <div className="mt-4 rounded-xl bg-surface-2 px-3 py-2 font-mono text-[12px] break-all text-muted">{p.installHint}</div>
+        <div className="mt-4 rounded-md bg-paper-sunk px-3 py-2 font-mono text-[13px] break-all text-ink-muted">{p.installHint}</div>
       ) : (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {!p.loggedIn &&
             (admin ? (
               <Button variant="primary" size="sm" loading={p.loginInProgress} icon={<LogIn className="size-4" />} onClick={onLogin}>
-                {p.loginInProgress ? 'Finish in your browser…' : `Sign in with ${p.id === 'claude' ? 'Claude' : 'ChatGPT'}`}
+                {p.loginInProgress ? 'Im Browser abschließen …' : `Mit ${p.id === 'claude' ? 'Claude' : 'ChatGPT'} anmelden`}
               </Button>
             ) : (
-              <span className="text-[12.5px] text-muted">Sign in from the Mac app.</span>
+              <span className="t-caption text-ink-muted">Melde dich in der Mac-App an.</span>
             ))}
           <Select
             value={model}
@@ -202,7 +203,7 @@ function ProviderCard({ p, prefs, admin, onLogin }: { p: ProviderStatus; prefs: 
           </Select>
           {!isDefault && (
             <Button size="sm" variant="ghost" onClick={() => void savePrefs({ defaultProvider: p.id })}>
-              Make default
+              Als Standard
             </Button>
           )}
         </div>
@@ -225,7 +226,7 @@ function Integrations() {
   useEffect(() => {
     void load();
   }, []);
-  if (!data) return <div className="flex items-center gap-2 px-1 py-2 text-sm text-muted"><Spinner className="size-4" /> Checking Claude Code & Codex…</div>;
+  if (!data) return <div className="flex items-center gap-2 px-1 py-2 text-[15px] text-ink-muted"><Spinner className="size-4" /> Checking Claude Code & Codex…</div>;
   const copy = (t: string) => void navigator.clipboard.writeText(t).then(() => toast.success('Copied'));
   return (
     <div className="space-y-3">
@@ -234,12 +235,12 @@ function Integrations() {
           <Row
             key={c.target}
             title={c.name}
-            desc={!c.available ? 'CLI not found on this Mac' : c.registered ? 'Anker tools are available in every session.' : `Let ${c.name} read and edit your decks from any terminal session.`}
+            desc={!c.available ? 'CLI auf diesem Mac nicht gefunden' : c.registered ? 'Die Anker-Werkzeuge sind in jeder Sitzung verfügbar.' : `${c.name} kann deine Decks aus jeder Terminal-Sitzung lesen und bearbeiten.`}
           >
             {c.available &&
               (c.registered ? (
                 <>
-                  <Chip color="var(--good)">connected</Chip>
+                  <Chip color="var(--wiese)">verbunden</Chip>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -251,7 +252,7 @@ function Integrations() {
                       setBusy(null);
                     }}
                   >
-                    Remove
+                    Entfernen
                   </Button>
                 </>
               ) : (
@@ -264,8 +265,8 @@ function Integrations() {
                     setBusy(c.target);
                     try {
                       const r = await hubFetch<{ ok: boolean; output: string }>(`/api/integrations/${c.target}`, { body: {}, timeoutMs: 60_000 });
-                      if (r.ok) toast.success(`Added Anker to ${c.name}`);
-                      else toast.error(r.output || 'Failed');
+                      if (r.ok) toast.success(`Anker zu ${c.name} hinzugefügt`);
+                      else toast.error(r.output || 'Fehlgeschlagen');
                     } catch (e) {
                       toast.error((e as Error).message);
                     }
@@ -273,29 +274,29 @@ function Integrations() {
                     setBusy(null);
                   }}
                 >
-                  Connect
+                  Verbinden
                 </Button>
               ))}
           </Row>
         ))}
       </Panel>
       {data.snippets && (
-        <details className="group rounded-2xl border border-line bg-surface">
-          <summary className="cursor-pointer list-none px-4 py-3 text-[13.5px] font-medium text-muted group-open:border-b group-open:border-line">
-            Other MCP clients (Claude Desktop, Cursor, …)
+        <details className="group rounded-md border border-line bg-paper-raised">
+          <summary className="cursor-pointer list-none px-4 py-3 text-[13px] font-semibold text-ink-muted group-open:border-b group-open:border-line">
+            Andere MCP-Clients (Claude Desktop, Cursor …)
           </summary>
           <div className="space-y-3 p-4">
-            <p className="text-[12.5px] text-muted">
-              Add this to <code className="rounded bg-surface-2 px-1">claude_desktop_config.json</code> (or your client's MCP settings). It launches a tiny proxy that finds the running Anker app.
+            <p className="text-[13px] text-ink-muted">
+              Füge das in <code className="rounded-xs bg-paper-sunk px-1">claude_desktop_config.json</code> ein (oder in die MCP-Einstellungen deines Clients). Es startet einen kleinen Proxy, der die laufende Anker-App findet.
             </p>
             <div className="relative">
-              <pre className="thin-scroll overflow-x-auto rounded-xl bg-surface-2 p-3 text-[11.5px] leading-relaxed">{data.snippets.claudeDesktop}</pre>
-              <button onClick={() => copy(data.snippets!.claudeDesktop)} className="absolute top-2 right-2 rounded-lg bg-surface p-1.5 text-faint hover:text-ink" aria-label="Copy">
+              <pre className="thin-scroll overflow-x-auto rounded-md bg-paper-sunk p-3 text-[11px] leading-relaxed">{data.snippets.claudeDesktop}</pre>
+              <button onClick={() => copy(data.snippets!.claudeDesktop)} className="absolute top-2 right-2 rounded-sm bg-paper-raised p-1.5 text-ink-muted hover:text-ink" aria-label="Kopieren">
                 <Copy className="size-3.5" />
               </button>
             </div>
-            <p className="text-[12.5px] text-muted">
-              Streamable HTTP endpoint: <code className="rounded bg-surface-2 px-1">{data.mcpUrl}</code> (Bearer token in <code className="rounded bg-surface-2 px-1">~/.anker/connection.json</code>).
+            <p className="text-[13px] text-ink-muted">
+              Streamable-HTTP-Endpunkt: <code className="rounded-xs bg-paper-sunk px-1">{data.mcpUrl}</code> (Bearer-Token in <code className="rounded-xs bg-paper-sunk px-1">~/.anker/connection.json</code>).
             </p>
           </div>
         </details>
@@ -327,11 +328,11 @@ function AISection({ prefs, admin }: { prefs: Prefs; admin: boolean }) {
 
   if (!hub) {
     return (
-      <Panel className="p-5 text-sm text-muted">
-        The AI tutor runs on your Mac through your own Claude and ChatGPT subscriptions. Connect this device to your Mac hub first.
+      <Panel className="p-5 text-[15px] text-ink-muted">
+        Der KI-Tutor läuft auf deinem Mac über deine eigenen Claude- und ChatGPT-Abos. Verbinde dieses Gerät zuerst mit deinem Mac.
         <div className="mt-3">
           <Button size="sm" onClick={() => navigate('/connect')}>
-            Connect
+            Verbinden
           </Button>
         </div>
       </Panel>
@@ -339,14 +340,14 @@ function AISection({ prefs, admin }: { prefs: Prefs; admin: boolean }) {
   }
   return (
     <div className="space-y-4">
-      <p className="text-[13px] leading-relaxed text-muted">
-        Anker drives the official <b>Claude Code</b> and <b>Codex</b> CLIs on your Mac, so requests use your Claude Pro/Max and ChatGPT Plus/Pro subscriptions. Sign-in happens in the CLIs' own browser flow — Anker never sees your
-        credentials. Agents can only use Anker's deck tools (no shell or file access).
+      <p className="text-[13px] leading-relaxed text-ink-muted">
+        Anker steuert die offiziellen CLIs <b>Claude Code</b> und <b>Codex</b> auf deinem Mac, deshalb laufen Anfragen über deine Abos (Claude Pro/Max, ChatGPT Plus/Pro). Die Anmeldung passiert im Browser-Ablauf der CLIs – Anker sieht deine
+        Zugangsdaten nie. Die KI kann nur Ankers Deck-Werkzeuge nutzen, kein Terminal und keine Dateien.
       </p>
-      {error && <div className="rounded-xl bg-again/10 px-4 py-3 text-sm text-again">{error}</div>}
+      {error && <div className="rounded-md bg-koralle-soft px-4 py-3 text-[15px] text-koralle-ink">{error}</div>}
       {!providers ? (
-        <div className="flex items-center gap-2 text-sm text-muted">
-          <Spinner className="size-4" /> Checking subscriptions…
+        <div className="flex items-center gap-2 text-[15px] text-ink-muted">
+          <Spinner className="size-5" /> Abos werden geprüft …
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
@@ -358,8 +359,8 @@ function AISection({ prefs, admin }: { prefs: Prefs; admin: boolean }) {
               admin={admin}
               onLogin={async () => {
                 const r = await aiLogin(p.id as AIProvider);
-                if (!r.started) toast.error(r.error ?? 'Could not start sign-in');
-                else toast('Complete the sign-in in your browser');
+                if (!r.started) toast.error(r.error ?? 'Die Anmeldung konnte nicht starten');
+                else toast('Schließ die Anmeldung im Browser ab');
                 void load(true);
               }}
             />
@@ -367,11 +368,11 @@ function AISection({ prefs, admin }: { prefs: Prefs; admin: boolean }) {
         </div>
       )}
       <Button size="sm" variant="ghost" icon={<RefreshCw className="size-4" />} onClick={() => void load(true)}>
-        Refresh status
+        Status aktualisieren
       </Button>
       {admin && (
         <div className="pt-2">
-          <div className="mb-2 text-[13.5px] font-semibold">Use Anker from Claude Code & Codex (MCP)</div>
+          <div className="t-label mb-2">Anker in Claude Code & Codex nutzen (MCP)</div>
           <Integrations />
         </div>
       )}
@@ -398,37 +399,37 @@ function PairModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     void QRCode.toDataURL(`${addr.url}/pair?code=${info.code}`, { margin: 1, width: 440, errorCorrectionLevel: 'M' }).then(setQr);
   }, [info, addr]);
   return (
-    <Modal open={open} onClose={onClose} title="Pair a phone">
+    <Modal open={open} onClose={onClose} title="Handy koppeln">
       {!info ? (
         <div className="flex justify-center py-10">
           <Spinner />
         </div>
       ) : !info.addresses.length ? (
-        <p className="text-sm text-muted">This Mac has no network address. Connect to Wi‑Fi (or Tailscale) and try again.</p>
+        <p className="text-[15px] text-ink-muted">Dieser Mac hat keine Netzwerkadresse. Verbinde ihn mit einem WLAN (oder Tailscale) und versuch es noch mal.</p>
       ) : (
         <div className="space-y-5 text-center">
-          <p className="text-[14px] text-muted">Scan with your phone's camera, then tap “Open in the Anker app”. Or enter the code manually in Anker on your phone.</p>
-          <div className="flex justify-center">{qr ? <img src={qr} alt="Pairing QR code" className="size-56 rounded-2xl bg-white p-2" /> : <div className="size-56" />}</div>
+          <p className="text-[15px] text-ink-muted">Scanne den Code mit der Handykamera und öffne den Link in der Anker-App. Oder gib den Code in Anker auf dem Handy ein.</p>
+          <div className="flex justify-center">{qr ? <img src={qr} alt="QR-Code zum Koppeln" className="size-56 rounded-md bg-white p-2" /> : <div className="size-56" />}</div>
           <div>
-            <div className="text-[12px] font-semibold tracking-wide text-faint uppercase">Code</div>
-            <div className="font-mono text-[38px] font-bold tracking-[0.2em]">{info.code}</div>
-            <div className="text-[12px] text-faint">valid for 10 minutes</div>
+            <div className="t-overline text-ink-muted">Code</div>
+            <div className="font-mono text-[28px] font-bold tracking-[0.2em]">{info.code}</div>
+            <div className="t-caption text-ink-muted">10 Minuten gültig</div>
           </div>
           <div>
-            <div className="mb-2 text-[12px] font-semibold tracking-wide text-faint uppercase">Address</div>
+            <div className="t-overline mb-2 text-ink-muted">Adresse</div>
             <div className="flex flex-wrap justify-center gap-2">
               {info.addresses.map((a, i) => (
                 <button
                   key={a.url}
                   onClick={() => setSel(i)}
-                  className={cx('rounded-xl border px-3 py-1.5 font-mono text-[13px]', i === sel ? 'border-accent bg-accent-soft' : 'border-line hover:bg-surface-2')}
+                  className={cx('rounded-md border px-3 py-1.5 font-mono text-[13px]', i === sel ? 'border-hafen bg-hafen-soft' : 'border-line hover:bg-paper-sunk')}
                 >
                   {a.url.replace('http://', '')}
-                  <span className="ml-1.5 font-sans text-[11px] text-faint">{a.kind === 'tailscale' ? 'Tailscale' : a.kind === 'lan' ? 'Wi‑Fi' : ''}</span>
+                  <span className="ml-1.5 font-sans text-[11px] text-ink-muted">{a.kind === 'tailscale' ? 'Tailscale' : a.kind === 'lan' ? 'Wi‑Fi' : ''}</span>
                 </button>
               ))}
             </div>
-            <p className="mt-3 text-[12px] text-faint">Away from home? Install Tailscale on both devices and use the 100.x address.</p>
+            <p className="mt-3 text-[13px] text-ink-muted">Unterwegs? Installier Tailscale auf beiden Geräten und nimm die 100.x-Adresse.</p>
           </div>
         </div>
       )}
@@ -450,12 +451,12 @@ function HubAdmin() {
   return (
     <div className="space-y-3">
       <Panel className="divide-y divide-line">
-        <Row title="This Mac is the hub" desc={`Phones sync with it and the AI runs here. ${hubInfo.counts.notes} notes · ${hubInfo.counts.reviews} reviews stored.`}>
+        <Row title="Dieser Mac ist der Hub" desc={`Handys synchronisieren mit ihm, und die KI läuft hier. ${hubInfo.counts.notes} Notizen · ${hubInfo.counts.reviews} Wiederholungen gespeichert.`}>
           <Button variant="primary" icon={<Smartphone className="size-4" />} onClick={() => setPairOpen(true)}>
-            Pair a phone
+            Handy koppeln
           </Button>
         </Row>
-        <Row title="Allow devices on my network" desc="Needed for phone sync. Every request still requires a paired device token.">
+        <Row title="Geräte im Netzwerk erlauben" desc="Nötig für den Handy-Sync. Jede Anfrage braucht trotzdem ein gekoppeltes Gerät.">
           <Toggle
             checked={hubInfo.lanEnabled}
             onChange={async (v) => {
@@ -464,42 +465,42 @@ function HubAdmin() {
             }}
           />
         </Row>
-        <Row title="Hub name">
+        <Row title="Name des Hubs">
           <Input defaultValue={hubInfo.name} className="w-52" onBlur={async (e) => e.target.value.trim() && (await hubFetch('/api/hub/settings', { body: { name: e.target.value.trim() } }))} />
         </Row>
         {hubInfo.dataDir && (
-          <Row title="Data folder" desc={<span className="font-mono text-[11.5px] break-all">{hubInfo.dataDir}</span>}>
+          <Row title="Datenordner" desc={<span className="font-mono text-[11px] break-all">{hubInfo.dataDir}</span>}>
             <Button
               size="sm"
               variant="ghost"
               onClick={async () => {
                 const r = await hubFetch<{ file: string }>('/api/backup', { body: {} });
-                toast.success(`Backup saved: ${r.file.split('/').pop()}`);
+                toast.success(`Sicherung gespeichert: ${r.file.split('/').pop()}`);
               }}
             >
-              Back up now
+              Jetzt sichern
             </Button>
           </Row>
         )}
       </Panel>
-      <div className="px-1 pt-2 text-[12px] font-semibold tracking-wide text-faint uppercase">Paired devices</div>
+      <div className="t-overline px-1 pt-2 text-ink-muted">Gekoppelte Geräte</div>
       <Panel className="divide-y divide-line">
         {devices.length === 0 ? (
-          <div className="px-4 py-4 text-sm text-muted">No devices yet.</div>
+          <div className="px-4 py-4 text-[15px] text-ink-muted">Noch keine Geräte.</div>
         ) : (
           devices.map((d) => (
-            <Row key={d.id} title={d.name} desc={`Paired ${new Date(d.createdAt).toLocaleDateString()}${d.lastSeenAt ? ` · last seen ${new Date(d.lastSeenAt).toLocaleString()}` : ''}`}>
+            <Row key={d.id} title={d.name} desc={`Gekoppelt am ${new Date(d.createdAt).toLocaleDateString('de-DE')}${d.lastSeenAt ? ` · zuletzt gesehen ${new Date(d.lastSeenAt).toLocaleString('de-DE')}` : ''}`}>
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-again"
+                className="text-koralle-ink"
                 onClick={async () => {
-                  if (!(await confirm(`Unpair ${d.name}?`, { body: 'It will stop syncing until you pair it again.', confirm: 'Unpair', danger: true }))) return;
+                  if (!(await confirm(`${d.name} entkoppeln?`, { body: 'Das Gerät synchronisiert nicht mehr, bis du es neu koppelst.', confirm: 'Entkoppeln', danger: true }))) return;
                   await hubFetch(`/api/devices/${d.id}`, { method: 'DELETE' });
                   load();
                 }}
               >
-                Unpair
+                Entkoppeln
               </Button>
             </Row>
           ))
@@ -518,10 +519,10 @@ function SyncClient() {
   if (!hub) {
     return (
       <Panel className="p-5">
-        <div className="font-medium">Not connected</div>
-        <p className="mt-1 text-sm text-muted">Anker works fully offline. Connect to the Anker app on your Mac to sync and use the AI tutor.</p>
+        <div className="t-label">Nicht verbunden</div>
+        <p className="mt-1 text-[15px] text-ink-muted">Anker funktioniert komplett offline. Verbinde dich mit der Anker-App auf deinem Mac, um zu synchronisieren und den KI-Tutor zu nutzen.</p>
         <Button variant="primary" className="mt-4" onClick={() => navigate('/connect')}>
-          Connect to my Mac
+          Mit meinem Mac verbinden
         </Button>
       </Panel>
     );
@@ -529,36 +530,36 @@ function SyncClient() {
   return (
     <Panel className="divide-y divide-line">
       <Row
-        title={`Connected to ${hub.name ?? 'hub'}`}
+        title={`Verbunden mit ${hub.name ?? 'deinem Mac'}`}
         desc={
           <>
-            {hub.url} · {sync.status === 'idle' ? `synced ${sync.lastSync ? new Date(sync.lastSync).toLocaleTimeString() : ''}` : sync.status}
-            {sync.error ? ` — ${sync.error}` : ''}
+            {hub.url} · {sync.status === 'idle' ? `synchronisiert ${sync.lastSync ? uhrzeit(sync.lastSync) : ''}` : sync.status === 'syncing' ? 'synchronisiert …' : sync.status === 'offline' ? 'nicht erreichbar' : 'Fehler'}
+            {sync.error ? ` – ${sync.error}` : ''}
           </>
         }
       >
         <Button size="sm" icon={sync.status === 'syncing' ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />} onClick={() => void syncNow()}>
-          Sync now
+          Jetzt synchronisieren
         </Button>
       </Row>
       {hub.urls && hub.urls.length > 1 && (
-        <Row title="Known addresses" desc={hub.urls.join(' · ')}>
+        <Row title="Bekannte Adressen" desc={hub.urls.join(' · ')}>
           <span />
         </Row>
       )}
-      <Row title="Disconnect" desc="Keeps your cards on this device; stops syncing.">
+      <Row title="Trennen" desc="Deine Karten bleiben auf diesem Gerät, der Sync stoppt.">
         <Button
           size="sm"
           variant="ghost"
-          className="text-again"
+          className="text-koralle-ink"
           onClick={async () => {
-            if (!(await confirm('Disconnect from the hub?', { confirm: 'Disconnect', danger: true }))) return;
+            if (!(await confirm('Vom Mac trennen?', { confirm: 'Trennen', danger: true }))) return;
             await setHub(null);
             await resetSyncState();
-            toast('Disconnected');
+            toast('Getrennt');
           }}
         >
-          Disconnect
+          Trennen
         </Button>
       </Row>
       {confirmNode}
@@ -574,9 +575,9 @@ function DesktopPrefs() {
   }, []);
   if (!desktop || !s) return null;
   return (
-    <Section title="Mac app">
+    <Section title="Mac-App">
       <Panel className="divide-y divide-line">
-        <Row title="Open at login" desc="Keeps sync and the MCP server available for your phone and AI apps.">
+        <Row title="Beim Anmelden öffnen" desc="Hält Sync und MCP-Server für dein Handy und KI-Apps bereit.">
           <Toggle
             checked={s.openAtLogin}
             onChange={async (v) => {
@@ -585,14 +586,14 @@ function DesktopPrefs() {
             }}
           />
         </Row>
-        <Row title="Quick-add shortcut" desc="Capture a German word from anywhere on your Mac.">
+        <Row title="Kurzbefehl: Schnell hinzufügen" desc="Ein deutsches Wort von überall auf dem Mac festhalten.">
           <Input
             defaultValue={s.shortcut}
             className="w-52 font-mono text-[13px]"
             onBlur={async (e) => {
               const ok = await desktop!.setShortcut(e.target.value.trim());
-              if (ok) toast.success('Shortcut saved');
-              else toast.error('That shortcut is taken or invalid');
+              if (ok) toast.success('Kurzbefehl gespeichert');
+              else toast.error('Dieser Kurzbefehl ist belegt oder ungültig');
             }}
           />
         </Row>
@@ -621,24 +622,24 @@ export function Settings() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pt-6 pb-16 md:px-8 md:pt-10">
-      <PageHeader title="Settings" />
+    <div className="mx-auto max-w-3xl px-5 pt-8 pb-16 md:px-8 md:pt-10">
+      <PageHeader title="Einstellungen" />
 
-      <Section title="Study">
+      <Section title="Lernen">
         <StudyPrefs prefs={prefs} />
       </Section>
 
-      <Section title="AI tutor · Claude & Codex">
+      <Section title="KI-Tutor · Claude & Codex">
         <AISection prefs={prefs} admin={admin} />
       </Section>
 
-      <Section title={admin ? 'Sync & devices' : 'Sync'}>{admin ? <HubAdmin /> : <SyncClient />}</Section>
+      <Section title={admin ? 'Sync & Geräte' : 'Sync'}>{admin ? <HubAdmin /> : <SyncClient />}</Section>
 
-      <Section title="Voice">
+      <Section title="Stimme">
         <VoicePrefs />
       </Section>
 
-      <Section title="Appearance">
+      <Section title="Darstellung">
         <Panel className="p-4">
           <Segmented
             value={theme}
@@ -647,9 +648,9 @@ export function Settings() {
               setThemePref(v);
             }}
             options={[
-              { value: 'system', label: <span className="flex items-center gap-1.5"><Monitor className="size-3.5" />System</span> },
-              { value: 'light', label: <span className="flex items-center gap-1.5"><Sun className="size-3.5" />Light</span> },
-              { value: 'dark', label: <span className="flex items-center gap-1.5"><Moon className="size-3.5" />Dark</span> },
+              { value: 'system', label: <span className="flex items-center gap-1.5"><Monitor className="size-4" />System</span> },
+              { value: 'light', label: <span className="flex items-center gap-1.5"><Sun className="size-4" />Hell</span> },
+              { value: 'dark', label: <span className="flex items-center gap-1.5"><Moon className="size-4" />Nacht</span> },
             ]}
           />
         </Panel>
@@ -657,47 +658,47 @@ export function Settings() {
 
       <DesktopPrefs />
 
-      <Section title="Data">
+      <Section title="Daten">
         <Panel className="divide-y divide-line">
-          <Row title="Import" desc="Anki decks (.apkg), CSV/TSV word lists or an Anker backup.">
+          <Row title="Importieren" desc="Anki-Decks (.apkg), CSV/TSV-Wortlisten oder eine Anker-Sicherung.">
             <Button size="sm" onClick={() => navigate('/import')}>
-              Import…
+              Importieren …
             </Button>
           </Row>
-          <Row title="Export backup" desc="Everything on this device as one JSON file.">
+          <Row title="Sicherung exportieren" desc="Alles auf diesem Gerät als eine JSON-Datei.">
             <Button size="sm" onClick={() => void exportBackup()}>
-              Download
+              Herunterladen
             </Button>
           </Row>
           {!admin && (
-            <Row title="Erase this device" desc="Deletes all local data. Synced data stays on your hub.">
+            <Row title="Dieses Gerät zurücksetzen" desc="Löscht alle lokalen Daten. Synchronisierte Daten bleiben auf deinem Mac.">
               <Button
                 size="sm"
                 variant="danger"
                 icon={<Trash2 className="size-4" />}
                 onClick={async () => {
-                  if (!(await confirm('Erase all data on this device?', { body: 'Cards that are not synced to a hub will be lost.', confirm: 'Erase', danger: true }))) return;
+                  if (!(await confirm('Alle Daten auf diesem Gerät löschen?', { body: 'Karten, die nicht mit einem Mac synchronisiert sind, gehen verloren.', confirm: 'Löschen', danger: true }))) return;
                   await db.delete();
                   localStorage.clear();
                   location.reload();
                 }}
               >
-                Erase
+                Löschen
               </Button>
             </Row>
           )}
         </Panel>
       </Section>
 
-      <Section title="About">
+      <Section title="Über Anker">
         <Panel className="divide-y divide-line">
-          <Row title={`Anker ${typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''}`} desc="Spaced repetition (FSRS) for German, with Claude & Codex over MCP.">
+          <Row title={`Anker ${typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''}`} desc="Karteikarten mit FSRS für Deutsch, mit Claude & Codex über MCP.">
             <Button size="sm" variant="ghost" icon={<Code2 className="size-4" />} onClick={() => openExternal(REPO_URL)}>
               GitHub <ExternalLink className="size-3.5" />
             </Button>
           </Row>
-          <Row title="Platform" desc={isDesktop ? 'Mac app (hub)' : isNative ? 'Android app' : 'Web'}>
-            {isDesktop ? <Laptop className="size-5 text-faint" /> : <Smartphone className="size-5 text-faint" />}
+          <Row title="Plattform" desc={isDesktop ? 'Mac-App (Hub)' : isNative ? 'Android-App' : 'Web'}>
+            {isDesktop ? <Laptop className="size-5 text-ink-muted" /> : <Smartphone className="size-5 text-ink-muted" />}
           </Row>
         </Panel>
       </Section>

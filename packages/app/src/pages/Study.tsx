@@ -3,7 +3,6 @@ import {
   dayStartMs,
   deckPath,
   expectedTypedAnswer,
-  formatDuration,
   isProductionCard,
   matchesQuery,
   nextDayStartMs,
@@ -21,13 +20,16 @@ import {
   type Rating,
   type ReviewLog,
 } from '@anker/core';
-import { Ban, EyeOff, MoreHorizontal, Pencil, Sparkles, Trash2, Undo2, X } from 'lucide-react';
+import { Ban, EyeOff, MoreHorizontal, Pencil, Sparkles, Trash2, Undo2, X } from '../components/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AISheet } from '../components/AISheet';
-import { autoSpeech, cardAccent, CardView } from '../components/CardView';
+import { CheckIcon } from '@phosphor-icons/react';
+import { autoSpeech, cardTint, CardView } from '../components/CardView';
+import { OttoBadge } from '../components/Otto';
 import { UmlautBar, insertAtCaret } from '../components/UmlautBar';
 import { Button, cx, IconButton, Kbd, Modal, Ring, Spinner, toast, useConfirm } from '../components/ui';
 import { db } from '../lib/db';
+import { anzahl, dauer, intervall } from '../lib/format';
 import { diffAnswer, judgeAnswer, type DiffSeg, type Verdict } from '../lib/diff';
 import { useHotkeys, useHub, useIsWide } from '../lib/hooks';
 import { haptic, isNative } from '../lib/platform';
@@ -52,11 +54,12 @@ interface UndoEntry {
   queue: QueueKind;
 }
 
-const RATINGS: { r: Rating; label: string; color: string; key: string }[] = [
-  { r: 1, label: 'Again', color: 'var(--again)', key: '1' },
-  { r: 2, label: 'Hard', color: 'var(--hard)', key: '2' },
-  { r: 3, label: 'Good', color: 'var(--good)', key: '3' },
-  { r: 4, label: 'Easy', color: 'var(--easy)', key: '4' },
+// "Nochmal" is koralle-ink (never red: red belongs to die); the suggested answer is an ink fill.
+const RATINGS: { r: Rating; label: string; key: string }[] = [
+  { r: 1, label: 'Nochmal', key: '1' },
+  { r: 2, label: 'Schwer', key: '2' },
+  { r: 3, label: 'Gut', key: '3' },
+  { r: 4, label: 'Leicht', key: '4' },
 ];
 
 function shuffle<T>(a: T[]): T[] {
@@ -75,9 +78,9 @@ function Diff({ segs, kind }: { segs: DiffSeg[]; kind: 'typed' | 'expected' }) {
         <span
           key={i}
           className={cx(
-            s.kind === 'ok' && 'text-good',
-            s.kind === 'wrong' && 'rounded bg-again/15 text-again line-through decoration-2',
-            s.kind === 'missing' && 'rounded bg-hard/20 text-ink underline decoration-hard decoration-2 underline-offset-4',
+            s.kind === 'ok' && 'text-wiese',
+            s.kind === 'wrong' && 'rounded-xs bg-koralle-soft text-koralle-ink',
+            s.kind === 'missing' && 'text-ink underline decoration-sonne decoration-[3px] underline-offset-4',
           )}
         >
           {s.text.replace(/ /g, kind === 'expected' && s.kind === 'missing' ? '␣' : ' ')}
@@ -102,7 +105,7 @@ export function Study({ deckId }: { deckId: string | null }) {
   const [typed, setTyped] = useState('');
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [previews, setPreviews] = useState<Record<Rating, IntervalPreview> | null>(null);
-  const [title, setTitle] = useState('Study');
+  const [title, setTitle] = useState('Lernen');
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -204,7 +207,7 @@ export function Study({ deckId }: { deckId: string | null }) {
       decksRef.current = new Map(decks.map((d) => [d.id, d]));
       const t = Date.now();
       const root = deckId ? decksRef.current.get(deckId) : undefined;
-      setTitle(mode === 'cram' ? 'Practice' : root ? root.name : 'All decks');
+      setTitle(mode === 'cram' ? 'Üben' : root ? root.name : 'Alle Decks');
       if (mode === 'cram') {
         const [allNotes, allCards] = await Promise.all([db.notes.toArray(), db.cards.toArray()]);
         const terms = parseQuery(q);
@@ -304,7 +307,7 @@ export function Study({ deckId }: { deckId: string | null }) {
       }
       advance();
     } catch (e) {
-      toast.error(`Couldn't save: ${(e as Error).message}`);
+      toast.error(`Speichern fehlgeschlagen: ${(e as Error).message}`);
     } finally {
       busy.current = false;
     }
@@ -324,7 +327,7 @@ export function Study({ deckId }: { deckId: string | null }) {
       }
       setStats((s) => ({ ...s, done: Math.max(0, s.done - 1) }));
       await show(e.prev, e.queue);
-      toast('Undone');
+      toast('Rückgängig gemacht');
     } finally {
       busy.current = false;
     }
@@ -342,20 +345,20 @@ export function Study({ deckId }: { deckId: string | null }) {
     if (!current) return;
     const siblings = await db.cards.where('noteId').equals(current.note.id).primaryKeys();
     await buryCards(siblings);
-    toast('Buried until tomorrow');
+    toast('Bis morgen zurückgestellt');
     removeCurrent(true);
   };
 
   const suspend = async () => {
     if (!current) return;
     await setCardsSuspended([current.card.id], true);
-    toast('Card suspended — find it in Browse → Suspended');
+    toast('Karte ausgesetzt – zu finden unter Karten suchen → Ausgesetzt');
     removeCurrent(false);
   };
 
   const del = async () => {
     if (!current) return;
-    const ok = await confirm('Delete this note?', { body: 'The note and all its cards are removed on every device.', confirm: 'Delete', danger: true });
+    const ok = await confirm('Diese Notiz löschen?', { body: 'Die Notiz und alle ihre Karten werden auf jedem Gerät entfernt.', confirm: 'Löschen', danger: true });
     if (!ok) return;
     await deleteNotes([current.note.id]);
     removeCurrent(true);
@@ -425,54 +428,54 @@ export function Study({ deckId }: { deckId: string | null }) {
 
   const remaining = mode === 'cram' ? cram.current.length + (current ? 1 : 0) : counts.new + counts.learn + counts.review;
   const progress = stats.done / Math.max(1, stats.done + remaining);
-  const accent = current ? cardAccent(current.note, current.card.ord, phase === 'answer' ? 'answer' : 'question') : null;
+  const tint = current ? cardTint(current.note, current.card.ord, phase === 'answer' ? 'answer' : 'question') : null;
 
   const topBar = (
-    <div className="pt-safe sticky top-0 z-10 bg-bg/85 backdrop-blur-xl">
-      <div className="drag mx-auto flex h-14 max-w-3xl items-center gap-2 px-3 md:h-16 md:px-6">
-        <IconButton label="End session (Esc)" onClick={exit} className="no-drag">
-          <X className="size-5" />
+    <div className="pt-safe sticky top-0 z-10 bg-paper/90 backdrop-blur-xl">
+      <div className="drag mx-auto flex h-14 max-w-3xl items-center gap-1 px-3 md:h-16 md:px-6">
+        <IconButton label="Beenden (Esc)" onClick={exit} className="no-drag">
+          <X className="size-6" />
         </IconButton>
-        <div className="min-w-0 flex-1 truncate text-center text-[14px] font-semibold text-muted">{title}</div>
+        <div className="t-label min-w-0 flex-1 truncate text-center text-ink-muted">{title}</div>
         {mode === 'review' ? (
-          <div className="no-drag flex gap-2.5 text-[14px] font-semibold tabular-nums">
+          <div className="no-drag flex gap-2.5 px-1 text-[15px] font-bold tabular-nums">
             {(
               [
-                ['new', counts.new, 'var(--easy)'],
-                ['learning', counts.learn, 'var(--again)'],
-                ['review', counts.review, 'var(--good)'],
+                ['new', counts.new, 'var(--hafen)', 'neu'],
+                ['learning', counts.learn, 'var(--koralle-ink)', 'in Arbeit'],
+                ['review', counts.review, 'var(--wiese)', 'fällig'],
               ] as const
-            ).map(([k, v, color]) => (
+            ).map(([k, v, color, label]) => (
               <span
                 key={k}
                 style={{ color: v ? color : undefined }}
-                className={cx(!v && 'text-faint', current?.queue === k && 'underline decoration-2 underline-offset-4')}
-                title={k}
+                className={cx(!v && 'text-ink-muted', current?.queue === k && 'underline decoration-2 underline-offset-4')}
+                title={label}
               >
                 {v}
               </span>
             ))}
           </div>
         ) : (
-          <span className="text-[14px] font-semibold text-muted tabular-nums">{remaining}</span>
+          <span className="px-1 text-[15px] font-bold text-ink-muted tabular-nums">{remaining}</span>
         )}
-        <IconButton label="Undo (U)" onClick={() => void undo()} disabled={!undoStack.current.length} className="no-drag">
-          <Undo2 className="size-[18px]" />
+        <IconButton label="Rückgängig (U)" onClick={() => void undo()} disabled={!undoStack.current.length} className="no-drag">
+          <Undo2 className="size-5" />
         </IconButton>
         <div className="no-drag relative">
-          <IconButton label="More" onClick={() => setMenuOpen((v) => !v)} disabled={!current}>
-            <MoreHorizontal className="size-5" />
+          <IconButton label="Mehr" onClick={() => setMenuOpen((v) => !v)} disabled={!current}>
+            <MoreHorizontal className="size-6" />
           </IconButton>
           {menuOpen && current && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-              <div className="anim-in absolute right-0 z-20 mt-1 w-56 overflow-hidden rounded-2xl border border-line bg-surface py-1.5 shadow-xl">
+              <div className="anim-in absolute right-0 z-20 mt-1 w-64 overflow-hidden rounded-md border border-line bg-paper-raised py-1.5 shadow-xl">
                 {[
-                  { icon: Pencil, label: 'Edit note', key: 'E', run: () => setEditing(true) },
-                  ...(hub ? [{ icon: Sparkles, label: 'AI help', key: 'A', run: () => setAiOpen(true) }] : []),
-                  { icon: EyeOff, label: 'Bury until tomorrow', key: 'B', run: () => void bury() },
-                  { icon: Ban, label: 'Suspend card', key: '!', run: () => void suspend() },
-                  { icon: Trash2, label: 'Delete note', key: '', run: () => void del(), danger: true },
+                  { icon: Pencil, label: 'Notiz bearbeiten', key: 'E', run: () => setEditing(true) },
+                  ...(hub ? [{ icon: Sparkles, label: 'KI-Hilfe', key: 'A', run: () => setAiOpen(true) }] : []),
+                  { icon: EyeOff, label: 'Bis morgen zurückstellen', key: 'B', run: () => void bury() },
+                  { icon: Ban, label: 'Karte aussetzen', key: '!', run: () => void suspend() },
+                  { icon: Trash2, label: 'Notiz löschen', key: '', run: () => void del(), danger: true },
                 ].map((item) => (
                   <button
                     key={item.label}
@@ -480,9 +483,9 @@ export function Study({ deckId }: { deckId: string | null }) {
                       setMenuOpen(false);
                       item.run();
                     }}
-                    className={cx('flex w-full items-center gap-3 px-4 py-2.5 text-left text-[14px] hover:bg-surface-2', 'danger' in item && item.danger && 'text-again')}
+                    className={cx('flex h-11 w-full items-center gap-3 px-4 text-left text-[15px] hover:bg-paper-sunk', 'danger' in item && item.danger && 'text-koralle-ink')}
                   >
-                    <item.icon className="size-4" />
+                    <item.icon className="size-5" />
                     <span className="flex-1">{item.label}</span>
                     {item.key && wide && <Kbd>{item.key}</Kbd>}
                   </button>
@@ -492,8 +495,8 @@ export function Study({ deckId }: { deckId: string | null }) {
           )}
         </div>
       </div>
-      <div className="h-[3px] bg-surface-2">
-        <div className="h-full bg-accent transition-[width] duration-500" style={{ width: `${progress * 100}%` }} />
+      <div className="h-[3px] bg-paper-sunk">
+        <div className="h-full bg-hafen transition-[width] duration-300 ease-out" style={{ width: `${progress * 100}%` }} />
       </div>
     </div>
   );
@@ -508,42 +511,43 @@ export function Study({ deckId }: { deckId: string | null }) {
 
   if (phase === 'empty' || phase === 'done') {
     const acc = stats.done ? Math.round(((stats.done - stats.again) / stats.done) * 100) : 0;
+    const done = phase === 'done';
     return (
       <div className="flex min-h-full flex-col">
         {topBar}
-        <div className="anim-in mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-          <div className="text-6xl">{phase === 'done' ? '🎉' : '🌿'}</div>
-          <h1 className="mt-5 font-display text-[32px] font-semibold">{phase === 'done' ? 'Geschafft!' : 'Nothing due here'}</h1>
-          <p className="mt-2 text-muted">
-            {phase === 'done'
-              ? `You reviewed ${stats.done} card${stats.done === 1 ? '' : 's'}${stats.learned ? ` and learned ${stats.learned} new` : ''}.`
-              : 'This deck has no cards due right now. Practice anyway or add new words.'}
+        <div className="anim-in mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-5 py-10 text-center">
+          <OttoBadge size={132} mood={done ? 'proud' : 'sleepy'} />
+          <h1 className="t-title mt-6">{done ? 'Otto ist stolz!' : 'Hier ist nichts fällig'}</h1>
+          <p className="mt-2 text-[15px] text-ink-muted">
+            {done
+              ? `Du hast ${anzahl(stats.done, 'Karte', 'Karten')} wiederholt${stats.learned ? ` und ${stats.learned} neue gelernt` : ''}.`
+              : 'In diesem Deck ist gerade nichts fällig. Üb trotzdem oder füge neue Wörter hinzu.'}
           </p>
-          {phase === 'done' && stats.done > 0 && (
-            <div className="mt-8 grid w-full grid-cols-3 gap-3">
+          {done && stats.done > 0 && (
+            <div className="mt-8 grid w-full grid-cols-3 overflow-hidden rounded-md border border-line bg-paper-raised py-3">
               {[
-                ['Cards', stats.done],
-                ['Correct', `${acc}%`],
-                ['Time', formatDuration(stats.timeMs)],
-              ].map(([k, v]) => (
-                <div key={k as string} className="rounded-2xl border border-line bg-surface px-3 py-3">
-                  <div className="text-[12px] text-faint">{k}</div>
-                  <div className="mt-0.5 text-[20px] font-semibold tabular-nums">{v}</div>
+                ['Karten', String(stats.done)],
+                ['Richtig', `${acc} %`],
+                ['Zeit', dauer(stats.timeMs)],
+              ].map(([k, v], i) => (
+                <div key={k} className={cx('px-1', i > 0 && 'border-l border-line')}>
+                  <div className="t-stat">{v}</div>
+                  <div className="t-caption text-ink-muted">{k}</div>
                 </div>
               ))}
             </div>
           )}
           <div className="mt-8 flex w-full flex-col gap-2">
             <Button variant="primary" size="lg" onClick={() => navigate('/')}>
-              Back to Today
+              Zurück zu Heute
             </Button>
             {mode === 'review' && (
               <Button size="lg" onClick={() => navigate(`/study?mode=cram&q=${encodeURIComponent(deckId ? `deck:"${deckPath(decksRef.current.get(deckId)!, decksRef.current)}"` : 'rated:1')}`)}>
-                {deckId ? 'Practice this deck' : "Practice today's cards again"}
+                {deckId ? 'Dieses Deck üben' : 'Heutige Karten nochmal üben'}
               </Button>
             )}
             <Button size="lg" variant="ghost" onClick={() => navigate('/practice')}>
-              Play a practice game
+              Ein Übungsspiel spielen
             </Button>
           </div>
         </div>
@@ -558,14 +562,14 @@ export function Study({ deckId }: { deckId: string | null }) {
     return (
       <div className="flex min-h-full flex-col">
         {topBar}
-        <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center px-6 text-center">
+        <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center px-5 text-center">
           <Ring value={1 - left / (20 * 60_000)} size={120} stroke={9}>
-            <span className="text-2xl font-semibold tabular-nums">
+            <span className="t-stat">
               {mm}:{String(ss).padStart(2, '0')}
             </span>
           </Ring>
-          <h2 className="mt-6 font-display text-2xl font-semibold">Kurze Pause</h2>
-          <p className="mt-2 text-muted">Your next learning card is due soon. Spacing it out helps it stick.</p>
+          <h2 className="t-title mt-6">Kurze Pause</h2>
+          <p className="mt-2 text-[15px] text-ink-muted">Deine nächste Lernkarte ist gleich wieder dran. Abstand hilft beim Merken.</p>
           <div className="mt-6 flex gap-2">
             <Button
               variant="primary"
@@ -574,9 +578,9 @@ export function Study({ deckId }: { deckId: string | null }) {
                 if (n?.kind === 'card') void show(n.card, n.queue);
               }}
             >
-              Continue now
+              Jetzt weiter
             </Button>
-            <Button onClick={exit}>Finish</Button>
+            <Button onClick={exit}>Beenden</Button>
           </div>
         </div>
       </div>
@@ -586,17 +590,24 @@ export function Study({ deckId }: { deckId: string | null }) {
   if (!current) return null;
   const expected = typing ? expectedTypedAnswer(current.note, current.card.ord) : '';
   const diff = typing && phase === 'answer' ? diffAnswer(typed.trim(), expected) : null;
-  const swipeColor = drag > 40 ? 'var(--good)' : drag < -40 ? 'var(--again)' : null;
+  const swipeColor = drag > 40 ? 'var(--wiese)' : drag < -40 ? 'var(--koralle-ink)' : null;
+  const defaultRating: Rating = suggested ?? 3;
+  const leech = current.card.lapses >= cfgFor(current.card.deckId).leechThreshold;
 
   return (
     <div className="flex min-h-full flex-col">
       {topBar}
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-3 pt-4 pb-40 md:px-6 md:pt-8">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 pt-4 pb-40 md:px-6 md:pt-8">
         <div
-          className="relative flex min-h-[46vh] flex-1 touch-pan-y flex-col items-center justify-center overflow-hidden rounded-[28px] border border-line bg-surface px-5 py-10 shadow-card select-text md:min-h-[52vh] md:px-10"
+          className={cx(
+            'relative flex min-h-[52vh] flex-1 touch-pan-y flex-col justify-center overflow-hidden rounded-lg px-5 py-8 select-text md:px-10',
+            !tint && 'border border-line bg-paper-raised',
+            verdict === 'exact' && phase === 'answer' && 'anim-lift',
+          )}
           style={{
+            background: tint ?? undefined,
             transform: drag ? `translateX(${drag}px) rotate(${drag / 40}deg)` : undefined,
-            transition: drag ? 'none' : 'transform .25s cubic-bezier(.2,.8,.2,1)',
+            transition: drag ? 'none' : 'transform .2s ease-out, background-color .2s ease-out',
             boxShadow: swipeColor ? `0 0 0 3px ${swipeColor}` : undefined,
           }}
           onClick={() => phase === 'question' && !typing && !wide && reveal()}
@@ -606,17 +617,18 @@ export function Study({ deckId }: { deckId: string | null }) {
           onPointerCancel={onPointerUp}
           key={`${current.card.id}-${current.shownAt}`}
         >
-          {accent && <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: accent }} />}
-          {current.card.lapses >= cfgFor(current.card.deckId).leechThreshold && (
-            <span className="absolute top-4 left-4 rounded-full bg-again/12 px-2 py-0.5 text-[11px] font-semibold text-again">🩹 leech</span>
+          {(leech || current.queue === 'new') && (
+            <div className="mb-5 flex gap-2">
+              {current.queue === 'new' && <span className="rounded-full bg-hafen-soft px-2.5 py-0.5 text-[13px] font-bold text-hafen">neu</span>}
+              {leech && <span className="rounded-full bg-koralle-soft px-2.5 py-0.5 text-[13px] font-bold text-koralle-ink">Oft vergessen</span>}
+            </div>
           )}
-          {current.queue === 'new' && <span className="absolute top-4 right-4 rounded-full bg-easy/12 px-2 py-0.5 text-[11px] font-semibold text-easy">new</span>}
           <div className="anim-in w-full">
             <CardView note={current.note} ord={current.card.ord} side={phase === 'answer' ? 'answer' : 'question'} hideProductionHint={typing} />
           </div>
           {typing && phase === 'question' && (
             <form
-              className="mt-8 w-full max-w-md"
+              className="mt-8 w-full"
               onSubmit={(e) => {
                 e.preventDefault();
                 reveal();
@@ -627,78 +639,90 @@ export function Study({ deckId }: { deckId: string | null }) {
                 autoFocus
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
-                placeholder="Type the answer…"
+                placeholder="Antwort eintippen …"
                 autoCapitalize="off"
                 autoCorrect="off"
                 autoComplete="off"
                 spellCheck={false}
                 lang="de"
-                className="h-13 w-full rounded-2xl border border-line bg-surface-2 px-4 text-center font-display text-[20px] outline-none focus:border-accent focus:ring-4 focus:ring-accent/15"
+                className="h-14 w-full rounded-md border border-transparent bg-paper-sunk px-4 font-display text-[20px] font-semibold outline-none placeholder:font-sans placeholder:text-[17px] placeholder:font-normal placeholder:text-ink-muted focus:border-hafen focus:bg-paper-raised"
               />
-              {!isNative && <UmlautBar className="mt-2 justify-center" onInsert={(ch) => insertAtCaret(inputRef.current, ch, setTyped)} />}
+              {!isNative && <UmlautBar className="mt-2" onInsert={(ch) => insertAtCaret(inputRef.current, ch, setTyped)} />}
             </form>
           )}
           {diff && (
-            <div className="mt-8 w-full max-w-md space-y-1.5 rounded-2xl bg-surface-2 px-4 py-3 text-left">
-              <div className="flex items-baseline gap-2">
-                <span className="w-16 shrink-0 text-[11px] font-semibold tracking-wide text-faint uppercase">You</span>
-                {typed.trim() ? <Diff segs={diff.typed} kind="typed" /> : <span className="text-sm text-faint italic">(nothing)</span>}
+            <div className="mt-8 w-full space-y-1.5 rounded-md bg-paper-raised px-4 py-3 text-left">
+              <div className="flex items-baseline gap-3">
+                <span className="t-overline w-16 shrink-0 text-ink-muted">Du</span>
+                {typed.trim() ? <Diff segs={diff.typed} kind="typed" /> : <span className="text-[15px] text-ink-muted">(nichts)</span>}
               </div>
               {verdict !== 'exact' && (
-                <div className="flex items-baseline gap-2">
-                  <span className="w-16 shrink-0 text-[11px] font-semibold tracking-wide text-faint uppercase">Answer</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="t-overline w-16 shrink-0 text-ink-muted">Lösung</span>
                   <Diff segs={diff.expected} kind="expected" />
                 </div>
               )}
-              <div className={cx('pt-1 text-[13px] font-semibold', verdict === 'exact' ? 'text-good' : verdict === 'close' ? 'text-hard' : 'text-again')}>
-                {verdict === 'exact' ? 'Perfekt! ✓' : verdict === 'close' ? 'Almost — check capitals, umlauts or punctuation.' : 'Not quite.'}
+              <div className={cx('flex items-center gap-2 pt-1 text-[15px] font-bold', verdict === 'exact' ? 'text-wiese' : verdict === 'close' ? 'text-sonne-ink' : 'text-koralle-ink')}>
+                {verdict === 'exact' ? (
+                  <>
+                    <span className="anim-pop inline-flex size-6 items-center justify-center rounded-full bg-wiese text-on-wiese">
+                      <CheckIcon weight="bold" className="size-3.5" />
+                    </span>
+                    Perfekt!
+                  </>
+                ) : verdict === 'close' ? (
+                  'Fast – prüf Großschreibung, Umlaute oder Satzzeichen.'
+                ) : (
+                  'Nicht ganz.'
+                )}
               </div>
             </div>
           )}
         </div>
         {hub && phase === 'answer' && (
           <div className="mt-3 flex justify-center">
-            <button onClick={() => setAiOpen(true)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
-              <Sparkles className="size-4 text-accent" /> Explain this card {wide && <Kbd>A</Kbd>}
+            <button onClick={() => setAiOpen(true)} className="flex h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold text-ink-muted hover:bg-paper-sunk hover:text-ink">
+              <Sparkles className="size-5" /> Karte erklären {wide && <Kbd>A</Kbd>}
             </button>
           </div>
         )}
       </div>
 
-      <div className="pb-safe fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-bg via-bg/95 to-transparent pt-6">
-        <div className="mx-auto max-w-3xl px-3 pb-4 md:px-6 md:pb-6">
+      <div className="pb-safe fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-paper via-paper/95 to-transparent pt-6">
+        <div className="mx-auto max-w-2xl px-5 pb-4 md:px-6 md:pb-6">
           {phase === 'question' ? (
-            <Button variant="primary" size="lg" className="h-14 w-full text-[16px]" onClick={reveal}>
-              {typing ? 'Check' : 'Show answer'} {wide && <Kbd>Space</Kbd>}
+            <Button variant="primary" size="lg" className="w-full" onClick={reveal}>
+              {typing ? 'Prüfen' : 'Antwort zeigen'} {wide && <Kbd>Leertaste</Kbd>}
             </Button>
           ) : (
             <div className="grid grid-cols-4 gap-2">
-              {RATINGS.map(({ r, label, color, key }) => (
-                <button
-                  key={r}
-                  onClick={() => void answer(r)}
-                  className={cx(
-                    'flex h-16 flex-col items-center justify-center rounded-2xl border bg-surface transition-all active:scale-[0.97]',
-                    suggested === r ? 'border-transparent ring-2' : 'border-line hover:bg-surface-2',
-                  )}
-                  style={suggested === r ? ({ ['--tw-ring-color' as string]: color } as React.CSSProperties) : undefined}
-                >
-                  <span className="text-[15px] font-semibold" style={{ color }}>
-                    {label}
-                  </span>
-                  <span className="mt-0.5 text-[12px] text-faint tabular-nums">
-                    {mode === 'cram' ? (r === 1 ? 'again soon' : '✓') : previews?.[r]?.label ?? ''}
-                    {wide && <span className="ml-1.5 opacity-60">{key}</span>}
-                  </span>
-                </button>
-              ))}
+              {RATINGS.map(({ r, label, key }) => {
+                const main = r === defaultRating;
+                return (
+                  <button
+                    key={r}
+                    onClick={() => void answer(r)}
+                    className={cx(
+                      'flex h-14 flex-col items-center justify-center rounded-md border transition-[transform,background] duration-[120ms] active:scale-[0.97]',
+                      main ? 'border-ink bg-ink text-paper' : 'border-line bg-paper-raised hover:bg-paper-sunk',
+                      !main && (r === 1 ? 'text-koralle-ink' : 'text-ink'),
+                    )}
+                  >
+                    <span className="text-[15px] leading-[18px] font-semibold">{label}</span>
+                    <span className={cx('text-[13px] leading-4 font-medium tabular-nums', main ? 'text-paper-sunk' : 'text-ink-muted')}>
+                      {mode === 'cram' ? (r === 1 ? 'gleich' : '–') : previews ? intervall(previews[r].due - Date.now()) : ''}
+                      {wide && <span className="ml-1.5 opacity-60">{key}</span>}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
-          {!wide && phase === 'answer' && <p className="mt-2 text-center text-[11.5px] text-faint">Swipe the card → Good · ← Again</p>}
+          {!wide && phase === 'answer' && <p className="t-caption mt-2 text-center text-ink-muted">Karte wischen: → Gut · ← Nochmal</p>}
         </div>
       </div>
 
-      <Modal open={editing} onClose={() => setEditing(false)} title="Edit note" wide>
+      <Modal open={editing} onClose={() => setEditing(false)} title="Notiz bearbeiten" wide>
         {editing && (
           <NoteEditor
             noteId={current.note.id}

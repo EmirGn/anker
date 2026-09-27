@@ -1,5 +1,6 @@
+import { CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react';
 import { euroToGerman, formatEuro, numberToGerman, yearToGerman } from '@anker/core';
-import { Turtle, Volume2 } from 'lucide-react';
+import { Turtle, Volume2 } from '../components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { Button, cx, Segmented } from '../components/ui';
 import { haptic } from '../lib/platform';
@@ -116,8 +117,8 @@ export function Zahlen() {
   if (phase === 'start')
     return (
       <GameShell title="Zahlen-Diktat">
-        <StartScreen emoji="🔢" title="Zahlen-Diktat" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
-          German says <i>vierundzwanzig</i> — “four-and-twenty”. Listen and type the number you hear.
+        <StartScreen game="zahlen" title="Zahlen-Diktat" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
+          Im Deutschen kommen die Einer zuerst: <b>vierundzwanzig</b> = vier und zwanzig. Hör zu und tipp die Zahl.
           <div className="mt-5 flex justify-center">
             <Segmented value={level} onChange={setLevel} options={LEVELS} size="sm" className="flex-wrap" />
           </div>
@@ -136,10 +137,10 @@ export function Zahlen() {
     <GameShell title="Zahlen-Diktat" right={`${round + 1}/${ROUNDS}`} progress={(round + (checked !== null ? 1 : 0)) / ROUNDS}>
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         <div className="flex gap-3">
-          <Button size="lg" variant="primary" className="size-20 rounded-full !px-0" onClick={() => item && void speak(item.spoken)} aria-label="Play again">
+          <Button size="lg" className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => item && void speak(item.spoken)} aria-label="Noch mal anhören">
             <Volume2 className="size-8" />
           </Button>
-          <Button size="lg" className="size-20 rounded-full !px-0" onClick={() => item && void speak(item.spoken, { rate: 0.6 })} aria-label="Play slowly">
+          <Button size="lg" className="size-20 rounded-full !px-0" onClick={() => item && void speak(item.spoken, { rate: 0.6 })} aria-label="Langsam anhören">
             <Turtle className="size-7" />
           </Button>
         </div>
@@ -158,18 +159,22 @@ export function Zahlen() {
             placeholder={level === 'prices' ? '3,50' : '…'}
             readOnly={checked !== null}
             className={cx(
-              'h-16 w-full rounded-2xl border-2 bg-surface text-center font-display text-[32px] tabular-nums outline-none',
-              checked === null ? 'border-line focus:border-accent' : checked ? 'border-good text-good' : 'anim-shake border-again text-again',
+              'h-16 w-full rounded-md border-2 bg-paper-raised text-center font-display text-[28px] tabular-nums outline-none',
+              checked === null ? 'border-line focus:border-hafen' : checked ? 'border-wiese text-wiese' : 'anim-shake border-koralle-ink text-koralle-ink',
             )}
           />
           <Button type="submit" variant="primary" size="lg" className="mt-3 w-full">
-            {checked === null ? 'Check' : round + 1 >= ROUNDS ? 'Finish' : 'Next'}
+            {checked === null ? 'Prüfen' : round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
           </Button>
         </form>
         {checked !== null && item && (
           <div className="anim-in text-center">
-            <div className="text-[28px] font-semibold tabular-nums">{item.display}</div>
-            <div className="mt-1 font-display text-[19px] text-muted italic">{item.words}</div>
+            <div className={cx('t-label mb-1 flex items-center justify-center gap-1.5', checked ? 'text-wiese' : 'text-koralle-ink')}>
+              {checked ? <CheckCircleIcon weight="fill" className="anim-pop size-5" /> : <XCircleIcon weight="fill" className="size-5" />}
+              {checked ? 'Richtig' : 'Nicht ganz'}
+            </div>
+            <div className="t-title tabular-nums">{item.display}</div>
+            <div className="mt-1 font-display text-[20px] text-ink-muted">{item.words}</div>
           </div>
         )}
       </div>

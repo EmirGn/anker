@@ -19,3 +19,4 @@ packages/app/android/keystore.properties
 *.keystore
 *.p12
 !packages/app/android/app/debug.keystore
+.claude/

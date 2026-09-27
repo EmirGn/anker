@@ -1,5 +1,5 @@
 import { parseVerbForms, type PoolVerb } from '@anker/core';
-import { Check, X } from 'lucide-react';
+import { Check, X } from '../components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { UmlautBar, insertAtCaret } from '../components/UmlautBar';
 import { Button, cx } from '../components/ui';
@@ -76,8 +76,8 @@ export function Verben() {
   if (phase === 'start')
     return (
       <GameShell title="Stammformen">
-        <StartScreen emoji="💪" title="Stammformen" onStart={() => void start()} best={best} bestLabel={`/${ROUNDS * 3}`}>
-          The three forms every verb needs: <i>fahren → fährt · fuhr · ist gefahren</i>. Don't forget <b>haben</b> or <b>sein</b> in the Perfekt!
+        <StartScreen game="verben" title="Stammformen" onStart={() => void start()} best={best} bestLabel={`/${ROUNDS * 3}`}>
+          Die drei Formen, die jedes Verb braucht: <b>fahren → fährt · fuhr · ist gefahren</b>. Denk im Perfekt an <b>haben</b> oder <b>sein</b>.
         </StartScreen>
       </GameShell>
     );
@@ -93,8 +93,10 @@ export function Verben() {
     <GameShell title="Stammformen" right={`${round + 1}/${ROUNDS}`} progress={(round + (result ? 1 : 0)) / ROUNDS}>
       <div className="flex flex-1 flex-col items-center justify-center gap-7">
         <div className="text-center">
-          <div className="font-display text-[46px] leading-tight font-semibold">{verb.infinitive}</div>
-          <div className="text-[16px] text-muted">{verb.meaning}</div>
+          <div className="t-word" lang="de">
+            {verb.infinitive}
+          </div>
+          <div className="text-[17px] text-ink-muted">{verb.meaning}</div>
         </div>
         <form
           className="w-full max-w-md space-y-3"
@@ -105,7 +107,7 @@ export function Verben() {
         >
           {LABELS.map((label, i) => (
             <div key={label}>
-              <div className="mb-1 text-[12.5px] font-medium text-muted">{label}</div>
+              <div className="mb-1 text-[13px] font-medium text-ink-muted">{label}</div>
               <div className="relative">
                 <input
                   ref={refs[i]}
@@ -125,17 +127,17 @@ export function Verben() {
                   spellCheck={false}
                   lang="de"
                   className={cx(
-                    'h-12 w-full rounded-xl border-2 bg-surface px-4 pr-10 text-[18px] outline-none',
-                    !result ? 'border-line focus:border-accent' : result[i] ? 'border-good' : 'border-again',
+                    'h-12 w-full rounded-md border-2 bg-paper-raised px-4 pr-10 text-[17px] font-semibold outline-none',
+                    !result ? 'border-line focus:border-hafen' : result[i] ? 'border-wiese' : 'border-koralle-ink',
                   )}
                 />
                 {result && (
                   <span className="absolute top-1/2 right-3 -translate-y-1/2">
-                    {result[i] ? <Check className="size-5 text-good" /> : <X className="size-5 text-again" />}
+                    {result[i] ? <Check className="size-5 text-wiese" /> : <X className="size-5 text-koralle-ink" />}
                   </span>
                 )}
               </div>
-              {result && !result[i] && <div className="anim-in mt-1 text-[14px] font-semibold text-good">{expected[i]}</div>}
+              {result && !result[i] && <div className="anim-in mt-1 text-[15px] font-semibold text-wiese">{expected[i]}</div>}
             </div>
           ))}
           {!isNative && !result && (
@@ -147,7 +149,7 @@ export function Verben() {
             />
           )}
           <Button type="submit" variant="primary" size="lg" className="w-full">
-            {!result ? 'Check' : round + 1 >= ROUNDS ? 'Finish' : 'Next'}
+            {!result ? 'Prüfen' : round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
           </Button>
         </form>
       </div>

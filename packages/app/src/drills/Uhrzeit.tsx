@@ -1,5 +1,5 @@
 import { informalTime } from '@anker/core';
-import { Volume2 } from 'lucide-react';
+import { Volume2 } from '../components/icons';
 import { useEffect, useState } from 'react';
 import { Button, cx } from '../components/ui';
 import { haptic } from '../lib/platform';
@@ -16,8 +16,8 @@ function Clock({ t, size = 200 }: { t: T; size?: number }) {
   const hourA = ((t.h % 12) + t.m / 60) * 30;
   const minA = t.m * 6;
   return (
-    <svg viewBox="0 0 200 200" width={size} height={size} aria-label={`Clock showing ${digital(t)}`}>
-      <circle cx="100" cy="100" r="94" fill="var(--surface)" stroke="var(--line)" strokeWidth="3" />
+    <svg viewBox="0 0 200 200" width={size} height={size} aria-label={`Uhr zeigt ${digital(t)}`}>
+      <circle cx="100" cy="100" r="94" fill="var(--paper-raised)" stroke="var(--line)" strokeWidth="3" />
       {Array.from({ length: 60 }, (_, i) => (
         <line
           key={i}
@@ -25,7 +25,7 @@ function Clock({ t, size = 200 }: { t: T; size?: number }) {
           y1={i % 5 === 0 ? 14 : 12}
           x2="100"
           y2={i % 5 === 0 ? 28 : 18}
-          stroke={i % 5 === 0 ? 'var(--ink)' : 'var(--faint)'}
+          stroke={i % 5 === 0 ? 'var(--ink)' : 'var(--ink-muted)'}
           strokeWidth={i % 5 === 0 ? 3.5 : 1.5}
           strokeLinecap="round"
           transform={`rotate(${i * 6} 100 100)`}
@@ -34,13 +34,13 @@ function Clock({ t, size = 200 }: { t: T; size?: number }) {
       {[12, 3, 6, 9].map((n) => {
         const a = (n * 30 * Math.PI) / 180;
         return (
-          <text key={n} x={100 + 58 * Math.sin(a)} y={100 - 58 * Math.cos(a) + 7} textAnchor="middle" fontSize="20" fontWeight="600" fill="var(--muted)" fontFamily="var(--font-sans)">
+          <text key={n} x={100 + 58 * Math.sin(a)} y={100 - 58 * Math.cos(a) + 7} textAnchor="middle" fontSize="20" fontWeight="600" fill="var(--ink-muted)" fontFamily="var(--font-sans)">
             {n}
           </text>
         );
       })}
       <line x1="100" y1="100" x2="100" y2="52" stroke="var(--ink)" strokeWidth="7" strokeLinecap="round" transform={`rotate(${hourA} 100 100)`} />
-      <line x1="100" y1="100" x2="100" y2="26" stroke="var(--accent)" strokeWidth="4.5" strokeLinecap="round" transform={`rotate(${minA} 100 100)`} />
+      <line x1="100" y1="100" x2="100" y2="26" stroke="var(--hafen)" strokeWidth="4.5" strokeLinecap="round" transform={`rotate(${minA} 100 100)`} />
       <circle cx="100" cy="100" r="6" fill="var(--ink)" />
     </svg>
   );
@@ -109,8 +109,8 @@ export function Uhrzeit() {
   if (phase === 'start')
     return (
       <GameShell title="Wie spät ist es?">
-        <StartScreen emoji="🕰️" title="Wie spät ist es?" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
-          <i>halb acht</i> is 7:30, not 8:30! Read the clock or listen to the time and pick the right answer.
+        <StartScreen game="uhrzeit" title="Wie spät ist es?" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
+          <b>halb acht</b> ist 7:30, nicht 8:30. Lies die Uhr oder hör die Uhrzeit und wähl die richtige Antwort.
         </StartScreen>
       </GameShell>
     );
@@ -137,10 +137,10 @@ export function Uhrzeit() {
                     key={key(o)}
                     onClick={() => choose(o)}
                     className={cx(
-                      'h-14 rounded-2xl border text-[18px] font-medium transition-colors',
-                      !answered && 'border-line bg-surface hover:bg-surface-2',
-                      answered && correct && 'border-good bg-good/12 text-good',
-                      answered && mine && !correct && 'anim-shake border-again bg-again/10 text-again',
+                      'h-14 rounded-md border text-[17px] font-medium transition-colors',
+                      !answered && 'border-line bg-paper-raised hover:bg-paper-sunk',
+                      answered && correct && 'border-wiese bg-wiese-soft text-wiese',
+                      answered && mine && !correct && 'anim-shake border-koralle-ink bg-koralle-soft text-koralle-ink',
                       answered && !mine && !correct && 'border-line opacity-50',
                     )}
                   >
@@ -152,10 +152,10 @@ export function Uhrzeit() {
           </>
         ) : (
           <>
-            <Button variant="primary" className="size-20 rounded-full !px-0" onClick={() => void speak(informalTime(q.t.h, q.t.m))} aria-label="Listen again">
+            <Button className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => void speak(informalTime(q.t.h, q.t.m))} aria-label="Noch mal anhören">
               <Volume2 className="size-8" />
             </Button>
-            {answered && <div className="anim-in font-display text-[24px] italic">„{informalTime(q.t.h, q.t.m)}“</div>}
+            {answered && <div className="anim-in font-display text-[22px]">„{informalTime(q.t.h, q.t.m)}“</div>}
             <div className="grid grid-cols-2 gap-3">
               {q.options.map((o) => {
                 const correct = key(o) === key(q.t);
@@ -165,15 +165,15 @@ export function Uhrzeit() {
                     key={key(o)}
                     onClick={() => choose(o)}
                     className={cx(
-                      'flex flex-col items-center rounded-3xl border p-2 transition-colors',
-                      !answered && 'border-line bg-surface hover:bg-surface-2',
-                      answered && correct && 'border-good bg-good/12',
-                      answered && mine && !correct && 'anim-shake border-again bg-again/10',
+                      'flex flex-col items-center rounded-md border p-2 transition-colors',
+                      !answered && 'border-line bg-paper-raised hover:bg-paper-sunk',
+                      answered && correct && 'border-wiese bg-wiese-soft',
+                      answered && mine && !correct && 'anim-shake border-koralle-ink bg-koralle-soft',
                       answered && !mine && !correct && 'border-line opacity-50',
                     )}
                   >
                     <Clock t={o} size={120} />
-                    <span className="text-[13px] font-medium text-muted tabular-nums">{digital(o)}</span>
+                    <span className="text-[13px] font-medium text-ink-muted tabular-nums">{digital(o)}</span>
                   </button>
                 );
               })}
@@ -182,7 +182,7 @@ export function Uhrzeit() {
         )}
         {answered && (
           <Button variant="primary" size="lg" className="w-full max-w-md" onClick={() => (round + 1 >= ROUNDS ? setPhase('done') : next(round + 1))} autoFocus>
-            {round + 1 >= ROUNDS ? 'Finish' : 'Next'}
+            {round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
           </Button>
         )}
       </div>

@@ -13,7 +13,7 @@ export function DeckSelect({
   onChange,
   className,
   allowNone,
-  noneLabel = 'All decks',
+  noneLabel = 'Alle Decks',
 }: {
   value: string | null;
   onChange: (id: string | null) => void;
@@ -25,11 +25,10 @@ export function DeckSelect({
   return (
     <Select value={value ?? ''} onChange={(e) => onChange(e.target.value || null)} className={className}>
       {allowNone && <option value="">{noneLabel}</option>}
-      {!allowNone && !value && <option value="">Choose a deck…</option>}
+      {!allowNone && !value && <option value="">Deck wählen …</option>}
       {options.map((o) => (
         <option key={o.id} value={o.id}>
           {'  '.repeat(o.depth)}
-          {o.emoji ? `${o.emoji} ` : ''}
           {o.path.split('::').pop()}
         </option>
       ))}

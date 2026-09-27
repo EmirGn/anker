@@ -21,10 +21,11 @@ import {
   type Gender,
   type PrepCase,
 } from '@anker/core';
-import { ArrowLeft, ArrowRight, BookOpen, Sparkles, Volume2, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Sparkles, Volume2, Zap } from '../components/icons';
 import { useState, type ReactNode } from 'react';
 import { GENDER_VAR } from '../components/CardView';
 import { Button, cx, Input, PageHeader, Panel, Section } from '../components/ui';
+import { HOW_DE, ruleLabel, ruleNote } from '../lib/de';
 import { useHub } from '../lib/hooks';
 import { Link, navigate } from '../lib/router';
 import { speak } from '../lib/tts';
@@ -35,13 +36,13 @@ const G_HEAD: Record<Gender, string> = { der: 'Maskulin', die: 'Feminin', das: '
 function Table({ head, rows, genderCols }: { head: ReactNode[]; rows: ReactNode[][]; genderCols?: boolean }) {
   return (
     <div className="thin-scroll overflow-x-auto">
-      <table className="w-full min-w-[420px] border-separate border-spacing-0 text-[14.5px]">
+      <table className="w-full min-w-[420px] border-separate border-spacing-0 text-[15px]">
         <thead>
           <tr>
             {head.map((h, i) => (
               <th
                 key={i}
-                className="border-b border-line px-3 py-2 text-left text-[12px] font-semibold tracking-wide text-faint uppercase"
+                className="t-overline border-b border-line px-3 py-2 text-left text-ink-muted"
                 style={genderCols && i > 0 ? { color: GENDER_VAR[G[i - 1]!] } : undefined}
               >
                 {h}
@@ -51,9 +52,9 @@ function Table({ head, rows, genderCols }: { head: ReactNode[]; rows: ReactNode[
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="even:bg-surface-2/40">
+            <tr key={i}>
               {r.map((c, j) => (
-                <td key={j} className={cx('border-b border-line px-3 py-2.5', j === 0 ? 'font-medium text-muted' : 'font-display text-[16.5px]')}>
+                <td key={j} className={cx('border-b border-line px-3 py-2.5', j === 0 ? 'text-[13px] font-medium text-ink-muted' : 'text-[17px] font-semibold')}>
                   {c}
                 </td>
               ))}
@@ -66,18 +67,20 @@ function Table({ head, rows, genderCols }: { head: ReactNode[]; rows: ReactNode[
 }
 
 function Note({ children }: { children: ReactNode }) {
-  return <div className="rounded-2xl bg-accent-soft px-4 py-3 text-[14px] leading-relaxed">{children}</div>;
+  return <div className="rounded-md bg-paper-sunk px-4 py-3 text-[15px] leading-[22px]">{children}</div>;
 }
 
 function Ex({ de, en }: { de: string; en?: string }) {
   return (
     <div className="flex items-start gap-2 py-1">
-      <button onClick={() => void speak(de)} className="mt-0.5 text-faint hover:text-accent-strong" aria-label="Listen">
-        <Volume2 className="size-4" />
+      <button onClick={() => void speak(de)} className="-my-1 flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-paper-sunk hover:text-ink" aria-label="Anhören">
+        <Volume2 className="size-5" />
       </button>
       <div>
-        <div className="font-display text-[16px] italic">{de}</div>
-        {en && <div className="text-[13px] text-muted">{en}</div>}
+        <div className="t-body-lg" lang="de">
+          {de}
+        </div>
+        {en && <div className="t-caption text-ink-muted">{en}</div>}
       </div>
     </div>
   );
@@ -88,19 +91,19 @@ const caseRows = (table: Record<Case, Record<Gender, string>>) => CASES.map((c) 
 function Faelle() {
   return (
     <div className="space-y-6">
-      <p className="text-[15px] leading-relaxed text-muted">
+      <p className="text-[15px] leading-relaxed text-ink-muted">
         German marks a noun's role with its article. <b>Nominativ</b> = subject, <b>Akkusativ</b> = direct object, <b>Dativ</b> = indirect object (and after many prepositions), <b>Genitiv</b> = possession.
       </p>
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">Bestimmter Artikel (the)</div>
+        <div className="t-label mb-2">Bestimmter Artikel (the)</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={caseRows(DEFINITE)} genderCols />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">Unbestimmter Artikel (a / an)</div>
+        <div className="t-label mb-2">Unbestimmter Artikel (a / an)</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={caseRows(INDEFINITE)} genderCols />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">Negativartikel (kein) — possessives (mein, dein, …) work the same way</div>
+        <div className="t-label mb-2">Negativartikel (kein) – Possessivartikel (mein, dein …) gehen genauso</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={caseRows(NEGATIVE)} genderCols />
       </Panel>
       <Note>
@@ -118,21 +121,21 @@ function Praepositionen() {
   const groups: { key: PrepCase; title: string; hint: string }[] = [
     { key: 'akk', title: 'Immer Akkusativ', hint: 'durch · für · gegen · ohne · um (“DOGFU”)' },
     { key: 'dat', title: 'Immer Dativ', hint: 'aus · bei · mit · nach · seit · von · zu (+ gegenüber, außer)' },
-    { key: 'wechsel', title: 'Wechselpräpositionen', hint: 'Wo? → Dativ (location) · Wohin? → Akkusativ (direction)' },
-    { key: 'gen', title: 'Genitiv', hint: 'wegen · trotz · während · (an)statt — in speech often Dativ' },
+    { key: 'wechsel', title: 'Wechselpräpositionen', hint: 'Wo? → Dativ (Ort) · Wohin? → Akkusativ (Richtung)' },
+    { key: 'gen', title: 'Genitiv', hint: 'wegen · trotz · während · (an)statt – gesprochen oft mit Dativ' },
   ];
   return (
     <div className="space-y-6">
       {groups.map((g) => (
         <Panel key={g.key} className="p-4">
-          <div className="font-semibold">{g.title}</div>
-          <div className="mb-3 text-[13px] text-muted">{g.hint}</div>
+          <div className="t-heading">{g.title}</div>
+          <div className="t-caption mt-1 mb-3 text-ink-muted">{g.hint}</div>
           <div className="divide-y divide-line">
             {PREPOSITIONS.filter((p) => p.case === g.key).map((p) => (
               <div key={p.word} className="grid grid-cols-[110px_1fr] gap-3 py-2">
                 <div>
-                  <div className="font-display text-[17px] font-semibold">{p.word}</div>
-                  <div className="text-[12px] text-faint">{p.meaning}</div>
+                  <div className="text-[17px] font-bold">{p.word}</div>
+                  <div className="text-[13px] text-ink-muted">{p.meaning}</div>
                 </div>
                 <Ex de={p.example} />
               </div>
@@ -141,10 +144,10 @@ function Praepositionen() {
         </Panel>
       ))}
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">Contractions</div>
+        <div className="t-label mb-2">Verschmelzungen</div>
         <div className="flex flex-wrap gap-2">
           {Object.entries(CONTRACTIONS).map(([k, v]) => (
-            <span key={k} className="rounded-xl bg-surface-2 px-3 py-1.5 text-[14px]">
+            <span key={k} className="rounded-md bg-paper-sunk px-3 py-1.5 text-[15px]">
               {k} → <b>{v}</b>
             </span>
           ))}
@@ -163,38 +166,39 @@ function Genus() {
   return (
     <div className="space-y-6">
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">Try it: type a noun</div>
-        <Input value={word} onChange={(e) => setWord(e.target.value)} placeholder="z. B. Freundschaft, Häuschen, Motor…" className="font-display text-[18px]" />
+        <div className="t-label mb-2">Probier es aus: Tipp ein Nomen</div>
+        <Input value={word} onChange={(e) => setWord(e.target.value)} placeholder="z. B. Freundschaft, Häuschen, Motor …" className="text-[17px]" />
         <div className="mt-3 min-h-8">
           {word.trim() &&
             (hits.length ? (
               <div className="space-y-1.5">
                 {hits.slice(0, 3).map((h, i) => (
-                  <div key={h.rule.id} className={cx('text-[14px]', i > 0 && 'text-muted')}>
-                    <b style={{ color: GENDER_VAR[h.gender] }}>{h.gender}</b> {word.trim()} — nouns in {h.rule.label} are {h.rule.reliability === 'always' ? 'always' : h.rule.reliability === 'mostly' ? 'almost always' : 'often'} {h.gender}
-                    {h.rule.exceptions?.length ? <span className="text-faint"> (exceptions: {h.rule.exceptions.join(', ')})</span> : null}
+                  <div key={h.rule.id} className={cx('text-[15px]', i > 0 && 'text-ink-muted')}>
+                    <b style={{ color: GENDER_VAR[h.gender] }}>{h.gender}</b> {word.trim()} – {ruleLabel(h.rule)}: {HOW_DE[h.rule.reliability]} {h.gender}
+                    {h.rule.exceptions?.length ? <span className="text-ink-muted"> (Ausnahmen: {h.rule.exceptions.join(', ')})</span> : null}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-[14px] text-muted">No rule matches — this one you simply have to learn (with its article!).</div>
+              <div className="text-[15px] text-ink-muted">Keine Regel passt – dieses Wort lernst du einfach mit Artikel.</div>
             ))}
         </div>
       </Panel>
       {(['die', 'der', 'das'] as const).map((g) => (
         <Panel key={g} className="p-4">
-          <div className="mb-3 font-display text-[20px] font-semibold" style={{ color: GENDER_VAR[g] }}>
-            {g} — {G_HEAD[g].toLowerCase()}
+          <div className="t-heading mb-3" style={{ color: GENDER_VAR[g] }}>
+            {g} – {G_HEAD[g].toLowerCase()}
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {GENDER_RULES.filter((r) => r.gender === g).map((r) => (
-              <div key={r.id} className="rounded-xl bg-surface-2/60 px-3 py-2">
+              <div key={r.id} className="rounded-md bg-paper-sunk px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold">{r.label}</span>
-                  <span className="text-[11px] font-medium text-faint">{r.reliability}</span>
+                  <span className="t-label">{ruleLabel(r)}</span>
+                  <span className="text-[11px] font-semibold text-ink-muted">{HOW_DE[r.reliability]}</span>
                 </div>
-                <div className="text-[13px] text-muted">{r.examples.join(', ')}</div>
-                {r.exceptions && <div className="text-[12px] text-faint">but: {r.exceptions.join(', ')}</div>}
+                <div className="t-caption text-ink-muted">{r.examples.join(', ')}</div>
+                {r.exceptions && <div className="t-caption text-ink-muted">aber: {r.exceptions.join(', ')}</div>}
+                {ruleNote(r) && <div className="t-caption text-ink-muted">{ruleNote(r)}</div>}
               </div>
             ))}
           </div>
@@ -212,18 +216,18 @@ function Adjektive() {
   return (
     <div className="space-y-6">
       <Panel className="p-4">
-        <div className="mb-1 font-semibold">After der / die / das (weak)</div>
-        <div className="mb-2 text-[13px] text-muted">der alte Mann · die alte Frau · mit dem alten Auto</div>
+        <div className="mb-1 font-semibold">Nach der / die / das (schwach)</div>
+        <div className="mb-2 text-[13px] text-ink-muted">der alte Mann · die alte Frau · mit dem alten Auto</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={t(ADJ_WEAK)} genderCols />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-1 font-semibold">After ein / kein / mein (mixed)</div>
-        <div className="mb-2 text-[13px] text-muted">ein alter Mann · ein altes Haus · meine alten Freunde</div>
+        <div className="mb-1 font-semibold">Nach ein / kein / mein (gemischt)</div>
+        <div className="mb-2 text-[13px] text-ink-muted">ein alter Mann · ein altes Haus · meine alten Freunde</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={t(ADJ_MIXED)} genderCols />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-1 font-semibold">No article (strong)</div>
-        <div className="mb-2 text-[13px] text-muted">kalter Kaffee · frisches Brot · mit heißem Wasser</div>
+        <div className="mb-1 font-semibold">Ohne Artikel (stark)</div>
+        <div className="mb-2 text-[13px] text-ink-muted">kalter Kaffee · frisches Brot · mit heißem Wasser</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={t(ADJ_STRONG)} genderCols />
       </Panel>
       <Note>
@@ -246,13 +250,13 @@ function Pronomen() {
   return (
     <div className="space-y-6">
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">Personalpronomen</div>
+        <div className="t-label mb-2">Personalpronomen</div>
         <Table head={['', 'Nominativ', 'Akkusativ', 'Dativ']} rows={PERSONAL_PRONOUNS.map((p) => [p.person, p.nom, p.akk, p.dat])} />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">Possessivartikel (Nominativ)</div>
+        <div className="t-label mb-2">Possessivartikel (Nominativ)</div>
         <Table head={['', 'der / das', 'die / Plural']} rows={poss} />
-        <p className="mt-3 text-[13px] text-muted">They decline like <i>kein</i>: meinen Bruder (Akk), mit meiner Schwester (Dat), unseren Freunden (Dat pl).</p>
+        <p className="mt-3 text-[13px] text-ink-muted">They decline like <i>kein</i>: meinen Bruder (Akk), mit meiner Schwester (Dat), unseren Freunden (Dat pl).</p>
       </Panel>
       <Panel className="p-4">
         <Ex de="Ich gebe es dir morgen." en="I'll give it to you tomorrow. (Akk pronoun before Dat pronoun)" />
@@ -273,17 +277,17 @@ function Zahlen() {
   return (
     <div className="space-y-6">
       <Panel className="space-y-3 p-4">
-        <div className="font-semibold">Number → Deutsch</div>
-        <Input value={n} onChange={(e) => setN(e.target.value.replace(/[^\d]/g, ''))} inputMode="numeric" className="font-mono text-[18px]" />
+        <div className="t-label">Zahl → Deutsch</div>
+        <Input value={n} onChange={(e) => setN(e.target.value.replace(/[^\d]/g, ''))} inputMode="numeric" className="font-mono text-[17px]" />
         {valid && (
           <div className="space-y-1">
-            <div className="flex items-center gap-2 font-display text-[20px]">
+            <div className="flex items-center gap-2 font-display text-[20px] font-bold" lang="de">
               {numberToGerman(num)}
-              <button onClick={() => void speak(String(num))} className="text-faint hover:text-accent-strong" aria-label="Listen">
+              <button onClick={() => void speak(String(num))} className="flex size-9 items-center justify-center rounded-full text-ink-muted hover:bg-paper-sunk hover:text-ink" aria-label="Anhören">
                 <Volume2 className="size-4" />
               </button>
             </div>
-            {num >= 1100 && num < 2000 && <div className="text-[14px] text-muted">as a year: {yearToGerman(num)}</div>}
+            {num >= 1100 && num < 2000 && <div className="text-[15px] text-ink-muted">als Jahreszahl: {yearToGerman(num)}</div>}
           </div>
         )}
       </Panel>
@@ -291,18 +295,18 @@ function Zahlen() {
         German says the ones before the tens: <b>21 = einundzwanzig</b> (“one-and-twenty”). Numbers below a million are written as one word. Watch out: <i>sechzehn, sechzig</i> (no s), <i>siebzehn, siebzig</i> (no en), <i>dreißig</i> (ß).
       </Note>
       <Panel className="space-y-3 p-4">
-        <div className="font-semibold">Wie spät ist es?</div>
+        <div className="t-label">Wie spät ist es?</div>
         <Input type="time" value={t} onChange={(e) => setT(e.target.value)} className="w-40" />
         {tValid && (
           <div className="space-y-1 text-[15px]">
             <div>
-              <span className="text-muted">Official: </span>
+              <span className="text-ink-muted">Official: </span>
               <b>{formalTime(hh, mm)}</b>
             </div>
             <div>
-              <span className="text-muted">Everyday: </span>
+              <span className="text-ink-muted">Everyday: </span>
               <b>{round5 < 60 ? informalTime(hh, round5) : informalTime((hh + 1) % 24, 0)}</b>
-              {round5 !== mm && <span className="text-faint"> (≈ {String(hh).padStart(2, '0')}:{String(round5 % 60).padStart(2, '0')})</span>}
+              {round5 !== mm && <span className="text-ink-muted"> (≈ {String(hh).padStart(2, '0')}:{String(round5 % 60).padStart(2, '0')})</span>}
             </div>
           </div>
         )}
@@ -334,37 +338,37 @@ function Satzbau() {
   return (
     <div className="space-y-6">
       <Panel className="space-y-2 p-4">
-        <div className="font-semibold">1 · The verb is always in position 2</div>
+        <div className="t-label">1 · Das Verb steht immer an Position 2</div>
         <Ex de="Ich lerne heute Deutsch." />
         <Ex de="Heute lerne ich Deutsch." en="Something else first? The subject moves behind the verb." />
         <Ex de="Was lernst du heute?" en="W-questions: question word + verb." />
         <Ex de="Lernst du heute Deutsch?" en="Yes/no questions: the verb comes first." />
       </Panel>
       <Panel className="space-y-2 p-4">
-        <div className="font-semibold">2 · The sentence bracket (Satzklammer)</div>
+        <div className="t-label">2 · Die Satzklammer</div>
         <Ex de="Ich muss heute Deutsch lernen." en="Modal verb in position 2, infinitive at the end." />
         <Ex de="Ich habe gestern Deutsch gelernt." en="Perfekt: haben/sein in position 2, participle at the end." />
         <Ex de="Ich stehe jeden Tag um sieben Uhr auf." en="Separable verbs (aufstehen): the prefix goes to the end." />
       </Panel>
       <Panel className="space-y-2 p-4">
-        <div className="font-semibold">3 · Subordinate clauses: verb at the very end</div>
+        <div className="t-label">3 · Nebensätze: Verb ganz am Ende</div>
         <Ex de="Ich lerne Deutsch, weil ich in Berlin arbeiten möchte." />
         <Ex de="Weil ich müde bin, gehe ich früh ins Bett." en="Subordinate clause first → the main clause starts with the verb." />
-        <p className="text-[13px] text-muted">weil · dass · wenn · ob · als · obwohl · damit · bevor · nachdem · während · bis · seit(dem)</p>
-        <p className="text-[13px] text-muted">
+        <p className="text-[13px] text-ink-muted">weil · dass · wenn · ob · als · obwohl · damit · bevor · nachdem · während · bis · seit(dem)</p>
+        <p className="text-[13px] text-ink-muted">
           But <b>und, aber, oder, denn, sondern</b> (“ADUSO”) don't change word order: <i>Ich bin müde, denn ich habe schlecht geschlafen.</i>
         </p>
       </Panel>
       <Panel className="space-y-2 p-4">
-        <div className="font-semibold">4 · TeKaMoLo — the order of details</div>
+        <div className="t-label">4 · TeKaMoLo – die Reihenfolge der Angaben</div>
         <Ex de="Ich fahre morgen wegen des Streiks mit dem Fahrrad zur Arbeit." en="Temporal (wann?) · Kausal (warum?) · Modal (wie?) · Lokal (wo/wohin?)" />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">sein · haben · werden</div>
+        <div className="t-label mb-2">sein · haben · werden</div>
         <Table head={['', 'sein', 'haben', 'werden']} rows={aux} />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-2 font-semibold">Modalverben</div>
+        <div className="t-label mb-2">Modalverben</div>
         <Table head={['', 'können', 'müssen', 'wollen', 'sollen', 'dürfen', 'möchten']} rows={modal} />
       </Panel>
       <Note>
@@ -375,13 +379,13 @@ function Satzbau() {
 }
 
 export const TOPICS: { id: string; title: string; desc: string; body: () => ReactNode; drill?: string; ask: string }[] = [
-  { id: 'faelle', title: 'Artikel & Fälle', desc: 'der/den/dem/des — all four cases', body: Faelle, drill: 'kasus', ask: 'Explain the four German cases with simple examples and a trick to remember when to use each.' },
-  { id: 'praepositionen', title: 'Präpositionen', desc: 'Which case after which preposition', body: Praepositionen, drill: 'kasus', ask: 'Explain Wechselpräpositionen (Wo? vs. Wohin?) with 6 contrasting example pairs.' },
-  { id: 'genus', title: 'Genus-Regeln', desc: 'Guess der/die/das from the ending', body: Genus, drill: 'artikel', ask: 'Teach me the most reliable rules for guessing the gender of German nouns, with memorable examples.' },
-  { id: 'adjektive', title: 'Adjektivendungen', desc: 'guter Wein, das gute Brot…', body: Adjektive, ask: 'Explain German adjective endings with a simple system I can apply while speaking.' },
-  { id: 'pronomen', title: 'Pronomen', desc: 'ich/mich/mir, mein/meine…', body: Pronomen, ask: 'Quiz me on personal pronouns in Akkusativ and Dativ with 8 short sentences.' },
-  { id: 'zahlen', title: 'Zahlen & Uhrzeit', desc: 'einundzwanzig, halb acht', body: Zahlen, drill: 'zahlen', ask: 'Give me 10 tricky German numbers and times to read aloud, with the answers hidden at the end.' },
-  { id: 'satzbau', title: 'Satzbau & Verben', desc: 'Verb position, Perfekt, Modalverben', body: Satzbau, drill: 'verben', ask: 'Explain German word order (V2, verb-final in subordinate clauses, separable verbs) with examples.' },
+  { id: 'faelle', title: 'Artikel & Fälle', desc: 'der/den/dem/des – alle vier Fälle', body: Faelle, drill: 'kasus', ask: 'Erklär mir die vier Fälle mit einfachen Beispielen und einem Trick, wann ich welchen brauche.' },
+  { id: 'praepositionen', title: 'Präpositionen', desc: 'Welcher Fall nach welcher Präposition', body: Praepositionen, drill: 'kasus', ask: 'Erklär mir die Wechselpräpositionen (Wo? oder Wohin?) mit 6 gegensätzlichen Beispielpaaren.' },
+  { id: 'genus', title: 'Genus-Regeln', desc: 'der, die oder das an der Endung erkennen', body: Genus, drill: 'artikel', ask: 'Bring mir die zuverlässigsten Regeln bei, um das Genus deutscher Nomen zu erraten – mit einprägsamen Beispielen.' },
+  { id: 'adjektive', title: 'Adjektivendungen', desc: 'guter Wein, das gute Brot …', body: Adjektive, ask: 'Erklär mir die Adjektivendungen mit einem einfachen System, das ich beim Sprechen anwenden kann.' },
+  { id: 'pronomen', title: 'Pronomen', desc: 'ich/mich/mir, mein/meine …', body: Pronomen, ask: 'Frag mich Personalpronomen im Akkusativ und Dativ mit 8 kurzen Sätzen ab.' },
+  { id: 'zahlen', title: 'Zahlen & Uhrzeit', desc: 'einundzwanzig, halb acht', body: Zahlen, drill: 'zahlen', ask: 'Gib mir 10 knifflige Zahlen und Uhrzeiten zum Vorlesen, die Lösungen versteckt am Ende.' },
+  { id: 'satzbau', title: 'Satzbau & Verben', desc: 'Verbstellung, Perfekt, Modalverben', body: Satzbau, drill: 'verben', ask: 'Erklär mir den deutschen Satzbau (Verb an Position 2, Verb am Ende im Nebensatz, trennbare Verben) mit Beispielen.' },
 ];
 
 export function Grammar({ topic }: { topic: string | null }) {
@@ -389,17 +393,19 @@ export function Grammar({ topic }: { topic: string | null }) {
   const t = TOPICS.find((x) => x.id === topic);
   if (!t) {
     return (
-      <div className="mx-auto max-w-4xl px-4 pt-6 pb-12 md:px-8 md:pt-10">
-        <PageHeader title="Grammatik" subtitle="Compact tables and rules — with live examples you can listen to." />
+      <div className="mx-auto max-w-4xl px-5 pt-8 pb-12 md:px-8 md:pt-10">
+        <PageHeader title="Grammatik" subtitle="Kompakte Tabellen und Regeln – mit Beispielen zum Anhören." />
         <div className="grid gap-3 sm:grid-cols-2">
           {TOPICS.map((x) => (
-            <Link key={x.id} to={`/grammar/${x.id}`} className="group flex items-center gap-4 rounded-2xl border border-line bg-surface p-5 transition-all hover:-translate-y-0.5 hover:shadow-card">
-              <BookOpen className="size-6 shrink-0 text-accent" />
+            <Link key={x.id} to={`/grammar/${x.id}`} className="flex items-center gap-3 rounded-md border border-line bg-paper-raised p-4 transition-colors duration-[120ms] hover:bg-paper-sunk">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-paper-sunk">
+                <BookOpen className="size-6 text-ink" />
+              </span>
               <div className="min-w-0 flex-1">
-                <div className="font-display text-[19px] font-semibold">{x.title}</div>
-                <div className="text-[13.5px] text-muted">{x.desc}</div>
+                <div className="t-heading">{x.title}</div>
+                <div className="t-caption mt-0.5 text-ink-muted">{x.desc}</div>
               </div>
-              <ArrowRight className="size-5 text-faint transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="size-5 text-ink-muted" />
             </Link>
           ))}
         </div>
@@ -408,9 +414,9 @@ export function Grammar({ topic }: { topic: string | null }) {
   }
   const Body = t.body;
   return (
-    <div className="mx-auto max-w-4xl px-4 pt-6 pb-16 md:px-8 md:pt-10">
-      <Link to="/grammar" className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
-        <ArrowLeft className="size-4" /> Grammatik
+    <div className="mx-auto max-w-4xl px-5 pt-6 pb-16 md:px-8 md:pt-10">
+      <Link to="/grammar" className="t-label mb-5 inline-flex h-9 items-center gap-1.5 text-ink-muted hover:text-ink">
+        <ArrowLeft className="size-5" /> Grammatik
       </Link>
       <PageHeader
         title={t.title}
@@ -418,13 +424,13 @@ export function Grammar({ topic }: { topic: string | null }) {
         actions={
           <>
             {t.drill && (
-              <Button onClick={() => navigate(`/practice/${t.drill}`)} icon={<Zap className="size-4" />}>
-                Practice
+              <Button onClick={() => navigate(`/practice/${t.drill}`)} icon={<Zap className="size-5" />}>
+                Üben
               </Button>
             )}
             {hub && (
-              <Button variant="primary" onClick={() => navigate(`/tutor?q=${encodeURIComponent(t.ask)}`)} icon={<Sparkles className="size-4" />}>
-                Ask the tutor
+              <Button variant="primary" onClick={() => navigate(`/tutor?q=${encodeURIComponent(t.ask)}`)} icon={<Sparkles className="size-5" />}>
+                Tutor fragen
               </Button>
             )}
           </>

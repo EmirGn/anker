@@ -180,7 +180,7 @@ async function doSync() {
     const unauthorized = e instanceof HubError && e.status === 401;
     setState({
       status: offline ? 'offline' : 'error',
-      error: unauthorized ? 'This device is no longer paired. Pair it again in Settings.' : (e as Error).message,
+      error: unauthorized ? 'Dieses Gerät ist nicht mehr gekoppelt. Kopple es in den Einstellungen neu.' : (e as Error).message,
       pending: await db.outbox.count(),
     });
   }

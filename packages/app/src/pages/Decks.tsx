@@ -1,6 +1,7 @@
 import type { DeckCounts, DeckNode } from '@anker/core';
-import { ChevronRight, FolderPlus, Import, Library, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { DeckCover } from '../components/DeckCover';
+import { ChevronRight, FolderPlus, Import, Plus } from '../components/icons';
 import { Button, cx, Empty, Input, Label, Modal, PageHeader, Panel, Spinner, toast } from '../components/ui';
 import { db } from '../lib/db';
 import { useDeckCounts, useDeckTree, useLiveQuery } from '../lib/hooks';
@@ -19,22 +20,21 @@ function loadCollapsed(): Set<string> {
 export function Counts({ c, className }: { c?: DeckCounts; className?: string }) {
   if (!c) return null;
   const cell = (n: number, color: string, label: string) => (
-    <span className={cx('w-8 text-right tabular-nums', !n && 'opacity-30')} style={{ color: n ? color : undefined }} title={label}>
+    <span className={cx('w-12 text-right tabular-nums', !n && 'opacity-30')} style={{ color: n ? color : undefined }} title={label}>
       {n}
     </span>
   );
   return (
-    <div className={cx('flex gap-1 text-[13.5px] font-semibold', className)}>
-      {cell(c.new, 'var(--easy)', 'New')}
-      {cell(c.learn, 'var(--again)', 'Learning')}
-      {cell(c.review, 'var(--good)', 'Review')}
+    <div className={cx('flex gap-1 text-[15px] font-bold', className)}>
+      {cell(c.new, 'var(--hafen)', 'Neu')}
+      {cell(c.learn, 'var(--koralle-ink)', 'In Arbeit')}
+      {cell(c.review, 'var(--wiese)', 'Fällig')}
     </div>
   );
 }
 
 export function NewDeckModal({ open, onClose, parentPath }: { open: boolean; onClose: () => void; parentPath?: string }) {
   const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState('');
   const [desc, setDesc] = useState('');
   const [busy, setBusy] = useState(false);
   const submit = async () => {
@@ -42,10 +42,9 @@ export function NewDeckModal({ open, onClose, parentPath }: { open: boolean; onC
     setBusy(true);
     try {
       const path = parentPath ? `${parentPath}::${name.trim()}` : name.trim();
-      const d = await createDeckPath(path, { emoji: emoji.trim() || undefined, description: desc.trim() || undefined });
-      toast.success(`Created “${d.name}”`);
+      const d = await createDeckPath(path, { description: desc.trim() || undefined });
+      toast.success(`„${d.name}“ erstellt`);
       setName('');
-      setEmoji('');
       setDesc('');
       onClose();
     } finally {
@@ -56,31 +55,23 @@ export function NewDeckModal({ open, onClose, parentPath }: { open: boolean; onC
     <Modal
       open={open}
       onClose={onClose}
-      title={parentPath ? `New deck in ${parentPath.split('::').pop()}` : 'New deck'}
+      title={parentPath ? `Neues Deck in ${parentPath.split('::').pop()}` : 'Neues Deck'}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button onClick={onClose}>Abbrechen</Button>
           <Button variant="primary" onClick={submit} loading={busy} disabled={!name.trim()}>
-            Create
+            Erstellen
           </Button>
         </>
       }
     >
       <div className="space-y-4">
-        <div className="flex gap-3">
-          <div className="w-20">
-            <Label>Emoji</Label>
-            <Input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="🍳" maxLength={4} className="text-center text-lg" />
-          </div>
-          <div className="flex-1">
-            <Label hint="Use :: for sub-decks">Name</Label>
-            <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Küche & Kochen" onKeyDown={(e) => e.key === 'Enter' && submit()} />
-          </div>
+        <div>
+          <Label hint="Mit :: für Unterdecks">Name</Label>
+          <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Küche & Kochen" onKeyDown={(e) => e.key === 'Enter' && submit()} />
         </div>
         <div>
-          <Label>Description</Label>
+          <Label>Beschreibung</Label>
           <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Optional" />
         </div>
       </div>
@@ -108,31 +99,30 @@ function DeckRow({
   const notes = noteCounts.get(node.deck.id) ?? 0;
   return (
     <>
-      <div className="group flex items-center gap-2 border-b border-line px-3 py-2.5 last:border-b-0 hover:bg-surface-2/50 md:px-4" style={{ paddingLeft: `${12 + node.depth * 22}px` }}>
+      <div className="flex items-center gap-2 border-b border-line py-2.5 pr-3 last:border-b-0 md:pr-4" style={{ paddingLeft: `${8 + node.depth * 22}px` }}>
         <button
           onClick={() => hasKids && toggle(node.deck.id)}
-          className={cx('flex size-6 shrink-0 items-center justify-center rounded-md text-faint', hasKids ? 'hover:bg-surface-3' : 'invisible')}
-          aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+          className={cx('flex size-7 shrink-0 items-center justify-center rounded-xs text-ink-muted', hasKids ? 'hover:bg-paper-sunk' : 'invisible')}
+          aria-label={isCollapsed ? 'Aufklappen' : 'Zuklappen'}
         >
-          <ChevronRight className={cx('size-4 transition-transform', !isCollapsed && 'rotate-90')} />
+          <ChevronRight className={cx('size-4 transition-transform duration-200', !isCollapsed && 'rotate-90')} />
         </button>
         <Link to={`/decks/${node.deck.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-lg">{node.deck.emoji ?? (node.depth ? '📁' : '📚')}</span>
+          <DeckCover deck={node.deck} size="xs" />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium">{node.deck.name}</div>
-            <div className="truncate text-[12px] text-faint">
-              {notes} {notes === 1 ? 'note' : 'notes'}
+            <div className="t-label truncate" lang="de">
+              {node.deck.name}
+            </div>
+            <div className="t-caption truncate text-ink-muted">
+              {notes} {notes === 1 ? 'Notiz' : 'Notizen'}
               {node.deck.description ? ` · ${node.deck.description}` : ''}
             </div>
           </div>
         </Link>
         <Counts c={c} className="hidden sm:flex" />
-        <Button size="sm" variant={total ? 'primary' : 'ghost'} onClick={() => navigate(`/study/${node.deck.id}`)} disabled={!total} className="ml-1 w-[72px]">
-          {total ? 'Study' : 'Done'}
+        <Button size="sm" variant={total ? 'secondary' : 'ghost'} onClick={() => navigate(`/study/${node.deck.id}`)} disabled={!total} className="ml-1 w-[76px]">
+          {total ? 'Lernen' : 'Fertig'}
         </Button>
-        <Link to={`/decks/${node.deck.id}`} className="flex size-8 items-center justify-center rounded-lg text-faint hover:bg-surface-3 hover:text-ink" aria-label="Deck options">
-          <MoreHorizontal className="size-4" />
-        </Link>
       </div>
       {!isCollapsed && node.children.map((ch) => <DeckRow key={ch.deck.id} node={ch} counts={counts} noteCounts={noteCounts} collapsed={collapsed} toggle={toggle} />)}
     </>
@@ -168,19 +158,20 @@ export function Decks() {
     setCollapsed(next);
     localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...next]));
   };
+  const empty = tree?.length === 0;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pt-6 pb-10 md:px-8 md:pt-10">
+    <div className="mx-auto max-w-4xl px-5 pt-8 pb-10 md:px-8 md:pt-10">
       <PageHeader
         title="Decks"
-        subtitle="Your Kartenstapel. Sub-decks count toward their parent."
+        subtitle="Deine Kartenstapel. Unterdecks zählen zu ihrem Oberdeck."
         actions={
           <>
-            <Button onClick={() => navigate('/import')} icon={<Import className="size-4" />} className="hidden sm:inline-flex">
-              Import
+            <Button onClick={() => navigate('/import')} icon={<Import className="size-5" />} className="hidden sm:inline-flex">
+              Importieren
             </Button>
-            <Button variant="primary" onClick={() => setNewOpen(true)} icon={<FolderPlus className="size-4" />}>
-              New deck
+            <Button variant={empty ? 'secondary' : 'primary'} onClick={() => setNewOpen(true)} icon={<FolderPlus className="size-5" />}>
+              Neues Deck
             </Button>
           </>
         }
@@ -189,33 +180,32 @@ export function Decks() {
         <div className="flex justify-center py-16">
           <Spinner />
         </div>
-      ) : tree.length === 0 ? (
+      ) : empty ? (
         <Panel>
           <Empty
-            icon={<Library className="size-7" />}
-            title="No decks yet"
+            title="Noch keine Decks"
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="primary" onClick={() => navigate('/welcome')}>
-                  Get starter decks
+                  Starter-Decks holen
                 </Button>
-                <Button onClick={() => setNewOpen(true)} icon={<Plus className="size-4" />}>
-                  Create a deck
+                <Button onClick={() => setNewOpen(true)} icon={<Plus className="size-5" />}>
+                  Deck erstellen
                 </Button>
-                <Button onClick={() => navigate('/import')}>Import from Anki</Button>
+                <Button onClick={() => navigate('/import')}>Aus Anki importieren</Button>
               </div>
             }
           >
-            Start with a curated German deck, create your own, or bring your Anki decks along.
+            Starte mit einem deutschen Starter-Deck, erstelle ein eigenes oder bring deine Anki-Decks mit.
           </Empty>
         </Panel>
       ) : (
         <Panel className="overflow-hidden">
-          <div className="hidden items-center justify-end gap-1 border-b border-line bg-surface-2/40 px-4 py-2 text-[11px] font-semibold tracking-wide text-faint uppercase sm:flex">
-            <span className="w-8 text-right">New</span>
-            <span className="w-8 text-right">Learn</span>
-            <span className="w-8 text-right">Due</span>
-            <span className="w-[112px]" />
+          <div className="t-overline hidden items-center justify-end gap-1 border-b whitespace-nowrap hyphens-none border-line px-4 py-2 text-ink-muted sm:flex">
+            <span className="w-12 text-right">Neu</span>
+            <span className="w-12 text-right">Lernen</span>
+            <span className="w-12 text-right">Fällig</span>
+            <span className="w-[84px]" />
           </div>
           {tree.map((n) => (
             <DeckRow key={n.deck.id} node={n} counts={counts} noteCounts={noteCounts} collapsed={collapsed} toggle={toggle} />

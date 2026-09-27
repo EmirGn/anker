@@ -50,7 +50,7 @@ function mcpScript(): string {
 }
 
 function bg() {
-  return nativeTheme.shouldUseDarkColors ? '#0e1116' : '#f6f3ee';
+  return nativeTheme.shouldUseDarkColors ? '#16140f' : '#fbf6ee';
 }
 
 // ----------------------------------------------------------------- windows
@@ -183,7 +183,7 @@ function refreshStatus() {
   app.dock?.setBadge(due ? String(due) : '');
   if (tray) {
     tray.setTitle(due ? ` ${due}` : '', { fontType: 'monospacedDigit' });
-    tray.setToolTip(due ? `Anker — ${due} cards due` : 'Anker — all done for today');
+    tray.setToolTip(due ? `Anker – ${due} ${due === 1 ? 'Karte' : 'Karten'} fällig` : 'Anker – für heute alles erledigt');
     tray.setContextMenu(trayMenu(due));
   }
 }
@@ -191,14 +191,14 @@ function refreshStatus() {
 function trayMenu(due: number) {
   return Menu.buildFromTemplate([
     { label: due ? `${due} cards due today` : 'All done for today 🎉', enabled: false },
-    { label: 'Start studying', enabled: due > 0, click: () => showMain('/study') },
-    { label: 'Quick add…', accelerator: settings.shortcut, click: toggleQuickAdd },
-    { label: 'Ask the tutor', click: () => showMain('/tutor') },
+    { label: 'Jetzt lernen', enabled: due > 0, click: () => showMain('/study') },
+    { label: 'Schnell hinzufügen …', accelerator: settings.shortcut, click: toggleQuickAdd },
+    { label: 'Tutor fragen', click: () => showMain('/tutor') },
     { type: 'separator' },
-    { label: 'Open Anker', click: () => showMain() },
-    { label: 'Settings', click: () => showMain('/settings') },
+    { label: 'Anker öffnen', click: () => showMain() },
+    { label: 'Einstellungen', click: () => showMain('/settings') },
     { type: 'separator' },
-    { label: 'Quit Anker', role: 'quit' },
+    { label: 'Anker beenden', role: 'quit' },
   ]);
 }
 
@@ -222,7 +222,7 @@ function checkReminder() {
   settings.lastReminderDay = today;
   saveSettings();
   if (!due || !Notification.isSupported()) return;
-  const n = new Notification({ title: 'Zeit für Deutsch! ⚓', body: `${due} card${due === 1 ? ' is' : 's are'} waiting — a few minutes keeps your streak alive.` });
+  const n = new Notification({ title: 'Zeit für Deutsch', body: `${due} ${due === 1 ? 'Karte wartet' : 'Karten warten'}. Ein paar Minuten halten deine Serie am Leben.` });
   n.on('click', () => showMain('/study'));
   n.show();
 }
@@ -234,7 +234,7 @@ function appMenu() {
       submenu: [
         { role: 'about' },
         { type: 'separator' },
-        { label: 'Settings…', accelerator: 'Command+,', click: () => showMain('/settings') },
+        { label: 'Einstellungen …', accelerator: 'Command+,', click: () => showMain('/settings') },
         { type: 'separator' },
         { role: 'hide' },
         { role: 'hideOthers' },
@@ -245,18 +245,18 @@ function appMenu() {
     },
     { role: 'editMenu' },
     {
-      label: 'Go',
+      label: 'Gehe zu',
       submenu: [
-        { label: 'Today', accelerator: 'Command+1', click: () => showMain('/') },
+        { label: 'Heute', accelerator: 'Command+1', click: () => showMain('/') },
         { label: 'Decks', accelerator: 'Command+2', click: () => showMain('/decks') },
-        { label: 'Add cards', accelerator: 'Command+N', click: () => showMain('/add') },
-        { label: 'Browse', accelerator: 'Command+F', click: () => showMain('/browse') },
-        { label: 'Practice', accelerator: 'Command+3', click: () => showMain('/practice') },
+        { label: 'Neue Karte', accelerator: 'Command+N', click: () => showMain('/add') },
+        { label: 'Karten suchen', accelerator: 'Command+F', click: () => showMain('/browse') },
+        { label: 'Üben', accelerator: 'Command+3', click: () => showMain('/practice') },
         { label: 'Tutor', accelerator: 'Command+4', click: () => showMain('/tutor') },
-        { label: 'Stats', accelerator: 'Command+5', click: () => showMain('/stats') },
+        { label: 'Statistik', accelerator: 'Command+5', click: () => showMain('/stats') },
         { type: 'separator' },
-        { label: 'Start studying', accelerator: 'Command+Return', click: () => showMain('/study') },
-        { label: 'Quick add', click: toggleQuickAdd },
+        { label: 'Jetzt lernen', accelerator: 'Command+Return', click: () => showMain('/study') },
+        { label: 'Schnell hinzufügen', click: toggleQuickAdd },
       ],
     },
     { role: 'viewMenu' },

@@ -6,45 +6,45 @@ import {
   noteSubtitle,
   noteTitle,
   parseQuery,
-  relativeTime,
   DAY,
   type Card,
   type Deck,
   type Note,
 } from '@anker/core';
-import { Brain, CheckSquare, FolderInput, Pause, Play, RotateCcw, Search, Square, Tag, Trash2, X } from 'lucide-react';
+import { Brain, CheckSquare, FolderInput, Pause, Play, RotateCcw, Search, Square, Tag, Trash2, X } from '../components/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { GenderWord } from '../components/CardView';
 import { DeckSelect } from '../components/DeckSelect';
 import { TagInput } from '../components/TagInput';
 import { Button, Chip, cx, Empty, IconButton, Modal, PageHeader, Panel, Select, Spinner, toast, useConfirm } from '../components/ui';
 import { db } from '../lib/db';
+import { relativ } from '../lib/format';
 import { useIsWide, useLiveQuery, usePrefs } from '../lib/hooks';
 import { deleteNotes, forgetNotes, moveNotes, suspendNotes, tagNotes } from '../lib/repo';
 import { navigate, useRoute } from '../lib/router';
 import { NoteEditor } from './Editor';
 
 const FILTERS = [
-  { label: 'Due', q: 'is:due' },
-  { label: 'New', q: 'is:new' },
-  { label: 'Nouns', q: 'pos:noun' },
-  { label: 'Verbs', q: 'pos:verb' },
-  { label: 'Leeches', q: 'is:leech' },
-  { label: 'Suspended', q: 'is:suspended' },
-  { label: 'Added this week', q: 'added:7' },
-  { label: 'Reviewed today', q: 'rated:1' },
+  { label: 'Fällig', q: 'is:due' },
+  { label: 'Neu', q: 'is:new' },
+  { label: 'Nomen', q: 'pos:noun' },
+  { label: 'Verben', q: 'pos:verb' },
+  { label: 'Oft vergessen', q: 'is:leech' },
+  { label: 'Ausgesetzt', q: 'is:suspended' },
+  { label: 'Diese Woche neu', q: 'added:7' },
+  { label: 'Heute wiederholt', q: 'rated:1' },
 ];
 
 type SortKey = 'new' | 'alpha' | 'due' | 'lapses';
 
 function status(cards: Card[], now: number): { label: string; color?: string } {
-  if (!cards.length) return { label: '—' };
-  if (cards.every((c) => c.suspended)) return { label: 'Suspended', color: 'var(--hard)' };
+  if (!cards.length) return { label: '–' };
+  if (cards.every((c) => c.suspended)) return { label: 'Ausgesetzt', color: 'var(--ink-muted)' };
   const active = cards.filter((c) => !c.suspended);
-  if (active.every((c) => c.state === CardState.New)) return { label: 'New', color: 'var(--easy)' };
+  if (active.every((c) => c.state === CardState.New)) return { label: 'Neu', color: 'var(--hafen)' };
   const due = Math.min(...active.filter((c) => c.state !== CardState.New).map((c) => c.due));
-  if (due <= now) return { label: 'Due', color: 'var(--good)' };
-  return { label: relativeTime(due, now).replace(/^in /, '') };
+  if (due <= now) return { label: 'Fällig', color: 'var(--wiese)' };
+  return { label: relativ(due, now) };
 }
 
 export function Browse() {
@@ -159,30 +159,30 @@ export function Browse() {
   };
 
   return (
-    <div className={cx('mx-auto px-4 pt-6 pb-24 md:px-8 md:pt-10', openId && wide ? 'max-w-[1400px]' : 'max-w-5xl')}>
-      <PageHeader title="Browse" subtitle={results ? `${results.length} note${results.length === 1 ? '' : 's'}` : ' '} />
+    <div className={cx('mx-auto px-5 pt-8 pb-24 md:px-8 md:pt-10', openId && wide ? 'max-w-[1400px]' : 'max-w-5xl')}>
+      <PageHeader title="Karten suchen" subtitle={results ? `${results.length.toLocaleString('de-DE')} ${results.length === 1 ? 'Notiz' : 'Notizen'}` : ' '} />
       <div className={cx(openId && wide && 'grid grid-cols-[1fr_520px] gap-6')}>
         <div className="min-w-0">
           <div className="mb-3 flex gap-2">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-faint" />
+              <Search className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-ink-muted" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder='Search…  e.g. haus deck:"Deutsch::A1" gender:die is:due'
-                className="h-11 w-full rounded-xl border border-line bg-surface pr-9 pl-10 text-[15px] outline-none focus:border-accent focus:ring-4 focus:ring-accent/15"
+                placeholder='Suchen …  z. B. haus deck:"Deutsch::A1" gender:die is:due'
+                className="h-11 w-full rounded-md border border-transparent bg-paper-sunk pr-10 pl-11 text-[15px] outline-none placeholder:text-ink-muted focus:border-hafen focus:bg-paper-raised"
               />
               {q && (
-                <button onClick={() => setQ('')} className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1 text-faint hover:text-ink" aria-label="Clear search">
+                <button onClick={() => setQ('')} className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-xs p-1 text-ink-muted hover:text-ink" aria-label="Suche leeren">
                   <X className="size-4" />
                 </button>
               )}
             </div>
             <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="w-36 shrink-0">
-              <option value="new">Newest</option>
+              <option value="new">Neueste</option>
               <option value="alpha">A–Z</option>
-              <option value="due">Due date</option>
-              <option value="lapses">Most lapses</option>
+              <option value="due">Fälligkeit</option>
+              <option value="lapses">Meiste Fehler</option>
             </Select>
           </div>
           <div className="thin-scroll -mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
@@ -192,7 +192,7 @@ export function Browse() {
                 <button
                   key={f.q}
                   onClick={() => toggleFilter(f.q)}
-                  className={cx('shrink-0 rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors', active ? 'border-transparent bg-ink text-bg' : 'border-line text-muted hover:bg-surface-2')}
+                  className={cx('h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition-colors duration-[120ms]', active ? 'border-transparent bg-ink text-paper' : 'border-line bg-paper-raised text-ink-muted hover:bg-paper-sunk')}
                 >
                   {f.label}
                 </button>
@@ -206,21 +206,21 @@ export function Browse() {
             </div>
           ) : results.length === 0 ? (
             <Panel>
-              <Empty icon={<Search className="size-7" />} title="Nothing found">
-                Try fewer words, or search syntax like <code className="rounded bg-surface-2 px-1">tag:A2</code>, <code className="rounded bg-surface-2 px-1">is:leech</code> or <code className="rounded bg-surface-2 px-1">-is:suspended</code>.
+              <Empty mood="thinking" title="Nichts gefunden">
+                Versuch weniger Wörter oder Suchbefehle wie <code className="rounded-xs bg-paper-sunk px-1">tag:A2</code>, <code className="rounded-xs bg-paper-sunk px-1">is:leech</code> oder <code className="rounded-xs bg-paper-sunk px-1">-is:suspended</code>.
               </Empty>
             </Panel>
           ) : (
             <Panel className="overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-line bg-surface-2/40 px-3 py-2">
+              <div className="flex items-center gap-2 border-b border-line px-3 py-1.5">
                 <IconButton
-                  label={selected.size ? 'Clear selection' : 'Select all shown'}
+                  label={selected.size ? 'Auswahl aufheben' : 'Alle angezeigten auswählen'}
                   className="size-8"
                   onClick={() => setSelected(selected.size ? new Set() : new Set(results.slice(0, limit).map((r) => r.note.id)))}
                 >
-                  {selected.size ? <CheckSquare className="size-[18px] text-accent-strong" /> : <Square className="size-[18px]" />}
+                  {selected.size ? <CheckSquare className="size-[18px] text-hafen" /> : <Square className="size-[18px]" />}
                 </IconButton>
-                <span className="text-[12.5px] text-faint">{selected.size ? `${selected.size} selected` : 'Select to edit many at once'}</span>
+                <span className="text-[13px] text-ink-muted">{selected.size ? `${selected.size} ausgewählt` : 'Auswählen, um mehrere auf einmal zu bearbeiten'}</span>
               </div>
               {results.slice(0, limit).map(({ note, cards, path }) => {
                 const st = status(cards, now);
@@ -229,26 +229,26 @@ export function Browse() {
                 return (
                   <div
                     key={note.id}
-                    className={cx('group flex items-center gap-2 border-b border-line px-3 py-2.5 last:border-b-0', openId === note.id ? 'bg-accent-soft' : sel ? 'bg-surface-2' : 'hover:bg-surface-2/50')}
+                    className={cx('group flex items-center gap-2 border-b border-line px-3 py-2.5 last:border-b-0', openId === note.id ? 'bg-hafen-soft' : sel ? 'bg-paper-sunk' : 'hover:bg-paper-sunk/50')}
                   >
-                    <button onClick={() => toggle(note.id)} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-faint hover:text-ink" aria-label="Select">
-                      {sel ? <CheckSquare className="size-[18px] text-accent-strong" /> : <Square className="size-[18px] opacity-50 group-hover:opacity-100" />}
+                    <button onClick={() => toggle(note.id)} className="flex size-8 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:text-ink" aria-label="Auswählen">
+                      {sel ? <CheckSquare className="size-[18px] text-hafen" /> : <Square className="size-[18px] opacity-50 group-hover:opacity-100" />}
                     </button>
                     <button onClick={() => (selected.size ? toggle(note.id) : open(note.id))} className="flex min-w-0 flex-1 flex-col text-left">
                       <span className="truncate text-[15px] font-medium">
                         {note.type === 'word' ? <GenderWord word={note.fields.german ?? ''} gender={note.fields.gender} /> : noteTitle(note)}
                       </span>
-                      <span className="truncate text-[13px] text-muted">{noteSubtitle(note)}</span>
+                      <span className="truncate text-[13px] text-ink-muted">{noteSubtitle(note)}</span>
                     </button>
                     <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
                       <Chip className="max-w-48 truncate">{path.split('::').slice(-2).join(' › ')}</Chip>
-                      {note.tags.length > 0 && <span className="max-w-48 truncate text-[11px] text-faint">{note.tags.map((t) => `#${t}`).join(' ')}</span>}
+                      {note.tags.length > 0 && <span className="max-w-48 truncate text-[11px] text-ink-muted">{note.tags.map((t) => `#${t}`).join(' ')}</span>}
                     </div>
                     <div className="w-20 shrink-0 text-right">
-                      <span className="text-[12.5px] font-semibold" style={{ color: st.color }}>
+                      <span className="text-[13px] font-semibold" style={{ color: st.color }}>
                         {st.label}
                       </span>
-                      {lapses >= 3 && <div className="text-[11px] text-again">{lapses} lapses</div>}
+                      {lapses >= 3 && <div className="text-[11px] font-semibold text-koralle-ink">{lapses} Fehler</div>}
                     </div>
                   </div>
                 );
@@ -256,7 +256,7 @@ export function Browse() {
               {results.length > limit && (
                 <div className="p-3 text-center">
                   <Button variant="ghost" onClick={() => setLimit((l) => l + 200)}>
-                    Show more ({results.length - limit} left)
+                    Mehr zeigen (noch {results.length - limit})
                   </Button>
                 </div>
               )}
@@ -268,8 +268,8 @@ export function Browse() {
           <div className="min-w-0">
             <Panel className="sticky top-6 max-h-[calc(100vh-48px)] overflow-y-auto p-5">
               <div className="mb-4 flex items-center justify-between">
-                <span className="text-[12px] font-semibold tracking-wide text-faint uppercase">Edit</span>
-                <IconButton label="Close" onClick={() => setOpenId(null)}>
+                <span className="t-overline text-ink-muted">Bearbeiten</span>
+                <IconButton label="Schließen" onClick={() => setOpenId(null)}>
                   <X className="size-5" />
                 </IconButton>
               </div>
@@ -281,31 +281,31 @@ export function Browse() {
 
       {selected.size > 0 && (
         <div className="pb-safe fixed inset-x-0 bottom-[calc(64px+var(--safe-bottom))] z-30 flex justify-center px-3 md:bottom-6">
-          <div className="anim-in flex max-w-full flex-wrap items-center justify-center gap-1 rounded-2xl border border-line bg-surface p-1.5 shadow-2xl">
+          <div className="anim-in flex max-w-full flex-wrap items-center justify-center gap-1 rounded-md border border-line bg-paper-raised p-1.5 shadow-2xl">
             <span className="px-2 text-[13px] font-semibold">{selected.size}</span>
             <Button size="sm" variant="ghost" icon={<FolderInput className="size-4" />} onClick={() => setMoveOpen(true)}>
-              Move
+              Verschieben
             </Button>
             <Button size="sm" variant="ghost" icon={<Tag className="size-4" />} onClick={() => setTagOpen(true)}>
-              Tag
+              Tags
             </Button>
-            <Button size="sm" variant="ghost" icon={<Pause className="size-4" />} onClick={async () => { await suspendNotes(ids, true); toast.success('Suspended'); }}>
-              Suspend
+            <Button size="sm" variant="ghost" icon={<Pause className="size-4" />} onClick={async () => { await suspendNotes(ids, true); toast.success('Ausgesetzt'); }}>
+              Aussetzen
             </Button>
-            <Button size="sm" variant="ghost" icon={<Play className="size-4" />} onClick={async () => { await suspendNotes(ids, false); toast.success('Unsuspended'); }}>
-              Resume
+            <Button size="sm" variant="ghost" icon={<Play className="size-4" />} onClick={async () => { await suspendNotes(ids, false); toast.success('Wieder aktiv'); }}>
+              Aktivieren
             </Button>
             <Button
               size="sm"
               variant="ghost"
               icon={<RotateCcw className="size-4" />}
               onClick={async () => {
-                if (!(await confirm(`Reset ${ids.length} notes?`, { body: 'Their cards become new again (review history is kept).', confirm: 'Reset' }))) return;
+                if (!(await confirm(`${ids.length} Notizen zurücksetzen?`, { body: 'Ihre Karten werden wieder neu (der Lernverlauf bleibt erhalten).', confirm: 'Zurücksetzen' }))) return;
                 await forgetNotes(ids);
-                toast.success('Reset');
+                toast.success('Zurückgesetzt');
               }}
             >
-              Reset
+              Zurücksetzen
             </Button>
             <Button
               size="sm"
@@ -320,24 +320,24 @@ export function Browse() {
                 navigate('/study?mode=cram&sel=1');
               }}
             >
-              Practice
+              Üben
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="text-again"
+              className="text-koralle-ink"
               icon={<Trash2 className="size-4" />}
               onClick={async () => {
-                if (!(await confirm(`Delete ${ids.length} notes?`, { body: 'Notes, cards and their review history are removed on all devices.', confirm: 'Delete', danger: true }))) return;
+                if (!(await confirm(`${ids.length} Notizen löschen?`, { body: 'Notizen, Karten und ihr Lernverlauf werden auf allen Geräten entfernt.', confirm: 'Löschen', danger: true }))) return;
                 await deleteNotes(ids);
                 setSelected(new Set());
                 if (openId && selected.has(openId)) setOpenId(null);
-                toast.success('Deleted');
+                toast.success('Gelöscht');
               }}
             >
-              Delete
+              Löschen
             </Button>
-            <IconButton label="Clear selection" onClick={() => setSelected(new Set())}>
+            <IconButton label="Auswahl aufheben" onClick={() => setSelected(new Set())}>
               <X className="size-4" />
             </IconButton>
           </div>
@@ -347,11 +347,11 @@ export function Browse() {
       <Modal
         open={moveOpen}
         onClose={() => setMoveOpen(false)}
-        title={`Move ${selected.size} notes`}
+        title={`${selected.size} Notizen verschieben`}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setMoveOpen(false)}>
-              Cancel
+            <Button onClick={() => setMoveOpen(false)}>
+              Abbrechen
             </Button>
             <Button
               variant="primary"
@@ -359,10 +359,10 @@ export function Browse() {
               onClick={async () => {
                 await moveNotes(ids, moveTo!);
                 setMoveOpen(false);
-                toast.success('Moved');
+                toast.success('Verschoben');
               }}
             >
-              Move
+              Verschieben
             </Button>
           </>
         }
@@ -372,11 +372,11 @@ export function Browse() {
       <Modal
         open={tagOpen}
         onClose={() => setTagOpen(false)}
-        title={`Add tags to ${selected.size} notes`}
+        title={`Tags für ${selected.size} Notizen`}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setTagOpen(false)}>
-              Cancel
+            <Button onClick={() => setTagOpen(false)}>
+              Abbrechen
             </Button>
             <Button
               variant="primary"
@@ -385,10 +385,10 @@ export function Browse() {
                 await tagNotes(ids, newTags);
                 setTagOpen(false);
                 setNewTags([]);
-                toast.success('Tagged');
+                toast.success('Tags hinzugefügt');
               }}
             >
-              Add tags
+              Tags hinzufügen
             </Button>
           </>
         }

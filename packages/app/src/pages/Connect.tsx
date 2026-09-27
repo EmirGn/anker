@@ -1,6 +1,6 @@
-import { CheckCircle2, Laptop, Smartphone, Wifi } from 'lucide-react';
+import { CheckCircle2, Laptop, Smartphone, Wifi } from '../components/icons';
 import { useEffect, useRef, useState } from 'react';
-import { Logo } from '../components/Logo';
+import { OttoBadge } from '../components/Otto';
 import { Button, Input, Label, Panel, toast } from '../components/ui';
 import { setMeta } from '../lib/db';
 import { useHub, useSyncState } from '../lib/hooks';
@@ -30,7 +30,7 @@ export function Connect() {
       const token = query.get('token');
       const conn = token ? await connectWithToken(u || window.location.origin, token) : await pairWithHub(u, c.replace(/\D/g, ''), deviceName());
       await setMeta('onboarded', true);
-      toast.success(`Connected to ${conn.name ?? 'your hub'}`);
+      toast.success(`Verbunden mit ${conn.name ?? 'deinem Mac'}`);
       await syncNow();
       navigate('/', { replace: true });
     } catch (e) {
@@ -66,80 +66,80 @@ export function Connect() {
   return (
     <div className="pt-safe mx-auto flex min-h-full max-w-md flex-col justify-center px-5 py-10">
       <div className="mb-6 flex items-center gap-3">
-        <Logo size={44} />
+        <OttoBadge size={64} mood="happy" />
         <div>
-          <h1 className="font-display text-[26px] leading-tight font-semibold">Connect to your Mac</h1>
-          <p className="text-sm text-muted">Sync decks & reviews and use the AI tutor.</p>
+          <h1 className="t-title">Mit deinem Mac verbinden</h1>
+          <p className="mt-1 text-[15px] text-ink-muted">Decks und Wiederholungen synchronisieren, den KI-Tutor nutzen.</p>
         </div>
       </div>
 
       {hub && !query.get('code') ? (
         <Panel className="p-5">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="size-6 text-good" />
+            <CheckCircle2 className="size-6 text-wiese" />
             <div className="min-w-0 flex-1">
-              <div className="font-semibold">Connected to {hub.name ?? 'hub'}</div>
-              <div className="truncate text-[13px] text-muted">
-                {hub.url} · {sync.status === 'idle' ? 'in sync' : sync.status}
+              <div className="t-label">Verbunden mit {hub.name ?? 'deinem Mac'}</div>
+              <div className="truncate text-[13px] text-ink-muted">
+                {hub.url} · {sync.status === 'idle' ? 'synchron' : sync.status === 'syncing' ? 'synchronisiert …' : sync.status === 'offline' ? 'nicht erreichbar' : 'Fehler'}
               </div>
             </div>
           </div>
           <div className="mt-4 flex gap-2">
             <Button variant="primary" onClick={() => navigate('/')}>
-              Done
+              Fertig
             </Button>
             <Button
               variant="ghost"
               onClick={async () => {
                 await setHub(null);
-                toast('Disconnected');
+                toast('Getrennt');
               }}
             >
-              Disconnect
+              Trennen
             </Button>
           </div>
         </Panel>
       ) : (
         <>
-          <ol className="mb-6 space-y-3 text-[14px] text-muted">
+          <ol className="mb-6 space-y-3 text-[15px] text-ink-muted">
             <li className="flex gap-3">
-              <Laptop className="mt-0.5 size-5 shrink-0 text-accent" />
+              <Laptop className="size-6 shrink-0 text-ink" />
               <span>
-                On your Mac, open <b className="text-ink">Anker → Settings → Sync & devices → Pair a phone</b>.
+                Öffne auf deinem Mac <b className="text-ink">Anker → Einstellungen → Sync & Geräte → Handy koppeln</b>.
               </span>
             </li>
             <li className="flex gap-3">
-              <Smartphone className="mt-0.5 size-5 shrink-0 text-accent" />
-              <span>Scan the QR code with your camera — or type the address and 6-digit code below.</span>
+              <Smartphone className="size-6 shrink-0 text-ink" />
+              <span>Scanne den QR-Code mit der Kamera – oder gib unten Adresse und 6-stelligen Code ein.</span>
             </li>
             <li className="flex gap-3">
-              <Wifi className="mt-0.5 size-5 shrink-0 text-accent" />
-              <span>Both devices need to be on the same Wi‑Fi (or on Tailscale when you're away).</span>
+              <Wifi className="size-6 shrink-0 text-ink" />
+              <span>Beide Geräte müssen im selben WLAN sein (unterwegs über Tailscale).</span>
             </li>
           </ol>
           <Panel className="space-y-4 p-5">
             <div>
-              <Label hint={found ? `Found “${found}”` : undefined}>Hub address</Label>
+              <Label hint={found ? `„${found}“ gefunden` : undefined}>Adresse des Macs</Label>
               <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="192.168.1.23:4747" inputMode="url" autoCapitalize="off" autoCorrect="off" />
             </div>
             <div>
-              <Label>Pairing code</Label>
+              <Label>Kopplungscode</Label>
               <Input
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="123456"
                 inputMode="numeric"
-                className="text-center font-mono text-[24px] tracking-[0.4em]"
+                className="text-center font-mono text-[22px] tracking-[0.4em]"
                 onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && void connect()}
               />
             </div>
-            {error && <div className="rounded-xl bg-again/10 px-3.5 py-2.5 text-[13.5px] text-again">{error}</div>}
+            {error && <div className="rounded-md bg-koralle-soft px-3.5 py-2.5 text-[13px] font-medium text-koralle-ink">{error}</div>}
             <Button variant="primary" size="lg" className="w-full" loading={busy} disabled={!url.trim() || code.length !== 6} onClick={() => void connect()}>
-              Connect
+              Verbinden
             </Button>
           </Panel>
-          <button onClick={() => navigate('/')} className="mt-5 text-center text-sm font-medium text-muted hover:text-ink">
-            Use offline for now
+          <button onClick={() => navigate('/')} className="t-label mt-4 h-11 text-center text-ink-muted hover:text-ink">
+            Erst mal offline nutzen
           </button>
         </>
       )}

@@ -25,7 +25,7 @@ export function UmlautBar({ onInsert, className }: { onInsert: (ch: string) => v
           tabIndex={-1}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onInsert(c)}
-          className="h-8 min-w-8 rounded-lg border border-line bg-surface px-2 text-[15px] font-medium text-muted transition-colors hover:border-accent hover:text-ink"
+          className="h-8 min-w-8 rounded-sm border border-line bg-paper-raised px-2 text-[15px] font-medium text-ink-muted transition-colors hover:border-hafen hover:text-ink"
         >
           {c}
         </button>

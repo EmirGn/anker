@@ -1,21 +1,16 @@
-import {
-  dayKey,
-  DAY,
-  forecast,
-  knownNoteCount,
-  reviewsByDay,
-  streak,
-  summarizeLogs,
-  formatDuration,
-  withArticle,
-  type Note,
-} from '@anker/core';
-import { ArrowRight, BookOpen, Brain, Calculator, Clock, Flame, Headphones, Library, Plus, Send, Sparkles, Target, Zap } from 'lucide-react';
+import { dayKey, DAY, knownNoteCount, reviewsByDay, streak, summarizeLogs, forecast, withArticle, type Note } from '@anker/core';
+import { BookOpenTextIcon, CaretRightIcon, CheckCircleIcon, CheckIcon, type Icon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 import { Heatmap } from '../components/charts';
-import { GenderWord, SpeakButton } from '../components/CardView';
-import { Button, Chip, cx, Panel, Ring } from '../components/ui';
+import { GenderTag, SpeakButton } from '../components/CardView';
+import { DeckCover } from '../components/DeckCover';
+import { Brain, Calculator, Clock, Flame, Headphones, Layers, Library, Plus, Send, Sparkles, Target, Zap } from '../components/icons';
+import { StreakBadge } from '../components/Layout';
+import { Wordmark } from '../components/Logo';
+import { OttoBadge } from '../components/Otto';
+import { Button, cx, Modal, Panel } from '../components/ui';
 import { db } from '../lib/db';
+import { anzahl, dauer } from '../lib/format';
 import { useDeckCounts, useDecks, useHub, useLiveQuery, usePrefs, useTodayLogs } from '../lib/hooks';
 import { Link, navigate } from '../lib/router';
 import { renderField } from '../lib/sanitize';
@@ -28,36 +23,106 @@ function greeting(h: number) {
   return 'Gute Nacht';
 }
 
+const TINT = {
+  koralle: { bg: 'var(--koralle-soft)', fg: 'var(--koralle-ink)' },
+  hafen: { bg: 'var(--hafen-soft)', fg: 'var(--hafen)' },
+  sonne: { bg: 'var(--sonne)', fg: 'var(--on-sonne)' },
+  krake: { bg: 'var(--krake-soft)', fg: 'var(--krake-deep)' },
+  tanne: { bg: 'var(--tanne)', fg: 'var(--tanne-on)' },
+  neutral: { bg: 'var(--paper-sunk)', fg: 'var(--ink)' },
+} as const;
+
 export const DRILLS = [
-  { id: 'artikel', title: 'Artikel-Blitz', desc: 'der, die oder das? 60 seconds.', icon: Zap, color: 'var(--der)' },
-  { id: 'zahlen', title: 'Zahlen-Diktat', desc: 'Hear German numbers, type them.', icon: Calculator, color: 'var(--das)' },
-  { id: 'uhrzeit', title: 'Wie spät ist es?', desc: '„Viertel vor drei“ & friends.', icon: Clock, color: 'var(--hard)' },
-  { id: 'kasus', title: 'Kasus-Trainer', desc: 'Prepositions → the right article.', icon: Target, color: 'var(--die)' },
-  { id: 'verben', title: 'Stammformen', desc: 'fahren · fuhr · ist gefahren', icon: Brain, color: 'var(--pl)' },
-  { id: 'diktat', title: 'Diktat', desc: 'Listen and write your own words.', icon: Headphones, color: 'var(--easy)' },
+  { id: 'artikel', title: 'Artikel-Blitz', desc: 'der, die oder das? 60 Sekunden.', icon: Zap, tint: TINT.koralle },
+  { id: 'zahlen', title: 'Zahlen-Diktat', desc: 'Zahlen hören und tippen.', icon: Calculator, tint: TINT.hafen },
+  { id: 'uhrzeit', title: 'Wie spät ist es?', desc: '„Viertel vor drei“ und Co.', icon: Clock, tint: TINT.sonne },
+  { id: 'kasus', title: 'Kasus-Trainer', desc: 'Präposition → der richtige Artikel.', icon: Target, tint: TINT.krake },
+  { id: 'verben', title: 'Stammformen', desc: 'fahren · fuhr · ist gefahren', icon: Brain, tint: TINT.tanne },
+  { id: 'diktat', title: 'Diktat', desc: 'Hör zu und schreib deine Wörter.', icon: Headphones, tint: TINT.neutral },
 ] as const;
 
+/** Word of the day: a sonne card, text in on-sonne; the gender shows as a chip. */
 function WordOfTheDay({ note }: { note: Note }) {
   const f = note.fields;
   return (
-    <Panel className="relative overflow-hidden p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-[11px] font-semibold tracking-[0.16em] text-faint uppercase">Wort des Tages</span>
-        <SpeakButton text={withArticle(f.german ?? '', f.gender)} className="-my-2 -mr-2" />
+    <div className="rounded-md bg-sonne p-4 text-on-sonne">
+      <div className="flex items-center justify-between">
+        <span className="t-overline">Wort des Tages</span>
+        <SpeakButton text={withArticle(f.german ?? '', f.gender)} className="-my-2 -mr-1 bg-transparent text-on-sonne hover:bg-[#3a2a0014] hover:text-on-sonne" />
       </div>
       <Link to={`/edit/${note.id}`} className="block">
-        <div className="font-display text-[30px] leading-tight font-semibold">
-          <GenderWord word={f.german ?? ''} gender={f.gender} />
+        <div className="mt-1 flex items-center gap-2">
+          <GenderTag gender={f.gender} long />
         </div>
-        <div className="mt-1 text-[15px] text-muted" dangerouslySetInnerHTML={{ __html: renderField(f.english) }} />
+        <div className="t-title mt-2" lang="de">
+          {f.german}
+        </div>
+        <div className="t-body mt-0.5" dangerouslySetInnerHTML={{ __html: renderField(f.english) }} />
         {f.example && (
-          <div className="mt-4 border-l-2 border-accent pl-3">
-            <div className="font-display text-[15.5px] italic" dangerouslySetInnerHTML={{ __html: renderField(f.example) }} />
-            {f.exampleTranslation && <div className="mt-0.5 text-[13px] text-faint" dangerouslySetInnerHTML={{ __html: renderField(f.exampleTranslation) }} />}
+          <div className="mt-4 rounded-md bg-[#fffaf0] px-3.5 py-2.5 text-[#141414]">
+            <div className="t-body" lang="de" dangerouslySetInnerHTML={{ __html: renderField(f.example) }} />
+            {f.exampleTranslation && <div className="t-caption text-[#6f685c]" dangerouslySetInnerHTML={{ __html: renderField(f.exampleTranslation) }} />}
           </div>
         )}
       </Link>
-    </Panel>
+    </div>
+  );
+}
+
+interface Mission {
+  text: string;
+  detail?: string;
+  done: boolean;
+  icon: Icon | typeof Flame;
+  tint: { bg: string; fg: string };
+}
+
+function MissionSheet({ open, onClose, missions }: { open: boolean; onClose: () => void; missions: Mission[] }) {
+  const done = missions.filter((m) => m.done).length;
+  const all = done === missions.length;
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={<span className="t-title">Deine Tagesmission</span>}
+      footer={
+        <Button
+          variant="primary"
+          size="lg"
+          className="w-full"
+          onClick={() => {
+            onClose();
+            if (!all) navigate('/study');
+          }}
+        >
+          Weiter
+        </Button>
+      }
+    >
+      <div>
+        {missions.map((m, i) => (
+          <div key={i} className={cx('flex items-center gap-3 py-3', i > 0 && 'border-t border-line')}>
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-md" style={{ background: m.tint.bg, color: m.tint.fg }}>
+              <m.icon className="size-6" weight="fill" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="t-label block">{m.text}</span>
+              {m.detail && <span className="t-caption block text-ink-muted">{m.detail}</span>}
+            </span>
+            {m.done ? (
+              <span className="anim-pop flex size-6 items-center justify-center rounded-full bg-wiese text-on-wiese" aria-label="Geschafft">
+                <CheckIcon weight="bold" className="size-3.5" />
+              </span>
+            ) : (
+              <span className="size-[22px] rounded-full border-2 border-line" aria-label="Offen" />
+            )}
+          </div>
+        ))}
+        <div className={cx('t-overline mt-2 rounded-sm px-3 py-1.5 text-center', all ? 'bg-wiese text-on-wiese' : 'bg-paper-sunk text-ink-muted')}>
+          {all ? `${missions.length} Missionen geschafft` : `${done} von ${missions.length} geschafft`}
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -68,6 +133,7 @@ export function Today({ due }: { due: number }) {
   const todayLogs = useTodayLogs();
   const hub = useHub();
   const [ask, setAsk] = useState('');
+  const [missionOpen, setMissionOpen] = useState(false);
   const now = Date.now();
   const since = now - 371 * DAY;
   const yearLogs = useLiveQuery(() => db.revlog.where('review').above(since).toArray(), [Math.floor(since / DAY)]);
@@ -105,230 +171,218 @@ export function Today({ due }: { due: number }) {
     return pool.sort((a, b) => a.id.localeCompare(b.id))[h % pool.length]!;
   }, [wordNotes, prefs.rolloverHour]);
 
-  const topDecks = useMemo(() => {
+  // "Decks für dich": leaf decks with the most due cards first.
+  const forYou = useMemo(() => {
     if (!decks || !counts) return [];
+    const hasChildren = new Set(decks.map((d) => d.parentId).filter(Boolean));
     return decks
-      .filter((d) => !d.parentId || !decks.some((p) => p.id === d.parentId))
+      .filter((d) => !hasChildren.has(d.id))
       .map((d) => ({ d, c: counts.get(d.id)! }))
       .filter((x) => x.c)
-      .sort((a, b) => b.c.review + b.c.learn + b.c.new - (a.c.review + a.c.learn + a.c.new))
-      .slice(0, 5);
+      .sort((a, b) => b.c.review + b.c.learn + b.c.new - (a.c.review + a.c.learn + a.c.new) || a.d.name.localeCompare(b.d.name))
+      .slice(0, 8);
   }, [decks, counts]);
 
   const goal = Math.max(1, prefs.dailyGoal);
-  const progress = today.reviews / goal;
+  const newTarget = Math.min(5, today.learned + totals.new);
+  const missions: Mission[] = [
+    { text: 'Serie fortsetzen', detail: st.current ? `${anzahl(st.current, 'Tag', 'Tage')} in Folge` : undefined, done: today.reviews > 0, icon: Flame, tint: TINT.koralle },
+    { text: `${goal} Karten wiederholen`, detail: `${Math.min(today.reviews, goal)} von ${goal}`, done: today.reviews >= goal, icon: Layers, tint: TINT.hafen },
+    {
+      text: newTarget ? `${newTarget} neue Wörter lernen` : 'Neue Wörter lernen',
+      detail: newTarget ? `${Math.min(today.learned, newTarget)} von ${newTarget}` : 'Heute keine neuen Karten übrig',
+      done: newTarget === 0 || today.learned >= newTarget,
+      icon: BookOpenTextIcon,
+      tint: TINT.krake,
+    },
+  ];
+
   const hour = new Date().getHours();
   const dateStr = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
   const allDone = due === 0 && (cards?.length ?? 0) > 0;
   const empty = decks !== undefined && decks.length === 0;
+  const minutes = Math.round(today.timeMs / 60_000);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-6 pb-10 md:px-8 md:pt-10">
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[13px] font-medium text-faint capitalize">{dateStr}</p>
-          <h1 className="font-display text-[30px] leading-tight font-semibold tracking-tight md:text-[38px]">
-            {greeting(hour)}
-            {prefs.name ? `, ${prefs.name}` : ''}!
-          </h1>
+    <div className="mx-auto max-w-3xl px-5 pt-5 pb-10 md:px-8 md:pt-10">
+      {!empty && (
+        <div className="mb-6 flex items-center justify-between md:hidden">
+          <Wordmark size={32} />
+          <StreakBadge days={st.current} />
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-sm font-semibold shadow-card" title={`Longest streak: ${st.longest} days`}>
-          <Flame className={cx('size-[18px]', st.current > 0 ? 'anim-flame text-hard' : 'text-faint')} />
-          {st.current}
-          <span className="font-normal text-muted">{st.current === 1 ? 'day' : 'days'}</span>
-        </div>
-      </div>
+      )}
 
-      <div className="grid gap-4 md:grid-cols-[1.35fr_1fr]">
-        <Panel className="relative overflow-hidden p-5 md:p-6">
-          <div
-            className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full opacity-60 blur-3xl"
-            style={{ background: 'radial-gradient(circle, var(--accent-soft), transparent 70%)' }}
-          />
-          {empty ? (
-            <div className="relative">
-              <h2 className="font-display text-2xl font-semibold">Let's build your first deck</h2>
-              <p className="mt-2 max-w-md text-[15px] text-muted">
-                Start with a curated starter deck, add your own words, import from Anki — or ask the tutor to build a deck for you.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Button variant="primary" size="lg" onClick={() => navigate('/welcome')} icon={<Library className="size-5" />}>
-                  Starter decks
-                </Button>
-                <Button size="lg" onClick={() => navigate('/add')} icon={<Plus className="size-5" />}>
-                  Add words
-                </Button>
-              </div>
+      <p className="t-overline text-ink-muted">{dateStr}</p>
+      <h1 className="t-hero mt-1.5">
+        {greeting(hour)}
+        {prefs.name ? `, ${prefs.name}` : ''}.
+      </h1>
+
+      {empty ? (
+        <Panel className="mt-6 flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center">
+          <OttoBadge size={96} mood="happy" />
+          <div className="min-w-0 flex-1">
+            <h2 className="t-heading">Dein erstes Deck</h2>
+            <p className="mt-1 text-[15px] text-ink-muted">Starte mit einem Starter-Deck, füge eigene Wörter hinzu oder importiere aus Anki.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="primary" size="lg" onClick={() => navigate('/welcome')} icon={<Library className="size-5" />}>
+                Starter-Decks
+              </Button>
+              <Button size="lg" onClick={() => navigate('/add')} icon={<Plus className="size-5" />}>
+                Wörter hinzufügen
+              </Button>
             </div>
-          ) : allDone ? (
-            <div className="relative">
-              <div className="text-[40px] leading-none">🎉</div>
-              <h2 className="mt-3 font-display text-[26px] font-semibold">Alles erledigt!</h2>
-              <p className="mt-1 text-[15px] text-muted">
-                You're done for today{today.reviews ? ` — ${today.reviews} reviews in ${formatDuration(today.timeMs)}` : ''}.{' '}
-                {tomorrow ? `${tomorrow} cards are due tomorrow.` : ''}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Button onClick={() => navigate('/practice')} icon={<Zap className="size-4" />}>
-                  Practice games
-                </Button>
-                <Button onClick={() => navigate('/add')} icon={<Plus className="size-4" />}>
-                  Add new words
-                </Button>
+          </div>
+        </Panel>
+      ) : (
+        <>
+          {/* Stat card with the mission strip */}
+          <div className="mt-6 overflow-hidden rounded-md border border-line bg-paper-raised">
+            <div className="grid grid-cols-4 py-3 text-center">
+              {[
+                { n: st.current, l: st.current === 1 ? 'Tag' : 'Tage', c: 'var(--koralle-ink)', flame: true },
+                { n: known, l: 'Wörter', c: 'var(--hafen)' },
+                { n: minutes, l: 'Min.', c: 'var(--wiese)' },
+                { n: today.reviews, l: 'Karten', c: 'var(--ink)' },
+              ].map((s, i) => (
+                <div key={s.l} className={cx('px-1', i > 0 && 'border-l border-line')}>
+                  <div className="t-stat flex items-center justify-center gap-0.5" style={{ color: s.c }}>
+                    {s.flame && <Flame weight="fill" className="size-[18px]" />}
+                    {s.n.toLocaleString('de-DE')}
+                  </div>
+                  <div className="t-caption text-ink-muted">{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setMissionOpen(true)} className="t-overline flex w-full items-center justify-between bg-hafen px-3 py-2 text-on-hafen">
+              <span>Deine Tagesmission · {missions.filter((m) => m.done).length}/3</span>
+              <CaretRightIcon weight="bold" className="size-4" />
+            </button>
+          </div>
+
+          {allDone ? (
+            <div className="mt-4 flex items-center gap-3 rounded-md bg-wiese-soft px-4 py-3.5">
+              <CheckCircleIcon weight="fill" className="size-7 shrink-0 text-wiese" />
+              <div className="min-w-0">
+                <div className="t-label">Alles erledigt!</div>
+                <div className="t-caption text-ink-muted">
+                  {today.reviews ? `${anzahl(today.reviews, 'Karte', 'Karten')} in ${dauer(today.timeMs)}. ` : ''}
+                  {tomorrow ? `Morgen ${tomorrow === 1 ? 'ist 1 Karte' : `sind ${tomorrow} Karten`} fällig.` : ''}
+                </div>
               </div>
             </div>
           ) : (
-            <div className="relative flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-[13px] font-medium text-muted">Due today</div>
-                <div className="font-display text-[56px] leading-none font-semibold tracking-tight tabular-nums">{due}</div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  <Chip color="var(--easy)">{totals.new} new</Chip>
-                  <Chip color="var(--again)">{totals.learn} learning</Chip>
-                  <Chip color="var(--good)">{totals.review} review</Chip>
-                </div>
-                <Button variant="primary" size="lg" className="mt-5" onClick={() => navigate('/study')}>
-                  Start studying <ArrowRight className="size-5" />
-                </Button>
-              </div>
-              <Ring value={progress} size={116} stroke={10}>
-                <div className="text-center">
-                  <div className="text-[22px] font-semibold tabular-nums">{today.reviews}</div>
-                  <div className="text-[11px] text-faint">of {goal}</div>
-                </div>
-              </Ring>
-            </div>
-          )}
-        </Panel>
-
-        {wotd ? (
-          <WordOfTheDay note={wotd} />
-        ) : (
-          <Panel className="flex flex-col justify-between p-5">
-            <div>
-              <div className="text-[11px] font-semibold tracking-[0.16em] text-faint uppercase">Tipp</div>
-              <p className="mt-2 font-display text-[19px] leading-snug">
-                Nouns ending in <b>-ung</b>, <b>-heit</b>, <b>-keit</b> are always <span style={{ color: 'var(--die)' }}>die</span>.
+            <div className="mt-4">
+              <Button variant="primary" size="lg" className="w-full" onClick={() => navigate('/study')}>
+                {anzahl(due, 'Karte', 'Karten')} wiederholen
+              </Button>
+              <p className="t-caption mt-2 text-center text-ink-muted tabular-nums">
+                <span className="font-bold text-hafen">{totals.new}</span> neu · <span className="font-bold text-koralle-ink">{totals.learn}</span> in Arbeit ·{' '}
+                <span className="font-bold text-wiese">{totals.review}</span> fällig
               </p>
             </div>
-            <Link to="/grammar/genus" className="mt-4 text-sm font-medium text-accent-strong">
-              More gender rules →
-            </Link>
-          </Panel>
-        )}
-      </div>
+          )}
+        </>
+      )}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {[
-          { label: 'Reviewed today', value: today.reviews },
-          { label: 'Time today', value: today.timeMs ? formatDuration(today.timeMs) : '—' },
-          { label: 'Correct', value: today.correctRate === null ? '—' : `${Math.round(today.correctRate * 100)}%` },
-          { label: 'Words known', value: known },
-        ].map((s) => (
-          <Panel key={s.label} className="px-4 py-3">
-            <div className="text-[12px] text-faint">{s.label}</div>
-            <div className="mt-0.5 text-[20px] font-semibold tabular-nums">{s.value}</div>
-          </Panel>
-        ))}
-      </div>
+      {forYou.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="t-heading">Decks für dich</h2>
+            <Link to="/decks" className="t-label text-hafen">
+              Alle
+            </Link>
+          </div>
+          <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
+            {forYou.map(({ d, c }) => {
+              const n = c.new + c.learn + c.review;
+              return (
+                <Link key={d.id} to={`/decks/${d.id}`} className="w-[104px] shrink-0 rounded-sm">
+                  <DeckCover deck={d} />
+                  <div className="t-caption mt-1.5 text-ink-muted">{n ? `${n} fällig` : 'Erledigt'}</div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {wotd && (
+        <section className="mt-8">
+          <WordOfTheDay note={wotd} />
+        </section>
+      )}
 
       {hub && (
         <form
-          className="mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface p-2 pl-4 shadow-card"
+          className="mt-6 flex items-center gap-2 rounded-md border border-line bg-paper-raised py-1.5 pr-1.5 pl-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (!ask.trim()) return;
             navigate(`/tutor?q=${encodeURIComponent(ask.trim())}`);
           }}
         >
-          <Sparkles className="size-5 shrink-0 text-accent" />
+          <Sparkles className="size-5 shrink-0 text-ink-muted" />
           <input
             value={ask}
             onChange={(e) => setAsk(e.target.value)}
-            placeholder="Ask the tutor — “Make me 20 cards about cooking” or “Wann benutzt man ‘seit’?”"
-            className="h-10 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint"
+            placeholder="Frag den Tutor – „Wann benutzt man ‚seit‘?“"
+            className="h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink-muted"
           />
-          <Button type="submit" variant="primary" size="md" disabled={!ask.trim()} aria-label="Ask">
-            <Send className="size-4" />
-          </Button>
+          <button type="submit" disabled={!ask.trim()} aria-label="Fragen" className="flex size-11 items-center justify-center rounded-md bg-paper-sunk text-ink disabled:opacity-40">
+            <Send className="size-5" />
+          </button>
         </form>
       )}
 
-      <div className="mt-8 mb-3 flex items-center justify-between">
-        <h2 className="text-[13px] font-semibold tracking-wide text-muted uppercase">Übungen</h2>
-        <Link to="/practice" className="text-sm font-medium text-accent-strong">
-          All →
-        </Link>
-      </div>
-      <div className="thin-scroll -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
-        {DRILLS.map((d) => {
-          const Icon = d.icon;
-          return (
-            <Link
-              key={d.id}
-              to={`/practice/${d.id}`}
-              className="group w-[210px] shrink-0 snap-start rounded-2xl border border-line bg-surface p-4 transition-all hover:-translate-y-0.5 hover:shadow-card md:w-auto"
-            >
-              <div className="flex size-9 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${d.color} 15%, transparent)`, color: d.color }}>
-                <Icon className="size-5" />
-              </div>
-              <div className="mt-3 font-semibold">{d.title}</div>
-              <div className="mt-0.5 text-[13px] text-muted">{d.desc}</div>
-            </Link>
-          );
-        })}
-      </div>
+      <section className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="t-heading">Übungen</h2>
+          <Link to="/practice" className="t-label text-hafen">
+            Alle
+          </Link>
+        </div>
+        <Panel className="divide-y divide-line overflow-hidden">
+          {DRILLS.slice(0, 4).map((d) => {
+            const Icon = d.icon;
+            return (
+              <Link key={d.id} to={`/practice/${d.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-paper-sunk">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-md" style={{ background: d.tint.bg, color: d.tint.fg }}>
+                  <Icon className="size-6" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="t-label block">{d.title}</span>
+                  <span className="t-caption block truncate text-ink-muted">{d.desc}</span>
+                </span>
+                <CaretRightIcon className="size-5 text-ink-muted" />
+              </Link>
+            );
+          })}
+        </Panel>
+      </section>
 
-      {topDecks.length > 0 && (
-        <>
-          <div className="mt-8 mb-3 flex items-center justify-between">
-            <h2 className="text-[13px] font-semibold tracking-wide text-muted uppercase">Decks</h2>
-            <Link to="/decks" className="text-sm font-medium text-accent-strong">
-              All →
-            </Link>
-          </div>
-          <Panel className="divide-y divide-line">
-            {topDecks.map(({ d, c }) => (
-              <div key={d.id} className="flex items-center gap-3 px-4 py-3">
-                <Link to={`/decks/${d.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-lg">{d.emoji ?? '📚'}</span>
-                  <span className="truncate font-medium">{d.name}</span>
-                </Link>
-                <div className="flex gap-2 text-[13px] font-semibold tabular-nums">
-                  <span style={{ color: 'var(--easy)' }}>{c.new}</span>
-                  <span style={{ color: 'var(--again)' }}>{c.learn}</span>
-                  <span style={{ color: 'var(--good)' }}>{c.review}</span>
-                </div>
-                <Button size="sm" variant={c.new + c.learn + c.review ? 'primary' : 'secondary'} onClick={() => navigate(`/study/${d.id}`)}>
-                  Study
-                </Button>
-              </div>
-            ))}
-          </Panel>
-        </>
-      )}
-
-      <div className="mt-8 mb-3 flex items-center justify-between">
-        <h2 className="text-[13px] font-semibold tracking-wide text-muted uppercase">Your year</h2>
-        <Link to="/stats" className="text-sm font-medium text-accent-strong">
-          Stats →
-        </Link>
-      </div>
-      <Panel className="p-4">
-        <Heatmap days={days} weeks={26} rolloverHour={prefs.rolloverHour} />
-      </Panel>
+      <section className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="t-heading">Dein Jahr</h2>
+          <Link to="/stats" className="t-label text-hafen">
+            Statistik
+          </Link>
+        </div>
+        <Panel className="p-4">
+          <Heatmap days={days} weeks={26} rolloverHour={prefs.rolloverHour} />
+        </Panel>
+      </section>
 
       {!hub && (
-        <Panel className="mt-6 flex flex-wrap items-center gap-4 p-5">
-          <BookOpen className="size-6 text-accent" />
+        <Panel className="mt-6 flex flex-wrap items-center gap-4 p-4">
           <div className="min-w-0 flex-1">
-            <div className="font-semibold">Connect to your Mac</div>
-            <div className="text-sm text-muted">Sync decks between devices and unlock the AI tutor (Claude & Codex).</div>
+            <div className="t-label">Mit deinem Mac verbinden</div>
+            <div className="t-caption text-ink-muted">Decks zwischen Geräten synchronisieren und den KI-Tutor nutzen (Claude & Codex).</div>
           </div>
-          <Button onClick={() => navigate('/connect')}>Connect</Button>
+          <Button onClick={() => navigate('/connect')}>Verbinden</Button>
         </Panel>
       )}
-      <div className="h-4" />
+      <MissionSheet open={missionOpen} onClose={() => setMissionOpen(false)} missions={missions} />
     </div>
   );
 }

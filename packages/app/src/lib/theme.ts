@@ -20,7 +20,7 @@ const listeners = new Set<() => void>();
 export function applyTheme() {
   const t = resolvedTheme();
   document.documentElement.dataset.theme = t;
-  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', t === 'dark' ? '#0e1116' : '#f6f3ee'));
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', t === 'dark' ? '#16140f' : '#fbf6ee'));
   void import('./platform').then(async ({ isNative }) => {
     if (!isNative) return;
     try {

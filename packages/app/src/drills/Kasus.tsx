@@ -95,8 +95,8 @@ export function Kasus() {
   if (phase === 'start')
     return (
       <GameShell title="Kasus-Trainer">
-        <StartScreen emoji="🎯" title="Kasus-Trainer" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
-          mit, für, auf, wegen… Pick the article that follows. For Wechselpräpositionen watch the question: <b>Wo?</b> → Dativ, <b>Wohin?</b> → Akkusativ.
+        <StartScreen game="kasus" title="Kasus-Trainer" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
+          mit, für, auf, wegen … Wähl den Artikel, der folgt. Bei Wechselpräpositionen zählt die Frage: <b>Wo?</b> → Dativ, <b>Wohin?</b> → Akkusativ.
         </StartScreen>
       </GameShell>
     );
@@ -115,18 +115,18 @@ export function Kasus() {
       <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
         <div className="space-y-3">
           {q.context && (
-            <span className={cx('inline-block rounded-full px-3 py-1 text-[13px] font-semibold', q.context === 'Wo?' ? 'bg-easy/12 text-easy' : 'bg-hard/15 text-hard')}>
-              {q.context} {q.context === 'Wo?' ? '(position)' : '(direction)'}
+            <span className={cx('inline-block rounded-full px-3 py-1 text-[13px] font-semibold', q.context === 'Wo?' ? 'bg-paper-sunk text-ink' : 'bg-sonne text-on-sonne')}>
+              {q.context} {q.context === 'Wo?' ? '(Ort)' : '(Richtung)'}
             </span>
           )}
-          <div className="font-display text-[38px] leading-tight font-semibold md:text-[46px]">
+          <div className="t-title md:text-[44px] md:leading-[46px]" lang="de">
             {q.prep.word}{' '}
-            <span className={cx('inline-block min-w-20 rounded-xl border-b-4 px-2', !picked ? 'border-accent text-faint' : ok ? 'border-good text-good' : 'border-again text-again')}>
+            <span className={cx('inline-block min-w-20 rounded-md border-b-4 px-2', !picked ? 'border-hafen text-ink-muted' : ok ? 'border-wiese text-wiese' : 'border-koralle-ink text-koralle-ink')}>
               {picked ? q.answer : '___'}
             </span>{' '}
             {q.word}
           </div>
-          <div className="text-[15px] text-muted">
+          <div className="text-[15px] text-ink-muted">
             ({GENDER_ARTICLE[q.gender]} <span style={{ color: GENDER_VAR[q.gender] }}>{q.word}</span>
             {q.gender === 'pl' ? ', Plural' : ''}) · {q.prep.meaning}
           </div>
@@ -137,34 +137,34 @@ export function Kasus() {
               key={o}
               onClick={() => choose(o)}
               className={cx(
-                'h-14 rounded-2xl border text-[19px] font-semibold transition-colors',
-                !picked && 'border-line bg-surface hover:bg-surface-2',
-                picked && o === q.answer && 'border-good bg-good/12 text-good',
-                picked === o && o !== q.answer && 'anim-shake border-again bg-again/10 text-again',
+                'h-14 rounded-md border text-[20px] font-semibold transition-colors',
+                !picked && 'border-line bg-paper-raised hover:bg-paper-sunk',
+                picked && o === q.answer && 'border-wiese bg-wiese-soft text-wiese',
+                picked === o && o !== q.answer && 'anim-shake border-koralle-ink bg-koralle-soft text-koralle-ink',
                 picked && o !== q.answer && picked !== o && 'border-line opacity-40',
               )}
             >
               {o}
-              <span className="ml-1.5 text-[11px] font-medium text-faint">{i + 1}</span>
+              <span className="ml-1.5 text-[11px] font-medium text-ink-muted">{i + 1}</span>
             </button>
           ))}
         </div>
         {picked && (
           <div className="anim-in w-full max-w-md space-y-3">
-            <div className="rounded-2xl bg-surface-2 px-4 py-3 text-[14.5px]">
+            <div className="rounded-md bg-paper-raised px-4 py-3 text-[15px]">
               <b>{q.prep.word}</b> + {q.prep.case === 'wechsel' ? `${q.context} → ` : ''}
               <b>{CASE_NAME[q.kase]}</b>: {GENDER_ARTICLE[q.gender]} → <b>{q.answer}</b>
               {contracted && (
-                <span className="text-muted">
+                <span className="text-ink-muted">
                   {' '}
-                  · usually contracted: <b>{contracted}</b>
+                  · meist verkürzt: <b>{contracted}</b>
                 </span>
               )}
-              {q.kase === 'dat' && q.gender === 'pl' && <div className="mt-1 text-[13px] text-muted">Dativ plural: the noun also gets -n (unless it already ends in -n or -s).</div>}
-              {q.kase === 'gen' && (q.gender === 'der' || q.gender === 'das') && <div className="mt-1 text-[13px] text-muted">Genitiv: masculine/neuter nouns add -(e)s, e.g. des Wetters.</div>}
+              {q.kase === 'dat' && q.gender === 'pl' && <div className="mt-1 text-[13px] text-ink-muted">Dativ Plural: Das Nomen bekommt auch ein -n (außer es endet schon auf -n oder -s).</div>}
+              {q.kase === 'gen' && (q.gender === 'der' || q.gender === 'das') && <div className="mt-1 text-[13px] text-ink-muted">Genitiv: Maskuline und neutrale Nomen bekommen -(e)s, z. B. des Wetters.</div>}
             </div>
             <Button variant="primary" size="lg" className="w-full" onClick={next} autoFocus>
-              {round + 1 >= ROUNDS ? 'Finish' : 'Next'}
+              {round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
             </Button>
           </div>
         )}

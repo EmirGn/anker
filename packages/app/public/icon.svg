@@ -1,25 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2f3c5c"/>
-      <stop offset="1" stop-color="#121827"/>
-    </linearGradient>
-    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="0" y1="6" x2="0" y2="58">
-      <stop offset="0" stop-color="#ffd98f"/>
-      <stop offset="1" stop-color="#e3972c"/>
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="1.6" stdDeviation="1.6" flood-color="#000" flood-opacity="0.35"/>
-    </filter>
-  </defs>
-  <rect x="0" y="0" width="512" height="512" rx="71.45631067961165" fill="url(#bg)"/>
-  <rect x="122.88" y="88.064" width="266.24" height="348.16" rx="35.84" fill="#ffffff" fill-opacity="0.07" transform="rotate(-9 256 262.144)"/>
-  <g transform="translate(256 262.144) scale(4.8) translate(-32 -31)" fill="none" stroke="url(#gold)" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
-  <circle cx="32" cy="12.5" r="5.5"/>
-  <path d="M32 18v35"/>
-  <path d="M21 27h22"/>
-  <path d="M12.5 37c1.8 10 10 16 19.5 16s17.7-6 19.5-16"/>
-  <path d="M8.5 40.5 12.5 35l5 4"/>
-  <path d="M55.5 40.5 51.5 35l-5 4"/></g>
+  <rect x="0" y="0" width="512" height="512" rx="71.45631067961165" fill="#efeaff"/>
+  <g transform="translate(256 256) scale(2.4926315789473685) translate(-117 -108)">
+  <g stroke="#a895ec" stroke-width="14" fill="none" stroke-linecap="round">
+    <path d="M64 116 Q48 144 60 172"/><path d="M86 120 Q76 152 90 180"/><path d="M114 120 Q124 152 110 180"/><path d="M136 116 Q160 136 164 120"/>
+  </g>
+  <path d="M48 124 Q48 36 100 36 Q152 36 152 124 Z" fill="#b9a7f2"/>
+  <path d="M60 70 Q70 48 92 44" stroke="#d8ceff" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <g stroke="#1b1e24" stroke-width="4.5" fill="none" stroke-linecap="round"><path d="M77 91 Q84 81 91 91"/><path d="M109 91 Q116 81 123 91"/></g>
+  <circle cx="70" cy="104" r="7" fill="#f2b3b3"/><circle cx="130" cy="104" r="7" fill="#f2b3b3"/>
+  <path d="M88 101 Q100 119 112 101 Q100 107 88 101Z" fill="#1b1e24"/>
+  <g stroke="#e0a800" stroke-width="5" fill="none" stroke-linecap="round"><circle cx="176" cy="96" r="5"/><path d="M176 102 V132 M166 110 H186 M162 124 Q176 140 190 124"/></g></g>
 </svg>

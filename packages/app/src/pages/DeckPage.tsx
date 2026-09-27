@@ -8,16 +8,17 @@ import {
   DAY,
   type DeckConfig,
 } from '@anker/core';
-import { ArrowLeft, Brain, FolderPlus, Plus, Search, Trash2 } from 'lucide-react';
+import { ArrowLeft, Brain, FolderPlus, Plus, Search, Trash2 } from '../components/icons';
 import { useMemo, useState } from 'react';
 import { Bars, StackedBar } from '../components/charts';
 import { DeckSelect } from '../components/DeckSelect';
-import { Button, Empty, Input, Label, Panel, Section, Segmented, Spinner, toast, Toggle, useConfirm } from '../components/ui';
+import { DeckCover } from '../components/DeckCover';
+import { Button, cx, Empty, Input, Label, Panel, Section, Segmented, Spinner, toast, Toggle, useConfirm } from '../components/ui';
 import { db } from '../lib/db';
 import { useDeckCounts, useDecks, useLiveQuery, usePrefs } from '../lib/hooks';
 import { deleteDeck, updateDeck, updateDeckConfig } from '../lib/repo';
 import { Link, navigate } from '../lib/router';
-import { Counts, NewDeckModal } from './Decks';
+import { NewDeckModal } from './Decks';
 
 function NumberField({ label, value, onChange, min = 0, max = 9999, hint }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; hint?: string }) {
   const [draft, setDraft] = useState(String(value));
@@ -63,15 +64,15 @@ function StepsField({ label, value, onChange, hint }: { label: string; value: st
 }
 
 function Options({ deckId, cfg }: { deckId: string; cfg: DeckConfig }) {
-  const set = (patch: Partial<DeckConfig>) => void updateDeckConfig(deckId, patch).then(() => toast.success('Saved'));
+  const set = (patch: Partial<DeckConfig>) => void updateDeckConfig(deckId, patch).then(() => toast.success('Gespeichert'));
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
-        <NumberField label="New cards / day" value={cfg.newPerDay} onChange={(v) => set({ newPerDay: v })} />
-        <NumberField label="Reviews / day" value={cfg.reviewsPerDay} onChange={(v) => set({ reviewsPerDay: v })} max={99999} />
+        <NumberField label="Neue Karten pro Tag" value={cfg.newPerDay} onChange={(v) => set({ newPerDay: v })} />
+        <NumberField label="Wiederholungen pro Tag" value={cfg.reviewsPerDay} onChange={(v) => set({ reviewsPerDay: v })} max={99999} />
       </div>
       <div>
-        <Label hint={`${Math.round(cfg.desiredRetention * 100)}%`}>Desired retention (FSRS)</Label>
+        <Label hint={`${Math.round(cfg.desiredRetention * 100)} %`}>Gewünschte Behaltensquote (FSRS)</Label>
         <input
           type="range"
           min={0.75}
@@ -81,41 +82,41 @@ function Options({ deckId, cfg }: { deckId: string; cfg: DeckConfig }) {
           onMouseUp={(e) => set({ desiredRetention: Number((e.target as HTMLInputElement).value) })}
           onTouchEnd={(e) => set({ desiredRetention: Number((e.target as HTMLInputElement).value) })}
           onKeyUp={(e) => set({ desiredRetention: Number((e.target as HTMLInputElement).value) })}
-          className="w-full accent-[var(--accent)]"
+          className="w-full accent-[var(--hafen)]"
         />
-        <p className="mt-1 text-xs text-faint">Higher = you remember more, but review more often. 90% is a great default.</p>
+        <p className="mt-1 text-[13px] text-ink-muted">Höher heißt: du behältst mehr, wiederholst aber öfter. 90 % ist ein guter Standard.</p>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <StepsField label="Learning steps" value={cfg.learningSteps} onChange={(v) => set({ learningSteps: v })} hint="e.g. 1m 10m" />
-        <StepsField label="Relearning steps" value={cfg.relearningSteps} onChange={(v) => set({ relearningSteps: v })} hint="e.g. 10m" />
+        <StepsField label="Lernschritte" value={cfg.learningSteps} onChange={(v) => set({ learningSteps: v })} hint="z. B. 1m 10m" />
+        <StepsField label="Wiederlernschritte" value={cfg.relearningSteps} onChange={(v) => set({ relearningSteps: v })} hint="z. B. 10m" />
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <NumberField label="Maximum interval (days)" value={cfg.maximumInterval} onChange={(v) => set({ maximumInterval: v })} min={1} max={36500} />
-        <NumberField label="Leech threshold (lapses)" value={cfg.leechThreshold} onChange={(v) => set({ leechThreshold: v })} min={1} max={99} />
+        <NumberField label="Maximales Intervall (Tage)" value={cfg.maximumInterval} onChange={(v) => set({ maximumInterval: v })} min={1} max={36500} />
+        <NumberField label="„Oft vergessen“ ab (Fehlern)" value={cfg.leechThreshold} onChange={(v) => set({ leechThreshold: v })} min={1} max={99} />
       </div>
       <div>
-        <Label>New card order</Label>
+        <Label>Reihenfolge neuer Karten</Label>
         <Segmented
           value={cfg.newOrder}
           onChange={(v) => set({ newOrder: v })}
           options={[
-            { value: 'added', label: 'In order added' },
-            { value: 'random', label: 'Random' },
+            { value: 'added', label: 'Wie hinzugefügt' },
+            { value: 'random', label: 'Zufällig' },
           ]}
         />
       </div>
-      <div className="divide-y divide-line rounded-2xl border border-line">
+      <div className="divide-y divide-line rounded-md border border-line">
         {(
           [
-            ['autoSpeak', 'Speak German automatically', 'Reads words and sentences aloud when they appear.'],
-            ['typeAnswer', 'Type the answer on EN→DE cards', 'Checks your spelling (umlauts, capitals, articles).'],
-            ['burySiblings', 'One card per word per day', 'Hides the reverse card of a word until tomorrow.'],
+            ['autoSpeak', 'Deutsch automatisch vorlesen', 'Liest Wörter und Sätze vor, sobald sie erscheinen.'],
+            ['typeAnswer', 'Antwort tippen bei EN→DE-Karten', 'Prüft deine Schreibweise (Umlaute, Großschreibung, Artikel).'],
+            ['burySiblings', 'Eine Karte pro Wort und Tag', 'Versteckt die Rückrichtung eines Wortes bis morgen.'],
           ] as const
         ).map(([key, title, desc]) => (
           <div key={key} className="flex items-center gap-4 px-4 py-3">
             <div className="min-w-0 flex-1">
-              <div className="text-[14.5px] font-medium">{title}</div>
-              <div className="text-[12.5px] text-muted">{desc}</div>
+              <div className="t-label">{title}</div>
+              <div className="t-caption text-ink-muted">{desc}</div>
             </div>
             <Toggle checked={cfg[key]} onChange={(v) => set({ [key]: v } as Partial<DeckConfig>)} label={title} />
           </div>
@@ -124,9 +125,9 @@ function Options({ deckId, cfg }: { deckId: string; cfg: DeckConfig }) {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => void updateDeck(deckId, { config: {} }).then(() => toast.success('Options reset to defaults'))}
+        onClick={() => void updateDeck(deckId, { config: {} }).then(() => toast.success('Optionen zurückgesetzt'))}
       >
-        Reset to defaults
+        Auf Standard zurücksetzen
       </Button>
     </div>
   );
@@ -155,8 +156,8 @@ export function DeckPage({ id }: { id: string }) {
   if (!decks) return <div className="flex justify-center py-20"><Spinner /></div>;
   if (!deck)
     return (
-      <Empty title="Deck not found" action={<Button onClick={() => navigate('/decks')}>Back to decks</Button>}>
-        It may have been deleted on another device.
+      <Empty title="Deck nicht gefunden" mood="thinking" action={<Button onClick={() => navigate('/decks')}>Zurück zu den Decks</Button>}>
+        Vielleicht wurde es auf einem anderen Gerät gelöscht.
       </Empty>
     );
 
@@ -169,55 +170,58 @@ export function DeckPage({ id }: { id: string }) {
   const fc = data ? forecast(data.cards, Date.now(), prefs.rolloverHour, 14) : [];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pt-6 pb-12 md:px-8 md:pt-10">
-      <Link to="/decks" className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
-        <ArrowLeft className="size-4" /> Decks
+    <div className="mx-auto max-w-4xl px-5 pt-6 pb-12 md:px-8 md:pt-10">
+      <Link to="/decks" className="t-label mb-5 inline-flex h-9 items-center gap-1.5 text-ink-muted hover:text-ink">
+        <ArrowLeft className="size-5" /> Decks
       </Link>
-      <div className="mb-6 flex flex-wrap items-start gap-4">
-        <span className="flex size-14 items-center justify-center rounded-2xl bg-surface text-3xl shadow-card">{deck.emoji ?? '📚'}</span>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-xs font-medium text-faint">{path.includes('::') ? path.split('::').slice(0, -1).join(' › ') : 'Deck'}</div>
-          <h1 className="font-display text-[30px] leading-tight font-semibold tracking-tight">{deck.name}</h1>
-          {deck.description && <p className="mt-1 text-sm text-muted">{deck.description}</p>}
+      <div className="mb-6 flex items-end gap-5">
+        <DeckCover deck={deck} size="lg" />
+        <div className="min-w-0 flex-1 pb-1">
+          <div className="t-overline truncate text-ink-muted">{['Deck', ...path.split('::').slice(0, -1)].join(' · ')}</div>
+          <h1 className="t-title mt-1.5 break-words" lang="de">
+            {deck.name}
+          </h1>
+          <div className="t-caption mt-1.5 text-ink-muted">
+            {data ? `${data.notes} ${data.notes === 1 ? 'Notiz' : 'Notizen'} · ` : ''}
+            {total} fällig
+          </div>
+          {deck.description && <p className="mt-2 text-[15px] text-ink-muted">{deck.description}</p>}
         </div>
       </div>
 
-      <Panel className="mb-6 flex flex-wrap items-center gap-5 p-5">
-        <div className="flex-1">
-          <div className="text-[13px] text-muted">Due today</div>
-          <div className="mt-1 flex items-baseline gap-3">
-            <span className="font-display text-[40px] leading-none font-semibold tabular-nums">{total}</span>
-            <Counts c={c} />
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => navigate(`/study?mode=cram&q=${encodeURIComponent(`deck:"${path}"`)}`)} icon={<Brain className="size-4" />}>
-            Practice all
-          </Button>
-          <Button variant="primary" size="lg" disabled={!total} onClick={() => navigate(`/study/${id}`)}>
-            {total ? 'Study now' : 'All done ✓'}
-          </Button>
-        </div>
-      </Panel>
+      <div className="mb-2 grid grid-cols-[1fr_1.4fr] gap-2">
+        <Button size="lg" onClick={() => navigate(`/study?mode=cram&q=${encodeURIComponent(`deck:"${path}"`)}`)} icon={<Brain className="size-5" />}>
+          Alle üben
+        </Button>
+        <Button variant="primary" size="lg" disabled={!total} onClick={() => navigate(`/study/${id}`)}>
+          {total ? 'Lernen' : 'Alles erledigt'}
+        </Button>
+      </div>
+      {c && (
+        <p className="t-caption mb-6 text-center text-ink-muted tabular-nums">
+          <span className="font-bold text-hafen">{c.new}</span> neu · <span className="font-bold text-koralle-ink">{c.learn}</span> in Arbeit ·{' '}
+          <span className="font-bold text-wiese">{c.review}</span> fällig
+        </p>
+      )}
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <Segmented
           value={tab}
           onChange={setTab}
           options={[
-            { value: 'overview', label: 'Overview' },
-            { value: 'options', label: 'Options' },
+            { value: 'overview', label: 'Übersicht' },
+            { value: 'options', label: 'Optionen' },
           ]}
         />
         <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => navigate(`/add?deck=${id}`)} icon={<Plus className="size-4" />}>
-            Add cards
+            Karten hinzufügen
           </Button>
           <Button size="sm" onClick={() => navigate(`/browse?q=${encodeURIComponent(`deck:"${path}"`)}`)} icon={<Search className="size-4" />}>
-            Browse
+            Durchsuchen
           </Button>
           <Button size="sm" onClick={() => setSubOpen(true)} icon={<FolderPlus className="size-4" />}>
-            Sub-deck
+            Unterdeck
           </Button>
         </div>
       </div>
@@ -229,35 +233,35 @@ export function DeckPage({ id }: { id: string }) {
           </div>
         ) : (
           <>
-            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mb-6 grid grid-cols-2 overflow-hidden rounded-md border border-line bg-paper-raised text-center md:grid-cols-4">
               {[
-                ['Notes', data.notes],
-                ['Cards', breakdown.total],
-                ['Retention (30d)', ret?.rate == null ? '—' : `${Math.round(ret.rate * 100)}%`],
-                ['Reviews', data.logs.length],
-              ].map(([k, v]) => (
-                <Panel key={k as string} className="px-4 py-3">
-                  <div className="text-[12px] text-faint">{k}</div>
-                  <div className="mt-0.5 text-[20px] font-semibold tabular-nums">{v}</div>
-                </Panel>
+                ['Notizen', data.notes.toLocaleString('de-DE')],
+                ['Karten', breakdown.total.toLocaleString('de-DE')],
+                ['Behalten (30 T.)', ret?.rate == null ? '–' : `${Math.round(ret.rate * 100)} %`],
+                ['Wiederholungen', data.logs.length.toLocaleString('de-DE')],
+              ].map(([k, v], i) => (
+                <div key={k} className={cx('px-2 py-3', i % 2 === 1 && 'border-l border-line', i > 1 && 'border-t border-line md:border-t-0', i === 2 && 'md:border-l')}>
+                  <div className="t-stat">{v}</div>
+                  <div className="t-caption text-ink-muted">{k}</div>
+                </div>
               ))}
             </div>
-            <Section title="Cards">
+            <Section title="Karten">
               <Panel className="p-5">
                 <StackedBar
                   parts={[
-                    { label: 'New', value: breakdown.new, color: 'var(--easy)' },
-                    { label: 'Learning', value: breakdown.learning, color: 'var(--again)' },
-                    { label: 'Young', value: breakdown.young, color: 'color-mix(in srgb, var(--good) 55%, var(--surface-3))' },
-                    { label: 'Mature', value: breakdown.mature, color: 'var(--good)' },
-                    { label: 'Suspended', value: breakdown.suspended, color: 'var(--hard)' },
+                    { label: 'Neu', value: breakdown.new, color: 'var(--hafen)' },
+                    { label: 'In Arbeit', value: breakdown.learning, color: 'var(--koralle-ink)' },
+                    { label: 'Jung', value: breakdown.young, color: 'color-mix(in srgb, var(--wiese) 55%, var(--line))' },
+                    { label: 'Gefestigt', value: breakdown.mature, color: 'var(--wiese)' },
+                    { label: 'Ausgesetzt', value: breakdown.suspended, color: 'var(--sonne-ink)' },
                   ]}
                 />
               </Panel>
             </Section>
-            <Section title="Next 14 days">
+            <Section title="Nächste 14 Tage">
               <Panel className="p-5">
-                <Bars values={fc} labels={fc.map((_, i) => (i === 0 ? 'Heute' : i % 2 === 0 ? `+${i}` : null))} height={100} color="var(--good)" format={(v) => `${v} due`} />
+                <Bars values={fc} labels={fc.map((_, i) => (i === 0 ? 'Heute' : i % 2 === 0 ? `+${i}` : null))} height={100} color="var(--wiese)" format={(v) => `${v} fällig`} />
               </Panel>
             </Section>
           </>
@@ -273,26 +277,20 @@ export function DeckPage({ id }: { id: string }) {
                 <Label>Name</Label>
                 <Input defaultValue={deck.name} onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== deck.name && void updateDeck(id, { name: e.target.value.trim().replace(/::/g, ':') })} />
               </div>
-              <div className="flex gap-3">
-                <div className="w-20">
-                  <Label>Emoji</Label>
-                  <Input defaultValue={deck.emoji ?? ''} maxLength={4} className="text-center" onBlur={(e) => void updateDeck(id, { emoji: e.target.value.trim() || undefined })} />
-                </div>
-                <div className="flex-1">
-                  <Label>Description</Label>
-                  <Input defaultValue={deck.description ?? ''} onBlur={(e) => void updateDeck(id, { description: e.target.value.trim() || undefined })} />
-                </div>
+              <div>
+                <Label>Beschreibung</Label>
+                <Input defaultValue={deck.description ?? ''} onBlur={(e) => void updateDeck(id, { description: e.target.value.trim() || undefined })} />
               </div>
               <div>
-                <Label>Parent deck</Label>
+                <Label>Oberdeck</Label>
                 <DeckSelect
                   value={deck.parentId}
                   allowNone
-                  noneLabel="— Top level —"
+                  noneLabel="– Oberste Ebene –"
                   onChange={(pid) => {
                     if (pid === id) return;
                     updateDeck(id, { parentId: pid }).then(
-                      () => toast.success('Moved'),
+                      () => toast.success('Verschoben'),
                       (e) => toast.error((e as Error).message),
                     );
                   }}
@@ -300,25 +298,25 @@ export function DeckPage({ id }: { id: string }) {
               </div>
             </Panel>
             <Panel className="p-5">
-              <div className="font-medium">Delete deck</div>
-              <p className="mt-1 text-sm text-muted">Deletes this deck, its sub-decks and all their cards and review history — on every synced device.</p>
+              <div className="t-label">Deck löschen</div>
+              <p className="mt-1 text-[15px] text-ink-muted">Löscht dieses Deck, seine Unterdecks und alle Karten samt Lernverlauf – auf jedem synchronisierten Gerät.</p>
               <Button
                 variant="danger"
                 className="mt-3"
                 icon={<Trash2 className="size-4" />}
                 onClick={async () => {
-                  const ok = await confirm(`Delete “${deck.name}”?`, {
-                    body: `This removes ${ids.size} deck(s) and ${data?.notes ?? 0} notes permanently.`,
-                    confirm: 'Delete',
+                  const ok = await confirm(`„${deck.name}“ löschen?`, {
+                    body: `Das entfernt ${ids.size} Deck(s) und ${data?.notes ?? 0} Notizen endgültig.`,
+                    confirm: 'Löschen',
                     danger: true,
                   });
                   if (!ok) return;
                   await deleteDeck(id);
-                  toast.success('Deck deleted');
+                  toast.success('Deck gelöscht');
                   navigate('/decks');
                 }}
               >
-                Delete deck
+                Deck löschen
               </Button>
             </Panel>
           </div>

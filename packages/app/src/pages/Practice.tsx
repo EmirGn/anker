@@ -1,4 +1,4 @@
-import { Trophy } from 'lucide-react';
+import { Trophy } from '../components/icons';
 import { PageHeader } from '../components/ui';
 import { db } from '../lib/db';
 import { useLiveQuery } from '../lib/hooks';
@@ -11,8 +11,8 @@ export function Practice() {
     return new Map(rows.map((r) => [r.key.slice(5), r.value as number]));
   }, []);
   return (
-    <div className="mx-auto max-w-4xl px-4 pt-6 pb-10 md:px-8 md:pt-10">
-      <PageHeader title="Üben" subtitle="Quick games that train the tricky parts of German. They don't affect your review schedule." />
+    <div className="mx-auto max-w-4xl px-5 pt-8 pb-10 md:px-8 md:pt-10">
+      <PageHeader title="Üben" subtitle="Kurze Spiele für die kniffligen Stellen im Deutschen. Sie ändern deinen Wiederholungsplan nicht." />
       <div className="grid gap-3 sm:grid-cols-2">
         {DRILLS.map((d) => {
           const Icon = d.icon;
@@ -21,17 +21,17 @@ export function Practice() {
             <Link
               key={d.id}
               to={`/practice/${d.id}`}
-              className="group flex items-start gap-4 rounded-2xl border border-line bg-surface p-5 transition-all hover:-translate-y-0.5 hover:shadow-card"
+              className="flex items-start gap-3 rounded-md border border-line bg-paper-raised p-4 transition-colors duration-[120ms] hover:bg-paper-sunk"
             >
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: `color-mix(in srgb, ${d.color} 15%, transparent)`, color: d.color }}>
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-md" style={{ background: d.tint.bg, color: d.tint.fg }}>
                 <Icon className="size-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-display text-[19px] font-semibold">{d.title}</div>
-                <div className="mt-0.5 text-[14px] text-muted">{d.desc}</div>
+                <div className="t-heading">{d.title}</div>
+                <div className="mt-1 text-[15px] text-ink-muted">{d.desc}</div>
                 {best !== undefined && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-faint">
-                    <Trophy className="size-3.5" /> Best: {best}
+                  <div className="t-caption mt-2 inline-flex items-center gap-1 text-ink-muted">
+                    <Trophy className="size-4" /> Rekord: {best}
                   </div>
                 )}
               </div>

@@ -1,14 +1,12 @@
 import {
   CardState,
   duplicateKey,
-  explainGender,
   genderHints,
   makeNote,
   normalizeFields,
   NOTE_TYPE_ORDER,
   NOTE_TYPES,
   parseGender,
-  relativeTime,
   splitArticle,
   validateNote,
   type Card,
@@ -16,13 +14,15 @@ import {
   type Note,
   type NoteType,
 } from '@anker/core';
-import { ArrowLeft, Eye, RotateCcw, Sparkles, Trash2, Wand2 } from 'lucide-react';
+import { ArrowLeft, Eye, RotateCcw, Sparkles, Trash2, Wand2 } from '../components/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CardView, GENDER_VAR, POS_LABEL } from '../components/CardView';
 import { DeckSelect } from '../components/DeckSelect';
 import { TagInput } from '../components/TagInput';
 import { UmlautBar, insertAtCaret } from '../components/UmlautBar';
 import { Button, cx, Input, Label, Panel, Segmented, Spinner, Textarea, toast, useConfirm } from '../components/ui';
+import { erklaereGenus, fehlerDe, fieldDe, ruleLabel, templateDe, TYPE_DE } from '../lib/de';
+import { relativ } from '../lib/format';
 import { runTask } from '../lib/ai';
 import { db } from '../lib/db';
 import { useDecks, useHotkeys, useHub, useIsWide, useLiveQuery } from '../lib/hooks';
@@ -33,7 +33,7 @@ import { goBack, navigate, useRoute } from '../lib/router';
 const LAST_DECK = 'anker-last-deck';
 const LAST_TYPE = 'anker-last-type';
 const POS_OPTIONS = ['noun', 'verb', 'adjective', 'adverb', 'phrase', 'preposition', 'conjunction', 'pronoun', 'other'];
-const STATE_LABEL: Record<CardState, string> = { 0: 'New', 1: 'Learning', 2: 'Review', 3: 'Relearning' };
+const STATE_LABEL: Record<CardState, string> = { 0: 'Neu', 1: 'In Arbeit', 2: 'Wiederholung', 3: 'Wieder in Arbeit' };
 
 function emptyFields(type: NoteType): Record<string, string> {
   return Object.fromEntries(NOTE_TYPES[type].fields.map((f) => [f.key, '']));
@@ -134,13 +134,13 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
   const aiFill = async () => {
     const word = (fields.german || fields.english || '').trim();
     if (!word) {
-      toast('Type a word first');
+      toast('Gib zuerst ein Wort ein');
       return;
     }
     setFilling(true);
     try {
       const r = await runTask<Record<string, string>>('fill-word', { word, hint: fields.english && fields.german ? fields.english : '' });
-      if (!r.ok || !r.structured) throw new Error(r.error ?? 'No result');
+      if (!r.ok || !r.structured) throw new Error(r.error ?? 'Kein Ergebnis');
       const s = r.structured;
       setFields((f) => {
         const next = { ...f };
@@ -151,9 +151,9 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
         }
         return normalizeFields('word', next);
       });
-      toast.success('Filled in by AI — check and adjust');
+      toast.success('Von der KI ausgefüllt – bitte prüfen');
     } catch (e) {
-      toast.error(`AI fill failed: ${(e as Error).message}`);
+      toast.error(`KI-Ausfüllen fehlgeschlagen: ${(e as Error).message}`);
     } finally {
       setFilling(false);
     }
@@ -168,19 +168,19 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
     if (saving) return;
     let targetDeck = deckId;
     if (!targetDeck) {
-      targetDeck = (await createDeckPath('Deutsch', { emoji: '🇩🇪' })).id;
+      targetDeck = (await createDeckPath('Deutsch')).id;
       setDeckId(targetDeck);
     }
     const err = validateNote({ type, fields: normalizeFields(type, fields) });
     if (err) {
-      toast.error(err);
+      toast.error(fehlerDe(type, err));
       return;
     }
     setSaving(true);
     try {
       if (editing) {
         const n = await updateNote(noteId!, { fields, tags, deckId: targetDeck });
-        toast.success('Saved');
+        toast.success('Gespeichert');
         onSaved?.(n);
       } else {
         const r = await addNote({ deckId: targetDeck, type, fields, tags });
@@ -190,8 +190,8 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
         } catch {
           // ignore
         }
-        toast.success(`Added ${r.cards.length} card${r.cards.length === 1 ? '' : 's'}`, {
-          label: 'Undo',
+        toast.success(`${r.cards.length} ${r.cards.length === 1 ? 'Karte' : 'Karten'} hinzugefügt`, {
+          label: 'Rückgängig',
           run: () => void deleteNotes([r.note.id]),
         });
         onSaved?.(r.note);
@@ -213,7 +213,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
       </div>
     );
   }
-  if (editing && note === null) return <p className="py-10 text-center text-muted">This note no longer exists.</p>;
+  if (editing && note === null) return <p className="py-10 text-center text-ink-muted">Diese Notiz gibt es nicht mehr.</p>;
 
   const focusProps = (key: string, ref?: boolean) => ({
     onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -241,7 +241,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
           onChange={(e) => set(key, e.target.value)}
           placeholder={opts.placeholder}
           lang={opts.lang}
-          className={opts.big ? 'h-13 font-display text-[21px]' : undefined}
+          className={opts.big ? 'h-13 font-display text-[22px] font-semibold' : undefined}
           autoCapitalize={opts.lang === 'de' ? 'sentences' : undefined}
           {...(focusProps(key, opts.first) as object)}
         />
@@ -252,7 +252,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
   const wordForm = (
     <div className="space-y-4">
       <div>
-        <Label hint={hub ? undefined : 'Tip: type “der Tisch” — the article is detected'}>Deutsch</Label>
+        <Label hint={hub ? undefined : 'Tipp: „der Tisch“ tippen – der Artikel wird erkannt'}>Deutsch</Label>
         <div className="flex gap-2">
           <Input
             value={fields.german ?? ''}
@@ -264,12 +264,12 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
             placeholder="z. B. die Zeitung, fahren, gemütlich"
             lang="de"
             autoFocus={!editing && !isNative}
-            className="h-13 font-display text-[21px]"
+            className="h-13 font-display text-[22px] font-semibold"
             {...(focusProps('german', true) as object)}
           />
           {hub && (
-            <Button onClick={aiFill} loading={filling} className="h-13 shrink-0" title="Fill gender, plural, forms and an example with AI" icon={!filling && <Wand2 className="size-4" />}>
-              <span className="hidden sm:inline">Auto-fill</span>
+            <Button onClick={aiFill} loading={filling} className="h-13 shrink-0" title="Genus, Plural, Formen und ein Beispiel mit KI ausfüllen" icon={!filling && <Wand2 className="size-4" />}>
+              <span className="hidden sm:inline">Ausfüllen</span>
             </Button>
           )}
         </div>
@@ -277,10 +277,10 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
           <button
             type="button"
             onClick={() => setFields((f) => ({ ...f, gender: hints[0]!.gender, pos: f.pos || 'noun' }))}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-1 text-[12.5px] text-muted hover:text-ink"
+            className="mt-2 inline-flex items-center gap-1.5 rounded-sm bg-paper-sunk px-2.5 py-1 text-[13px] text-ink-muted hover:text-ink"
           >
-            <Sparkles className="size-3.5 text-accent" />
-            Probably <b style={{ color: GENDER_VAR[hints[0]!.gender] }}>{hints[0]!.gender}</b> ({hints[0]!.rule.label}) — tap to use
+            <Sparkles className="size-4" />
+            Wahrscheinlich <b style={{ color: GENDER_VAR[hints[0]!.gender] }}>{hints[0]!.gender}</b> ({ruleLabel(hints[0]!.rule)}) – antippen zum Übernehmen
           </button>
         )}
       </div>
@@ -290,8 +290,8 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
             key={g}
             type="button"
             onClick={() => setFields((f) => ({ ...f, gender: f.gender === g ? '' : g, pos: f.gender === g ? f.pos : f.pos || 'noun' }))}
-            className={cx('h-9 min-w-14 rounded-xl border px-3 text-[14px] font-semibold transition-all', gender === g ? 'border-transparent text-white shadow-sm' : 'border-line bg-surface hover:bg-surface-2')}
-            style={gender === g ? { background: GENDER_VAR[g] } : { color: GENDER_VAR[g] }}
+            className={cx('h-11 min-w-14 rounded-full border px-4 text-[15px] font-bold transition-colors duration-[120ms]', gender === g ? 'border-transparent' : 'border-line bg-paper-raised hover:bg-paper-sunk')}
+            style={gender === g ? (g === 'pl' ? { background: 'var(--paper-sunk)', color: 'var(--ink-muted)' } : { background: GENDER_VAR[g], color: 'var(--on-gender)' }) : { color: GENDER_VAR[g] }}
           >
             {g === 'pl' ? 'Pl.' : g}
           </button>
@@ -303,23 +303,23 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
               key={p}
               type="button"
               onClick={() => set('pos', fields.pos === p ? '' : p)}
-              className={cx('rounded-lg px-2.5 py-1 text-[12.5px] font-medium transition-colors', fields.pos === p ? 'bg-ink text-bg' : 'text-muted hover:bg-surface-2')}
+              className={cx('h-9 rounded-full px-3 text-[13px] font-semibold transition-colors duration-[120ms]', fields.pos === p ? 'bg-ink text-paper' : 'text-ink-muted hover:bg-paper-sunk')}
             >
               {POS_LABEL[p] || 'Andere'}
             </button>
           ))}
         </div>
       </div>
-      {fieldInput('english', 'Meaning', { placeholder: 'newspaper' })}
-      {(fields.pos === 'noun' || gender) && fieldInput('plural', 'Plural', { placeholder: 'Zeitungen  (or “-” if none)', lang: 'de' })}
+      {fieldInput('english', 'Bedeutung', { placeholder: 'newspaper' })}
+      {(fields.pos === 'noun' || gender) && fieldInput('plural', 'Plural', { placeholder: 'Zeitungen  (oder „-“, wenn es keinen gibt)', lang: 'de' })}
       {['verb', 'adjective', 'preposition'].includes(fields.pos ?? '') &&
-        fieldInput('forms', fields.pos === 'verb' ? 'Stammformen' : fields.pos === 'adjective' ? 'Komparativ · Superlativ' : 'Case', {
+        fieldInput('forms', fields.pos === 'verb' ? 'Stammformen' : fields.pos === 'adjective' ? 'Komparativ · Superlativ' : 'Kasus', {
           placeholder: fields.pos === 'verb' ? 'fährt · fuhr · ist gefahren' : fields.pos === 'adjective' ? 'größer · am größten' : '+ Dativ',
           lang: 'de',
         })}
-      {fieldInput('example', 'Example sentence', { placeholder: 'Ich lese jeden Morgen die Zeitung.', multiline: true, lang: 'de' })}
-      {fieldInput('exampleTranslation', 'Translation', { placeholder: 'I read the newspaper every morning.', multiline: true })}
-      {fieldInput('notes', 'Notes', { placeholder: 'Mnemonic, usage, false friends…', multiline: true })}
+      {fieldInput('example', 'Beispielsatz', { placeholder: 'Ich lese jeden Morgen die Zeitung.', multiline: true, lang: 'de' })}
+      {fieldInput('exampleTranslation', 'Übersetzung', { placeholder: 'I read the newspaper every morning.', multiline: true })}
+      {fieldInput('notes', 'Notizen', { placeholder: 'Eselsbrücke, Gebrauch, falsche Freunde …', multiline: true })}
     </div>
   );
 
@@ -327,7 +327,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
     <div className="space-y-4">
       {NOTE_TYPES[type].fields.map((f, i) => (
         <div key={f.key}>
-          {fieldInput(f.key, f.label, { placeholder: f.placeholder, multiline: f.multiline, first: i === 0, hint: f.help, lang: f.german ? 'de' : undefined })}
+          {fieldInput(f.key, fieldDe(type, f.key).label, { placeholder: f.placeholder, multiline: f.multiline, first: i === 0, hint: fieldDe(type, f.key).help, lang: f.german ? 'de' : undefined })}
           {type === 'cloze' && f.key === 'text' && (
             <div className="mt-2 flex flex-wrap gap-2">
               {[false, true].map((same) => (
@@ -347,7 +347,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
                     set('text', `${text.slice(0, start)}{{c${n}::${sel}}}${text.slice(end)}`);
                   }}
                 >
-                  {same ? 'Gap (same card)' : '[…] New gap'}
+                  {same ? 'Lücke (gleiche Karte)' : '[…] Neue Lücke'}
                 </Button>
               ))}
             </div>
@@ -366,20 +366,20 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
               value={type}
               onChange={changeType}
               size={wide ? 'md' : 'sm'}
-              options={NOTE_TYPE_ORDER.map((t) => ({ value: t, label: NOTE_TYPES[t].short }))}
+              options={NOTE_TYPE_ORDER.map((t) => ({ value: t, label: TYPE_DE[t].short }))}
             />
           )}
           <DeckSelect value={deckId} onChange={setDeckId} className="max-w-full min-w-48 flex-1 sm:max-w-72" />
         </div>
-        <p className="-mt-2 mb-5 text-[13px] text-faint">{NOTE_TYPES[type].description}</p>
+        <p className="t-caption -mt-2 mb-5 text-ink-muted">{TYPE_DE[type].description}</p>
 
         {duplicate && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl bg-hard/12 px-3.5 py-2.5 text-[13.5px]">
+          <div className="mb-4 flex items-center gap-2 rounded-md bg-sonne px-3.5 py-2 text-[15px] text-on-sonne">
             <span className="flex-1">
-              Already in <b>{dupDeck?.name ?? 'your collection'}</b>: {duplicate.fields.german || duplicate.fields.front || '…'}
+              Schon in <b>{dupDeck?.name ?? 'deiner Sammlung'}</b>: {duplicate.fields.german || duplicate.fields.front || '…'}
             </span>
-            <Button size="sm" variant="ghost" onClick={() => navigate(`/edit/${duplicate.id}`)}>
-              Open
+            <Button size="sm" variant="ghost" className="text-on-sonne hover:bg-[#3a2a0014] hover:text-on-sonne" onClick={() => navigate(`/edit/${duplicate.id}`)}>
+              Öffnen
             </Button>
           </div>
         )}
@@ -402,19 +402,19 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
           />
         )}
 
-        <div className="sticky bottom-0 z-10 -mx-1 mt-6 flex flex-wrap items-center gap-2 bg-gradient-to-t from-bg via-bg to-transparent px-1 pt-4 pb-4">
+        <div className="sticky bottom-0 z-10 -mx-1 mt-6 flex flex-wrap items-center gap-2 bg-gradient-to-t from-paper via-paper to-transparent px-1 pt-4 pb-4">
           <Button variant="primary" size="lg" onClick={save} loading={saving} className="min-w-32">
-            {editing ? 'Save' : 'Add'}
+            {editing ? 'Speichern' : 'Hinzufügen'}
           </Button>
-          <span className="hidden text-xs text-faint sm:inline">{modKey}+Enter</span>
+          <span className="hidden text-[13px] text-ink-muted sm:inline">{modKey}+Enter</span>
           {!wide && (
-            <Button variant="ghost" onClick={() => setPreview((v) => !v)} icon={<Eye className="size-4" />}>
-              Preview
+            <Button variant="ghost" onClick={() => setPreview((v) => !v)} icon={<Eye className="size-5" />}>
+              Vorschau
             </Button>
           )}
           {editing && !embedded && (
             <Button variant="ghost" className="ml-auto" onClick={() => goBack('/browse')}>
-              Done
+              Fertig
             </Button>
           )}
         </div>
@@ -424,17 +424,17 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
         <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           <Panel className="overflow-hidden">
             <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-              <span className="text-[12px] font-semibold tracking-wide text-faint uppercase">Preview</span>
+              <span className="t-overline text-ink-muted">Vorschau</span>
               {ords.length > 1 && (
                 <Segmented
                   size="sm"
                   value={String(Math.min(previewOrd, ords.length - 1))}
                   onChange={(v) => setPreviewOrd(Number(v))}
-                  options={ords.map((o, i) => ({ value: String(i), label: type === 'cloze' ? `c${o + 1}` : NOTE_TYPES[type].templates[o]?.split(' ')[0] ?? `#${i + 1}` }))}
+                  options={ords.map((o, i) => ({ value: String(i), label: type === 'cloze' ? `c${o + 1}` : templateDe(type, o).split(' ')[0] ?? `#${i + 1}` }))}
                 />
               )}
             </div>
-            <div className="max-h-[70vh] overflow-y-auto px-5 py-8">
+            <div className="max-h-[70vh] overflow-y-auto px-5 py-6">
               {previewNote && ords.length ? (
                 <div className="space-y-8">
                   <div className="opacity-90">
@@ -444,12 +444,12 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
                   <CardView note={previewNote} ord={ords[Math.min(previewOrd, ords.length - 1)]!} side="answer" />
                 </div>
               ) : (
-                <p className="text-center text-sm text-faint">Fill in the fields to see your card.</p>
+                <p className="text-center text-[15px] text-ink-muted">Füll die Felder aus, um deine Karte zu sehen.</p>
               )}
             </div>
           </Panel>
-          {type === 'word' && gender && fields.german && explainGender(fields.german, gender) && (
-            <Panel className="px-4 py-3 text-[13px] text-muted">💡 {explainGender(fields.german, gender)}</Panel>
+          {type === 'word' && gender && fields.german && erklaereGenus(fields.german, gender) && (
+            <Panel className="t-caption px-4 py-3 text-ink-muted">{erklaereGenus(fields.german, gender)}</Panel>
           )}
         </div>
       )}
@@ -457,41 +457,41 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
       {editing && cards && cards.length > 0 && (
         <div className={cx(!embedded && 'lg:col-span-2')}>
           <Panel className="mt-2 p-4">
-            <div className="mb-3 text-[12px] font-semibold tracking-wide text-faint uppercase">Cards</div>
+            <div className="t-overline mb-3 text-ink-muted">Karten</div>
             <div className="space-y-2">
               {cards
                 .sort((a: Card, b: Card) => a.ord - b.ord)
                 .map((c: Card) => (
-                  <div key={c.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px]">
-                    <span className="w-40 font-medium">{type === 'cloze' ? `Cloze ${c.ord + 1}` : NOTE_TYPES[type].templates[c.ord] ?? `Card ${c.ord + 1}`}</span>
-                    <span className="text-muted">{c.suspended ? 'Suspended' : STATE_LABEL[c.state]}</span>
-                    {c.state !== CardState.New && <span className="text-muted">due {relativeTime(c.due)}</span>}
-                    <span className="text-faint">
-                      {c.reps} reviews · {c.lapses} lapses
+                  <div key={c.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
+                    <span className="w-44 font-semibold">{type === 'cloze' ? `Lücke ${c.ord + 1}` : templateDe(type, c.ord)}</span>
+                    <span className="text-ink-muted">{c.suspended ? 'Ausgesetzt' : STATE_LABEL[c.state]}</span>
+                    {c.state !== CardState.New && <span className="text-ink-muted">fällig {relativ(c.due)}</span>}
+                    <span className="text-ink-muted">
+                      {c.reps} Wiederholungen · {c.lapses} Fehler
                     </span>
                   </div>
                 ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" icon={<RotateCcw className="size-4" />} onClick={async () => { await forgetNotes([noteId!]); toast.success('Progress reset — cards are new again'); }}>
-                Reset progress
+              <Button size="sm" icon={<RotateCcw className="size-4" />} onClick={async () => { await forgetNotes([noteId!]); toast.success('Fortschritt zurückgesetzt – die Karten sind wieder neu'); }}>
+                Fortschritt zurücksetzen
               </Button>
-              <Button size="sm" onClick={async () => { const s = !cards.every((c) => c.suspended); await suspendNotes([noteId!], s); toast.success(s ? 'Suspended' : 'Unsuspended'); }}>
-                {cards.every((c) => c.suspended) ? 'Unsuspend' : 'Suspend'}
+              <Button size="sm" onClick={async () => { const s = !cards.every((c) => c.suspended); await suspendNotes([noteId!], s); toast.success(s ? 'Ausgesetzt' : 'Wieder aktiv'); }}>
+                {cards.every((c) => c.suspended) ? 'Wieder aktivieren' : 'Aussetzen'}
               </Button>
               <Button
                 size="sm"
                 variant="danger"
                 icon={<Trash2 className="size-4" />}
                 onClick={async () => {
-                  if (!(await confirm('Delete this note?', { body: 'Its cards and review history are removed on all devices.', confirm: 'Delete', danger: true }))) return;
+                  if (!(await confirm('Diese Notiz löschen?', { body: 'Ihre Karten und der Lernverlauf werden auf allen Geräten entfernt.', confirm: 'Löschen', danger: true }))) return;
                   await deleteNotes([noteId!]);
-                  toast.success('Deleted');
+                  toast.success('Gelöscht');
                   if (embedded) onSaved?.(note!);
                   else goBack('/browse');
                 }}
               >
-                Delete
+                Löschen
               </Button>
             </div>
           </Panel>
@@ -512,14 +512,14 @@ export function Editor({ noteId }: { noteId?: string }) {
         fields: Object.fromEntries(['german', 'english', 'gender', 'front', 'back', 'text'].filter((k) => query.get(k)).map((k) => [k, query.get(k)!])),
       };
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-6 pb-4 md:px-8 md:pt-10">
+    <div className="mx-auto max-w-6xl px-5 pt-8 pb-4 md:px-8 md:pt-10">
       <div className="mb-6 flex items-center gap-3">
         {noteId && (
-          <button onClick={() => goBack('/browse')} className="flex size-9 items-center justify-center rounded-xl text-muted hover:bg-surface-2" aria-label="Back">
+          <button onClick={() => goBack('/browse')} className="flex size-11 items-center justify-center rounded-md text-ink-muted hover:bg-paper-sunk" aria-label="Zurück">
             <ArrowLeft className="size-5" />
           </button>
         )}
-        <h1 className="font-display text-[28px] font-semibold tracking-tight md:text-[32px]">{noteId ? 'Edit note' : 'Add cards'}</h1>
+        <h1 className="t-title">{noteId ? 'Notiz bearbeiten' : 'Neue Karte'}</h1>
       </div>
       <NoteEditor noteId={noteId} defaults={defaults} onSaved={noteId ? () => goBack('/browse') : undefined} />
     </div>

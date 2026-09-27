@@ -41,8 +41,8 @@ export async function scheduleDailyReminder(time: string | null): Promise<boolea
       notifications: [
         {
           id: 4747,
-          title: 'Zeit für Deutsch! ⚓',
-          body: 'Your cards are waiting — a few minutes keeps the streak alive.',
+          title: 'Zeit für Deutsch',
+          body: 'Deine Karten warten. Ein paar Minuten halten deine Serie am Leben.',
           schedule: { on: { hour, minute }, repeats: true, allowWhileIdle: true },
           smallIcon: 'ic_stat_anker',
         },

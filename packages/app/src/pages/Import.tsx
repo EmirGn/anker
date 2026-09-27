@@ -1,5 +1,5 @@
 import { isNewer, SYNC_TABLES, type AnyRecord, type NoteInput, type TableName } from '@anker/core';
-import { Download, FileSpreadsheet, FileUp, Package, Upload } from 'lucide-react';
+import { Download, FileSpreadsheet, FileUp, Package, Upload } from '../components/icons';
 import { useMemo, useRef, useState } from 'react';
 import { DeckSelect } from '../components/DeckSelect';
 import { Button, Chip, Input, Label, PageHeader, Panel, Section, Segmented, Select, Spinner, Textarea, toast, Toggle } from '../components/ui';
@@ -43,7 +43,7 @@ function AnkiImport() {
     setBusy(true);
     try {
       const r = await importAnkiPackage(pkg, { prefix, keepHistory }, setStatus);
-      toast.success(`Imported ${r.notes} notes${r.reviews ? ` with ${r.reviews} reviews` : ''}`);
+      toast.success(`${r.notes} Notizen importiert${r.reviews ? `, mit ${r.reviews} Wiederholungen` : ''}`);
       navigate('/decks');
     } catch (e) {
       toast.error((e as Error).message);
@@ -55,15 +55,15 @@ function AnkiImport() {
   return (
     <Panel className="p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <Package className="size-6 text-accent" />
+        <Package className="size-6 text-ink" />
         <div className="min-w-0 flex-1">
-          <div className="font-semibold">Anki deck (.apkg / .colpkg)</div>
-          <div className="text-[13px] text-muted">Decks, tags, images and — optionally — your review history, replayed through FSRS.</div>
+          <div className="t-label">Anki-Deck (.apkg / .colpkg)</div>
+          <div className="t-caption text-ink-muted">Decks, Tags, Bilder und auf Wunsch dein Lernverlauf, neu berechnet mit FSRS.</div>
         </div>
-        <Picker accept=".apkg,.colpkg,.zip" onFile={load} label="Choose file" icon={<FileUp className="size-4" />} />
+        <Picker accept=".apkg,.colpkg,.zip" onFile={load} label="Datei wählen" icon={<FileUp className="size-4" />} />
       </div>
       {status && (
-        <div className="mt-4 flex items-center gap-2 text-sm text-muted">
+        <div className="mt-4 flex items-center gap-2 text-[15px] text-ink-muted">
           <Spinner className="size-4" /> {status}
         </div>
       )}
@@ -71,24 +71,24 @@ function AnkiImport() {
         <div className="mt-5 space-y-4 border-t border-line pt-4">
           <div className="flex flex-wrap gap-2">
             <Chip>{pkg.format}</Chip>
-            <Chip>{pkg.notes.length} notes</Chip>
-            <Chip>{pkg.decks.length} decks</Chip>
-            <Chip>{pkg.revlog.length} reviews</Chip>
-            {pkg.images > 0 && <Chip>{pkg.images} images</Chip>}
+            <Chip>{pkg.notes.length} Notizen</Chip>
+            <Chip>{pkg.decks.length} Decks</Chip>
+            <Chip>{pkg.revlog.length} Wiederholungen</Chip>
+            {pkg.images > 0 && <Chip>{pkg.images} Bilder</Chip>}
           </div>
-          <div className="text-[13px] text-muted">{pkg.decks.slice(0, 8).join(' · ')}{pkg.decks.length > 8 ? ' …' : ''}</div>
+          <div className="t-caption text-ink-muted">{pkg.decks.slice(0, 8).join(' · ')}{pkg.decks.length > 8 ? ' …' : ''}</div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label hint="optional">Put decks under</Label>
-              <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="e.g. Anki" />
+              <Label hint="optional">Decks einordnen unter</Label>
+              <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="z. B. Anki" />
             </div>
             <div className="flex items-end gap-3 pb-2">
-              <Toggle checked={keepHistory} onChange={setKeepHistory} label="Keep progress" />
-              <span className="text-[14px]">Keep review history & progress</span>
+              <Toggle checked={keepHistory} onChange={setKeepHistory} label="Fortschritt behalten" />
+              <span className="text-[15px]">Lernverlauf und Fortschritt behalten</span>
             </div>
           </div>
           <Button variant="primary" onClick={run} loading={busy}>
-            Import {pkg.notes.length} notes
+            {pkg.notes.length} Notizen importieren
           </Button>
         </div>
       )}
@@ -97,15 +97,15 @@ function AnkiImport() {
 }
 
 const COLS = [
-  { v: 'ignore', l: 'Ignore' },
-  { v: 'german', l: 'German' },
-  { v: 'english', l: 'Meaning' },
-  { v: 'gender', l: 'Gender' },
+  { v: 'ignore', l: 'Ignorieren' },
+  { v: 'german', l: 'Deutsch' },
+  { v: 'english', l: 'Bedeutung' },
+  { v: 'gender', l: 'Genus' },
   { v: 'plural', l: 'Plural' },
-  { v: 'forms', l: 'Forms' },
-  { v: 'example', l: 'Example' },
-  { v: 'exampleTranslation', l: 'Example translation' },
-  { v: 'notes', l: 'Notes' },
+  { v: 'forms', l: 'Formen' },
+  { v: 'example', l: 'Beispiel' },
+  { v: 'exampleTranslation', l: 'Übersetzung' },
+  { v: 'notes', l: 'Notizen' },
   { v: 'tags', l: 'Tags' },
 ];
 
@@ -162,8 +162,8 @@ function CsvImport() {
         return { deckId: target, type: 'word', fields, tags, source: 'import' };
       });
       const r = await addNotes(inputs);
-      if (r.errors.length) toast.error(`${r.errors.length} rows skipped (${r.errors[0]})`);
-      toast.success(`Imported ${r.added} words`);
+      if (r.errors.length) toast.error(`${r.errors.length} Zeilen übersprungen (${r.errors[0]})`);
+      toast.success(`${r.added} Wörter importiert`);
       setText('');
     } finally {
       setBusy(false);
@@ -172,23 +172,23 @@ function CsvImport() {
   return (
     <Panel className="p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <FileSpreadsheet className="size-6 text-accent" />
+        <FileSpreadsheet className="size-6 text-ink" />
         <div className="min-w-0 flex-1">
-          <div className="font-semibold">Word list (CSV / TSV)</div>
-          <div className="text-[13px] text-muted">Paste from a spreadsheet or pick a file. Articles in the German column are detected automatically.</div>
+          <div className="t-label">Wortliste (CSV / TSV)</div>
+          <div className="t-caption text-ink-muted">Aus einer Tabelle einfügen oder Datei wählen. Artikel in der deutschen Spalte werden automatisch erkannt.</div>
         </div>
-        <Picker accept=".csv,.tsv,.txt" onFile={(f) => void f.text().then(setText)} label="Choose file" icon={<FileUp className="size-4" />} />
+        <Picker accept=".csv,.tsv,.txt" onFile={(f) => void f.text().then(setText)} label="Datei wählen" icon={<FileUp className="size-4" />} />
       </div>
-      <Textarea value={text} onChange={(e) => setText(e.target.value)} className="mt-4 font-mono text-[12.5px]" rows={5} placeholder={'der Tisch\ttable\t\tTische\ndie Zeitung\tnewspaper\t\tZeitungen'} />
+      <Textarea value={text} onChange={(e) => setText(e.target.value)} className="mt-4 font-mono text-[13px]" rows={5} placeholder={'der Tisch\ttable\t\tTische\ndie Zeitung\tnewspaper\t\tZeitungen'} />
       {rows.length > 0 && (
         <div className="mt-4 space-y-4">
           <div className="thin-scroll overflow-x-auto">
-            <table className="text-[12.5px]">
+            <table className="text-[13px]">
               <thead>
                 <tr>
                   {Array.from({ length: width }, (_, i) => (
                     <th key={i} className="pr-2 pb-2 text-left">
-                      <Select value={map[i] ?? 'ignore'} onChange={(e) => setMap((m) => Object.assign([...m], { [i]: e.target.value }))} className="h-8 w-36 text-[12px]">
+                      <Select value={map[i] ?? 'ignore'} onChange={(e) => setMap((m) => Object.assign([...m], { [i]: e.target.value }))} className="h-8 w-36 text-[13px]">
                         {COLS.map((c) => (
                           <option key={c.v} value={c.v}>
                             {c.l}
@@ -203,7 +203,7 @@ function CsvImport() {
                 {data.slice(0, 5).map((r, i) => (
                   <tr key={i}>
                     {Array.from({ length: width }, (_, j) => (
-                      <td key={j} className="max-w-40 truncate border-t border-line py-1 pr-2 text-muted">
+                      <td key={j} className="max-w-40 truncate border-t border-line py-1 pr-2 text-ink-muted">
                         {r[j] ?? ''}
                       </td>
                     ))}
@@ -215,10 +215,10 @@ function CsvImport() {
           <div className="flex flex-wrap items-center gap-3">
             <DeckSelect value={deckId} onChange={setDeckId} className="w-60" />
             <label className="flex items-center gap-2 text-[13.5px]">
-              <Toggle checked={skipHeader} onChange={setSkipHeader} label="First row is a header" /> First row is a header
+              <Toggle checked={skipHeader} onChange={setSkipHeader} label="Erste Zeile ist eine Überschrift" /> Erste Zeile ist eine Überschrift
             </label>
             <Button variant="primary" onClick={run} loading={busy} disabled={!map.includes('german') || !map.includes('english')}>
-              Import {data.length} words
+              {data.length} Wörter importieren
             </Button>
           </div>
         </div>
@@ -243,7 +243,7 @@ function BackupImport() {
         for (let i = 0; i < newer.length; i += 1000) await commit([{ table: t, put: newer.slice(i, i + 1000) }]);
         n += newer.length;
       }
-      toast.success(`Restored ${n} records`);
+      toast.success(`${n} Einträge wiederhergestellt`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -252,12 +252,12 @@ function BackupImport() {
   };
   return (
     <Panel className="flex flex-wrap items-center gap-3 p-5">
-      <Upload className="size-6 text-accent" />
+      <Upload className="size-6 text-ink" />
       <div className="min-w-0 flex-1">
-        <div className="font-semibold">Anker backup (.json)</div>
-        <div className="text-[13px] text-muted">Merges a backup into this device — newer versions win.</div>
+        <div className="t-label">Anker-Sicherung (.json)</div>
+        <div className="t-caption text-ink-muted">Führt eine Sicherung mit diesem Gerät zusammen – neuere Versionen gewinnen.</div>
       </div>
-      {busy ? <Spinner /> : <Picker accept=".json" onFile={load} label="Choose file" icon={<FileUp className="size-4" />} />}
+      {busy ? <Spinner /> : <Picker accept=".json" onFile={load} label="Datei wählen" icon={<FileUp className="size-4" />} />}
     </Panel>
   );
 }
@@ -291,37 +291,37 @@ function Export() {
   };
   return (
     <Panel className="flex flex-wrap items-center gap-3 p-5">
-      <Download className="size-6 text-accent" />
+      <Download className="size-6 text-ink" />
       <div className="min-w-0 flex-1">
-        <div className="font-semibold">Export</div>
-        <div className="text-[13px] text-muted">Your vocabulary as CSV, or a full backup.</div>
+        <div className="t-label">Exportieren</div>
+        <div className="t-caption text-ink-muted">Dein Wortschatz als CSV oder eine komplette Sicherung.</div>
       </div>
       <Segmented
         value={what}
         onChange={setWhat}
         size="sm"
         options={[
-          { value: 'csv', label: 'Words (CSV)' },
-          { value: 'json', label: 'Backup (JSON)' },
+          { value: 'csv', label: 'Wörter (CSV)' },
+          { value: 'json', label: 'Sicherung (JSON)' },
         ]}
       />
-      <Button onClick={() => void run()}>Download</Button>
+      <Button onClick={() => void run()}>Herunterladen</Button>
     </Panel>
   );
 }
 
 export function ImportPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 pt-6 pb-16 md:px-8 md:pt-10">
-      <PageHeader title="Import & export" subtitle="Bring your Anki decks and word lists along." />
-      <Section title="Import">
+    <div className="mx-auto max-w-3xl px-5 pt-8 pb-16 md:px-8 md:pt-10">
+      <PageHeader title="Import & Export" subtitle="Bring deine Anki-Decks und Wortlisten mit." />
+      <Section title="Importieren">
         <div className="space-y-3">
           <AnkiImport />
           <CsvImport />
           <BackupImport />
         </div>
       </Section>
-      <Section title="Export">
+      <Section title="Exportieren">
         <Export />
       </Section>
     </div>

@@ -1,4 +1,4 @@
-import { Turtle, Volume2 } from 'lucide-react';
+import { Turtle, Volume2 } from '../components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { UmlautBar, insertAtCaret } from '../components/UmlautBar';
 import { Button, cx } from '../components/ui';
@@ -67,8 +67,8 @@ export function Diktat() {
   if (phase === 'start')
     return (
       <GameShell title="Diktat">
-        <StartScreen emoji="🎧" title="Diktat" onStart={() => void start()} best={best} bestLabel={`/${ROUNDS}`}>
-          Listen to a sentence — from your own cards when you have enough — and write it down. Capitals, umlauts and ß count.
+        <StartScreen game="diktat" title="Diktat" onStart={() => void start()} best={best} bestLabel={`/${ROUNDS}`}>
+          Hör einen Satz – aus deinen eigenen Karten, sobald du genug hast – und schreib ihn auf. Großschreibung, Umlaute und ß zählen.
         </StartScreen>
       </GameShell>
     );
@@ -85,10 +85,10 @@ export function Diktat() {
     <GameShell title="Diktat" right={`${round + 1}/${ROUNDS}`} progress={(round + (verdict ? 1 : 0)) / ROUNDS}>
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         <div className="flex gap-3">
-          <Button variant="primary" className="size-20 rounded-full !px-0" onClick={() => play()} aria-label="Play">
+          <Button className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => play()} aria-label="Anhören">
             <Volume2 className="size-8" />
           </Button>
-          <Button className="size-20 rounded-full !px-0" onClick={() => play(0.6)} aria-label="Play slowly">
+          <Button className="size-20 rounded-full !px-0" onClick={() => play(0.6)} aria-label="Langsam anhören">
             <Turtle className="size-7" />
           </Button>
         </div>
@@ -104,34 +104,34 @@ export function Diktat() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             readOnly={!!verdict}
-            placeholder="Schreib, was du hörst…"
+            placeholder="Schreib, was du hörst …"
             autoCapitalize="sentences"
             autoCorrect="off"
             spellCheck={false}
             lang="de"
             className={cx(
-              'h-14 w-full rounded-2xl border-2 bg-surface px-4 font-display text-[20px] outline-none',
-              !verdict ? 'border-line focus:border-accent' : verdict === 'exact' ? 'border-good' : verdict === 'close' ? 'border-hard' : 'border-again',
+              'h-14 w-full rounded-md border-2 bg-paper-raised px-4 font-display text-[20px] font-semibold outline-none',
+              !verdict ? 'border-line focus:border-hafen' : verdict === 'exact' ? 'border-wiese' : verdict === 'close' ? 'border-sonne-ink' : 'border-koralle-ink',
             )}
           />
           {!isNative && !verdict && <UmlautBar className="mt-2" onInsert={(ch) => insertAtCaret(ref.current, ch, setText)} />}
           {diff && (
-            <div className="anim-in mt-4 space-y-2 rounded-2xl bg-surface-2 px-4 py-3">
+            <div className="anim-in mt-4 space-y-2 rounded-md bg-paper-raised px-4 py-3">
               <div className="font-mono text-[15px] leading-relaxed">
                 {diff.expected.map((s, i) => (
-                  <span key={i} className={cx(s.kind === 'ok' ? 'text-good' : 'rounded bg-hard/25 text-ink underline decoration-hard decoration-2')}>
+                  <span key={i} className={cx(s.kind === 'ok' ? 'text-wiese' : 'text-ink underline decoration-sonne decoration-[3px] underline-offset-4')}>
                     {s.text}
                   </span>
                 ))}
               </div>
-              <div className="text-[13.5px] text-muted">{item.en}</div>
-              <div className={cx('text-[13px] font-semibold', verdict === 'exact' ? 'text-good' : verdict === 'close' ? 'text-hard' : 'text-again')}>
-                {verdict === 'exact' ? 'Perfekt! ✓' : verdict === 'close' ? 'Almost — only capitals, umlauts or punctuation differ.' : 'Highlighted: what was missing or different.'}
+              <div className="t-caption text-ink-muted">{item.en}</div>
+              <div className={cx('text-[15px] font-bold', verdict === 'exact' ? 'text-wiese' : verdict === 'close' ? 'text-sonne-ink' : 'text-koralle-ink')}>
+                {verdict === 'exact' ? 'Perfekt!' : verdict === 'close' ? 'Fast – nur Großschreibung, Umlaute oder Satzzeichen weichen ab.' : 'Unterstrichen: was gefehlt hat oder anders war.'}
               </div>
             </div>
           )}
           <Button type="submit" variant="primary" size="lg" className="mt-4 w-full">
-            {!verdict ? 'Check' : round + 1 >= ROUNDS ? 'Finish' : 'Next'}
+            {!verdict ? 'Prüfen' : round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
           </Button>
         </form>
       </div>

@@ -1,4 +1,5 @@
 import { makeDeck, starterDeckId, STARTER_DECKS, type Deck } from '@anker/core';
+import { STARTER_DE } from './de';
 import { db } from './db';
 import { addNotes, commit } from './repo';
 
@@ -25,7 +26,7 @@ export async function installStarterDecks(keys: string[]): Promise<number> {
           parentId,
           now,
           emoji: last ? spec.emoji : i === 0 ? '🇩🇪' : undefined,
-          description: last ? spec.description : undefined,
+          description: last ? STARTER_DE[spec.key] ?? spec.description : undefined,
         });
         decks.push(d);
         newDecks.push(d);
