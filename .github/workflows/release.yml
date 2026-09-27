@@ -45,7 +45,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: android-actions/setup-android@v3
+      # ubuntu-latest ships the Android SDK (ANDROID_HOME); Gradle fetches missing platforms itself.
       - run: npm ci
       - run: npm run build -w @anker/app
       - run: npx cap sync android
