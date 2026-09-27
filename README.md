@@ -15,13 +15,13 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/mac-today.png" width="820" alt="Anker on the Mac — Today">
+  <img src="docs/screenshots/mac-today-v2.png" width="820" alt="Anker on the Mac — Today">
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/android-today.png" width="230" alt="Android — Today">
-  <img src="docs/screenshots/android-study.png" width="230" alt="Android — reviewing a card">
-  <img src="docs/screenshots/android-tutor.png" width="230" alt="Android — AI tutor">
+  <img src="docs/screenshots/android-today-v2.png" width="230" alt="Android — Today">
+  <img src="docs/screenshots/android-study-v2.png" width="230" alt="Android — reviewing a card">
+  <img src="docs/screenshots/android-tutor-v2.png" width="230" alt="Android — AI tutor">
 </p>
 
 *Anker* is German for *anchor* — it anchors words in your memory. (And yes, it sounds like Anki.)
@@ -54,13 +54,13 @@
 | 🎧 **Diktat** | dictation built from the example sentences in *your* cards |
 
 <p align="center">
-  <img src="docs/screenshots/mac-study.png" width="410" alt="Reviewing on the Mac">
-  <img src="docs/screenshots/mac-kasus.png" width="410" alt="Kasus-Trainer">
+  <img src="docs/screenshots/mac-study-v2.png" width="410" alt="Reviewing on the Mac">
+  <img src="docs/screenshots/mac-kasus-v2.png" width="410" alt="Kasus-Trainer">
 </p>
 
 ## The AI tutor — Claude & Codex on your subscriptions
 
-<p align="center"><img src="docs/screenshots/mac-tutor.png" width="820" alt="Tutor"></p>
+<p align="center"><img src="docs/screenshots/mac-tutor-v2.png" width="820" alt="Tutor"></p>
 
 Anker doesn't use API keys. It drives the **official command-line tools** on your Mac — [Claude Code](https://docs.claude.com/en/docs/claude-code) (`claude -p`) for Claude Pro/Max and [Codex CLI](https://github.com/openai/codex) (`codex exec`) for ChatGPT Plus/Pro — so requests count against the subscriptions you already have. Sign-in happens in each CLI's own browser flow (`claude auth login`, `codex login`); **Anker never reads, stores or forwards your credentials.**
 
