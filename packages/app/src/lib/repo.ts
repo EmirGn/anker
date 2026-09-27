@@ -25,7 +25,7 @@ import {
   type ReviewLog,
   type TableName,
 } from '@anker/core';
-import { db, TABLES } from './db';
+import { db, tableOf, TABLES } from './db';
 
 type Op = { table: TableName; put?: AnyRecord[]; remove?: string[] };
 
@@ -38,7 +38,7 @@ export async function commit(ops: Op[]) {
   const tables = [...new Set(ops.map((o) => o.table))].map((t) => TABLES[t]());
   await db.transaction('rw', [...tables, db.outbox, db.tombstones], async () => {
     for (const op of ops) {
-      const table = TABLES[op.table]();
+      const table = tableOf(op.table);
       if (op.put?.length) {
         await table.bulkPut(op.put);
         await db.outbox.bulkPut(op.put.map((r) => ({ key: `${op.table}:${r.id}`, table: op.table, id: r.id, updatedAt: r.updatedAt })));

@@ -22,7 +22,7 @@ import {
   type ReviewLog,
 } from '@anker/core';
 import { Ban, EyeOff, MoreHorizontal, Pencil, Sparkles, Trash2, Undo2, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AISheet } from '../components/AISheet';
 import { autoSpeech, cardAccent, CardView } from '../components/CardView';
 import { UmlautBar, insertAtCaret } from '../components/UmlautBar';

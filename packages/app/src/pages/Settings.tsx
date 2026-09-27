@@ -1,8 +1,8 @@
 import type { AIProvider, Prefs } from '@anker/core';
-import { CheckCircle2, Copy, ExternalLink, Github, Laptop, Loader2, LogIn, Monitor, Moon, Plug, RefreshCw, Smartphone, Sun, Trash2, Volume2, XCircle } from 'lucide-react';
+import { CheckCircle2, Code2, Copy, ExternalLink, Laptop, Loader2, LogIn, Monitor, Moon, Plug, RefreshCw, Smartphone, Sun, Trash2, Volume2, XCircle } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Chip, cx, Input, Label, Modal, PageHeader, Panel, Section, Segmented, Select, Spinner, toast, Toggle, useConfirm } from '../components/ui';
+import { Button, Chip, cx, Input, Modal, PageHeader, Panel, Section, Segmented, Select, Spinner, toast, Toggle, useConfirm } from '../components/ui';
 import { aiLogin, aiStatus, type ProviderStatus } from '../lib/ai';
 import { db } from '../lib/db';
 import { desktop } from '../lib/desktop';
@@ -692,7 +692,7 @@ export function Settings() {
       <Section title="About">
         <Panel className="divide-y divide-line">
           <Row title={`Anker ${typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''}`} desc="Spaced repetition (FSRS) for German, with Claude & Codex over MCP.">
-            <Button size="sm" variant="ghost" icon={<Github className="size-4" />} onClick={() => openExternal(REPO_URL)}>
+            <Button size="sm" variant="ghost" icon={<Code2 className="size-4" />} onClick={() => openExternal(REPO_URL)}>
               GitHub <ExternalLink className="size-3.5" />
             </Button>
           </Row>

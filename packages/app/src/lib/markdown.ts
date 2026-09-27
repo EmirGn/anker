@@ -47,7 +47,7 @@ export function renderMarkdown(src: string): string {
       i++;
       continue;
     }
-    if (/^\s*([-*_])\s*\1\s*\1[\s\1]*$/.test(line)) {
+    if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) {
       out.push('<hr>');
       i++;
       continue;

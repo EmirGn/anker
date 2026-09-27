@@ -13,3 +13,4 @@ export * from './stats';
 export * from './sync';
 export * from './german/index';
 export * from './ops';
+export * from './content/index';

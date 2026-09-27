@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Card, Chat, Deck, Note, Prefs, ReviewLog, TableName } from '@anker/core';
+import type { AnyRecord, Card, Chat, Deck, Note, Prefs, ReviewLog, TableName } from '@anker/core';
 
 export interface OutboxEntry {
   key: string;
@@ -69,6 +69,11 @@ export const TABLES = {
   chats: () => db.chats,
   prefs: () => db.prefs,
 } satisfies Record<TableName, () => Table<any, string>>;
+
+/** Untyped access to a synced table (the union of table types isn't callable). */
+export function tableOf(t: TableName): Table<AnyRecord, string> {
+  return TABLES[t]() as unknown as Table<AnyRecord, string>;
+}
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {
   const e = await db.meta.get(key);

@@ -1,7 +1,7 @@
 // Offline-first sync: local writes land in the outbox; syncNow() pushes them
 // and pulls everything newer than our cursor. Conflicts: last writer wins.
 import { isNewer, newId, SYNC_TABLES, type AnyRecord, type SyncChange, type SyncResponse, type TableName } from '@anker/core';
-import { db, getMeta, setMeta, TABLES, type OutboxEntry } from './db';
+import { db, getMeta, setMeta, tableOf, TABLES, type OutboxEntry } from './db';
 import { hub, hubFetch, HubError, onHubChange, sseStream } from './hub';
 import { onCommit } from './repo';
 
@@ -63,7 +63,7 @@ async function applyRemote(changes: SyncChange[]) {
   await db.transaction('rw', [...tables.map((t) => TABLES[t]()), db.outbox, db.tombstones], async () => {
     for (const table of tables) {
       const list = changes.filter((c) => c.table === table);
-      const t = TABLES[table]();
+      const t = tableOf(table);
       const keys = list.map((c) => `${table}:${c.id}`);
       const [locals, tombs, outs] = await Promise.all([
         t.bulkGet(list.map((c) => c.id)),
