@@ -30,7 +30,8 @@ function useOnboardingRedirect() {
   const sync = useSyncState();
   const { path } = useRoute();
   useEffect(() => {
-    if (!decks || decks.length > 0 || path === '/welcome' || path === '/connect' || path === '/quick-add') return;
+    // Only from the Today page, so "Import from Anki" etc. still work for brand-new users.
+    if (!decks || decks.length > 0 || path !== '/') return;
     if (sync.status === 'syncing' || (sync.status === 'idle' && !sync.lastSync)) return;
     void getMeta('onboarded', false).then((done) => {
       if (!done) navigate('/welcome', { replace: true });
