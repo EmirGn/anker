@@ -1,9 +1,13 @@
 import { addDaysKey, dayKey, type DayStat } from '@anker/core';
 import { useMemo, useState } from 'react';
 import { cx } from './ui';
+import { lang, LOCALE, tr } from '../lib/i18n';
 
-const WEEKDAYS = ['Mo', '', 'Mi', '', 'Fr', '', ''];
-const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+const WEEKDAYS = lang === 'de' ? ['Mo', '', 'Mi', '', 'Fr', '', ''] : ['Mon', '', 'Wed', '', 'Fri', '', ''];
+const MONTHS =
+  lang === 'de'
+    ? ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** GitHub-style review calendar (columns = weeks, Monday first). */
 export function Heatmap({ days, weeks = 20, rolloverHour = 4 }: { days: Map<string, DayStat>; weeks?: number; rolloverHour?: number }) {
@@ -63,7 +67,7 @@ export function Heatmap({ days, weeks = 20, rolloverHour = 4 }: { days: Map<stri
         </div>
       </div>
       <div className="mt-2 h-4 text-[11px] text-ink-muted">
-        {hover ? `${new Date(`${hover.key}T12:00`).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}: ${hover.count} Wiederholungen` : ''}
+        {hover ? tr('{0}: {1} Wiederholungen', new Date(`${hover.key}T12:00`).toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' }), hover.count) : ''}
       </div>
     </div>
   );

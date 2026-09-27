@@ -7,6 +7,7 @@ import { db } from '../lib/db';
 import { useDeckCounts, useDeckTree, useLiveQuery } from '../lib/hooks';
 import { createDeckPath } from '../lib/repo';
 import { Link, navigate } from '../lib/router';
+import { tr } from '../lib/i18n';
 
 const COLLAPSE_KEY = 'anker-collapsed';
 function loadCollapsed(): Set<string> {
@@ -20,7 +21,7 @@ function loadCollapsed(): Set<string> {
 export function Counts({ c, className }: { c?: DeckCounts; className?: string }) {
   if (!c) return null;
   const cell = (n: number, color: string, label: string) => (
-    <span className={cx('w-12 text-right tabular-nums', !n && 'opacity-30')} style={{ color: n ? color : undefined }} title={label}>
+    <span className={cx('w-14 text-right tabular-nums', !n && 'opacity-30')} style={{ color: n ? color : undefined }} title={tr(label)}>
       {n}
     </span>
   );
@@ -43,7 +44,7 @@ export function NewDeckModal({ open, onClose, parentPath }: { open: boolean; onC
     try {
       const path = parentPath ? `${parentPath}::${name.trim()}` : name.trim();
       const d = await createDeckPath(path, { description: desc.trim() || undefined });
-      toast.success(`„${d.name}“ erstellt`);
+      toast.success(tr('„{0}“ erstellt', d.name));
       setName('');
       setDesc('');
       onClose();
@@ -55,24 +56,22 @@ export function NewDeckModal({ open, onClose, parentPath }: { open: boolean; onC
     <Modal
       open={open}
       onClose={onClose}
-      title={parentPath ? `Neues Deck in ${parentPath.split('::').pop()}` : 'Neues Deck'}
+      title={parentPath ? tr('Neues Deck in {0}', parentPath.split('::').pop()) : tr('Neues Deck')}
       footer={
         <>
-          <Button onClick={onClose}>Abbrechen</Button>
-          <Button variant="primary" onClick={submit} loading={busy} disabled={!name.trim()}>
-            Erstellen
-          </Button>
+          <Button onClick={onClose}>{tr('Abbrechen')}</Button>
+          <Button variant="primary" onClick={submit} loading={busy} disabled={!name.trim()}>{tr('Erstellen')}</Button>
         </>
       }
     >
       <div className="space-y-4">
         <div>
-          <Label hint="Mit :: für Unterdecks">Name</Label>
-          <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Küche & Kochen" onKeyDown={(e) => e.key === 'Enter' && submit()} />
+          <Label hint={tr('Mit :: für Unterdecks')}>{tr('Name')}</Label>
+          <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={tr('Küche & Kochen')} onKeyDown={(e) => e.key === 'Enter' && submit()} />
         </div>
         <div>
-          <Label>Beschreibung</Label>
-          <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Optional" />
+          <Label>{tr('Beschreibung')}</Label>
+          <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={tr('Optional')} />
         </div>
       </div>
     </Modal>
@@ -103,7 +102,7 @@ function DeckRow({
         <button
           onClick={() => hasKids && toggle(node.deck.id)}
           className={cx('flex size-7 shrink-0 items-center justify-center rounded-xs text-ink-muted', hasKids ? 'hover:bg-paper-sunk' : 'invisible')}
-          aria-label={isCollapsed ? 'Aufklappen' : 'Zuklappen'}
+          aria-label={isCollapsed ? tr('Aufklappen') : tr('Zuklappen')}
         >
           <ChevronRight className={cx('size-4 transition-transform duration-200', !isCollapsed && 'rotate-90')} />
         </button>
@@ -114,14 +113,14 @@ function DeckRow({
               {node.deck.name}
             </div>
             <div className="t-caption truncate text-ink-muted">
-              {notes} {notes === 1 ? 'Notiz' : 'Notizen'}
+              {notes === 1 ? tr('1 Notiz') : tr('{0} Notizen', notes)}
               {node.deck.description ? ` · ${node.deck.description}` : ''}
             </div>
           </div>
         </Link>
         <Counts c={c} className="hidden sm:flex" />
         <Button size="sm" variant={total ? 'secondary' : 'ghost'} onClick={() => navigate(`/study/${node.deck.id}`)} disabled={!total} className="ml-1 w-[76px]">
-          {total ? 'Lernen' : 'Fertig'}
+          {total ? tr('Lernen') : tr('Fertig')}
         </Button>
       </div>
       {!isCollapsed && node.children.map((ch) => <DeckRow key={ch.deck.id} node={ch} counts={counts} noteCounts={noteCounts} collapsed={collapsed} toggle={toggle} />)}
@@ -163,16 +162,12 @@ export function Decks() {
   return (
     <div className="mx-auto max-w-4xl px-5 pt-8 pb-10 md:px-8 md:pt-10">
       <PageHeader
-        title="Decks"
-        subtitle="Deine Kartenstapel. Unterdecks zählen zu ihrem Oberdeck."
+        title={tr('Decks')}
+        subtitle={tr('Deine Kartenstapel. Unterdecks zählen zu ihrem Oberdeck.')}
         actions={
           <>
-            <Button onClick={() => navigate('/import')} icon={<Import className="size-5" />} className="hidden sm:inline-flex">
-              Importieren
-            </Button>
-            <Button variant={empty ? 'secondary' : 'primary'} onClick={() => setNewOpen(true)} icon={<FolderPlus className="size-5" />}>
-              Neues Deck
-            </Button>
+            <Button onClick={() => navigate('/import')} icon={<Import className="size-5" />} className="hidden sm:inline-flex">{tr('Importieren')}</Button>
+            <Button variant={empty ? 'secondary' : 'primary'} onClick={() => setNewOpen(true)} icon={<FolderPlus className="size-5" />}>{tr('Neues Deck')}</Button>
           </>
         }
       />
@@ -183,28 +178,22 @@ export function Decks() {
       ) : empty ? (
         <Panel>
           <Empty
-            title="Noch keine Decks"
+            title={tr('Noch keine Decks')}
             action={
               <div className="flex flex-wrap justify-center gap-2">
-                <Button variant="primary" onClick={() => navigate('/welcome')}>
-                  Starter-Decks holen
-                </Button>
-                <Button onClick={() => setNewOpen(true)} icon={<Plus className="size-5" />}>
-                  Deck erstellen
-                </Button>
-                <Button onClick={() => navigate('/import')}>Aus Anki importieren</Button>
+                <Button variant="primary" onClick={() => navigate('/welcome')}>{tr('Starter-Decks holen')}</Button>
+                <Button onClick={() => setNewOpen(true)} icon={<Plus className="size-5" />}>{tr('Deck erstellen')}</Button>
+                <Button onClick={() => navigate('/import')}>{tr('Aus Anki importieren')}</Button>
               </div>
             }
-          >
-            Starte mit einem deutschen Starter-Deck, erstelle ein eigenes oder bring deine Anki-Decks mit.
-          </Empty>
+          >{tr('Starte mit einem deutschen Starter-Deck, erstelle ein eigenes oder bring deine Anki-Decks mit.')}</Empty>
         </Panel>
       ) : (
         <Panel className="overflow-hidden">
           <div className="t-overline hidden items-center justify-end gap-1 border-b whitespace-nowrap hyphens-none border-line px-4 py-2 text-ink-muted sm:flex">
-            <span className="w-12 text-right">Neu</span>
-            <span className="w-12 text-right">Lernen</span>
-            <span className="w-12 text-right">Fällig</span>
+            <span className="w-14 text-right">{tr('Neu')}</span>
+            <span className="w-14 text-right">{tr('Lernend')}</span>
+            <span className="w-14 text-right">{tr('Fällig')}</span>
             <span className="w-[84px]" />
           </div>
           {tree.map((n) => (

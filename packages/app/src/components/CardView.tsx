@@ -3,8 +3,9 @@ import { renderField } from '../lib/sanitize';
 import { speak } from '../lib/tts';
 import { Volume2 } from './icons';
 import { cx } from './ui';
+import { lang, tr } from '../lib/i18n';
 
-export const POS_LABEL: Record<string, string> = {
+export const POS_LABEL: Record<string, string> = lang !== 'de' ? { noun: 'Noun', verb: 'Verb', adjective: 'Adjective', adverb: 'Adverb', preposition: 'Preposition', conjunction: 'Conjunction', pronoun: 'Pronoun', phrase: 'Phrase', other: '' } : {
   noun: 'Nomen',
   verb: 'Verb',
   adjective: 'Adjektiv',
@@ -19,7 +20,8 @@ export const POS_LABEL: Record<string, string> = {
 // Grammatical gender is a colour system: only ever on vocabulary. Plural is ink-muted, never "die" red.
 export const GENDER_VAR: Record<Gender, string> = { der: 'var(--der)', die: 'var(--die)', das: 'var(--das)', pl: 'var(--ink-muted)' };
 export const GENDER_SOFT: Record<Gender, string> = { der: 'var(--der-soft)', die: 'var(--die-soft)', das: 'var(--das-soft)', pl: 'var(--paper-raised)' };
-const GENDER_NAME: Record<Gender, string> = { der: 'maskulin', die: 'feminin', das: 'neutrum', pl: 'Plural' };
+const GENDER_NAME: Record<Gender, string> =
+  lang === 'de' ? { der: 'maskulin', die: 'feminin', das: 'neutrum', pl: 'Plural' } : { der: 'masculine', die: 'feminine', das: 'neuter', pl: 'plural' };
 
 /** Inline noun: the article alone takes the gender colour in weight 700, the noun stays ink. */
 export function GenderWord({ word, gender, className }: { word: string; gender?: string; className?: string }) {
@@ -66,8 +68,8 @@ export function SpeakButton({ text, className, slow, tint }: { text: string; cla
         className,
       )}
       style={g ? { background: GENDER_SOFT[g], color: GENDER_VAR[g] } : undefined}
-      aria-label={`Anhören: ${text}`}
-      title="Anhören (R)"
+      aria-label={tr('Anhören: {0}', text)}
+      title={tr('Anhören (R)')}
     >
       <Volume2 className="size-5" />
     </button>
@@ -108,15 +110,13 @@ function WordDetails({ note }: { note: Note }) {
   const stamm = verb?.present3 ? [verb.present3, verb.preterite, verb.perfect].filter(Boolean).join(' · ') : null;
   return (
     <>
-      {pl && <div className="t-caption mt-0.5 text-ink-muted">Plural: {pl}</div>}
+      {pl && <div className="t-caption mt-0.5 text-ink-muted">{tr('Plural:')}{' '}{pl}</div>}
       {stamm ? (
-        <div className="t-caption mt-0.5 text-ink-muted" lang="de">
-          Stammformen: <span className="font-bold text-ink">{stamm}</span>
+        <div className="t-caption mt-0.5 text-ink-muted" lang="de">{tr('Stammformen:')}{' '}<span className="font-bold text-ink">{stamm}</span>
         </div>
       ) : (
         forms && (
-          <div className="t-caption mt-0.5 text-ink-muted" lang="de">
-            Formen: <span className="font-bold text-ink">{forms}</span>
+          <div className="t-caption mt-0.5 text-ink-muted" lang="de">{tr('Formen:')}{' '}<span className="font-bold text-ink">{forms}</span>
           </div>
         )
       )}
@@ -150,7 +150,7 @@ export function CardView({ note, ord, side, hideProductionHint }: { note: Note; 
           {pos && <div className="t-overline text-ink-muted">{pos}</div>}
           <Html html={renderField(f.english)} className="t-title mt-3" />
           {!hideProductionHint && (
-            <div className="t-caption mt-3 text-ink-muted">{f.pos === 'noun' || g ? 'Sag es auf Deutsch – mit Artikel.' : 'Sag es auf Deutsch.'}</div>
+            <div className="t-caption mt-3 text-ink-muted">{f.pos === 'noun' || g ? tr('Sag es auf Deutsch – mit Artikel.') : tr('Sag es auf Deutsch.')}</div>
           )}
         </div>
       );

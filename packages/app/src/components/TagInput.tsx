@@ -1,8 +1,9 @@
 import { X } from './icons';
 import { useState } from 'react';
 import { cx } from './ui';
+import { tr } from '../lib/i18n';
 
-export function TagInput({ value, onChange, placeholder = 'Tags hinzufügen …', className }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string; className?: string }) {
+export function TagInput({ value, onChange, placeholder = tr('Tags hinzufügen …'), className }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string; className?: string }) {
   const [draft, setDraft] = useState('');
   const commit = (raw: string) => {
     const parts = raw
@@ -23,7 +24,7 @@ export function TagInput({ value, onChange, placeholder = 'Tags hinzufügen …'
       {value.map((t) => (
         <span key={t} className="inline-flex items-center gap-1 rounded-sm bg-paper-sunk py-0.5 pr-1 pl-2 text-[13px] font-medium">
           {t}
-          <button type="button" onClick={() => onChange(value.filter((x) => x !== t))} className="rounded-xs p-0.5 text-ink-muted hover:text-ink" aria-label={`${t} entfernen`}>
+          <button type="button" onClick={() => onChange(value.filter((x) => x !== t))} className="rounded-xs p-0.5 text-ink-muted hover:text-ink" aria-label={tr('{0} entfernen', t)}>
             <X className="size-3" />
           </button>
         </span>

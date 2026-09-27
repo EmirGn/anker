@@ -29,11 +29,13 @@ import { useDecks, useHotkeys, useHub, useIsWide, useLiveQuery } from '../lib/ho
 import { isNative, modKey } from '../lib/platform';
 import { addNote, createDeckPath, deleteNotes, forgetNotes, suspendNotes, updateNote } from '../lib/repo';
 import { goBack, navigate, useRoute } from '../lib/router';
+import { lang, tr } from '../lib/i18n';
 
 const LAST_DECK = 'anker-last-deck';
 const LAST_TYPE = 'anker-last-type';
 const POS_OPTIONS = ['noun', 'verb', 'adjective', 'adverb', 'phrase', 'preposition', 'conjunction', 'pronoun', 'other'];
-const STATE_LABEL: Record<CardState, string> = { 0: 'Neu', 1: 'In Arbeit', 2: 'Wiederholung', 3: 'Wieder in Arbeit' };
+const STATE_LABEL: Record<CardState, string> =
+  lang === 'de' ? { 0: 'Neu', 1: 'In Arbeit', 2: 'Wiederholung', 3: 'Wieder in Arbeit' } : { 0: 'New', 1: 'Learning', 2: 'Review', 3: 'Relearning' };
 
 function emptyFields(type: NoteType): Record<string, string> {
   return Object.fromEntries(NOTE_TYPES[type].fields.map((f) => [f.key, '']));
@@ -134,13 +136,13 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
   const aiFill = async () => {
     const word = (fields.german || fields.english || '').trim();
     if (!word) {
-      toast('Gib zuerst ein Wort ein');
+      toast(tr('Gib zuerst ein Wort ein'));
       return;
     }
     setFilling(true);
     try {
       const r = await runTask<Record<string, string>>('fill-word', { word, hint: fields.english && fields.german ? fields.english : '' });
-      if (!r.ok || !r.structured) throw new Error(r.error ?? 'Kein Ergebnis');
+      if (!r.ok || !r.structured) throw new Error(r.error ?? tr('Kein Ergebnis'));
       const s = r.structured;
       setFields((f) => {
         const next = { ...f };
@@ -151,9 +153,9 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
         }
         return normalizeFields('word', next);
       });
-      toast.success('Von der KI ausgefüllt – bitte prüfen');
+      toast.success(tr('Von der KI ausgefüllt – bitte prüfen'));
     } catch (e) {
-      toast.error(`KI-Ausfüllen fehlgeschlagen: ${(e as Error).message}`);
+      toast.error(tr('KI-Ausfüllen fehlgeschlagen: {0}', (e as Error).message));
     } finally {
       setFilling(false);
     }
@@ -180,7 +182,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
     try {
       if (editing) {
         const n = await updateNote(noteId!, { fields, tags, deckId: targetDeck });
-        toast.success('Gespeichert');
+        toast.success(tr('Gespeichert'));
         onSaved?.(n);
       } else {
         const r = await addNote({ deckId: targetDeck, type, fields, tags });
@@ -190,8 +192,8 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
         } catch {
           // ignore
         }
-        toast.success(`${r.cards.length} ${r.cards.length === 1 ? 'Karte' : 'Karten'} hinzugefügt`, {
-          label: 'Rückgängig',
+        toast.success(r.cards.length === 1 ? tr('1 Karte hinzugefügt') : tr('{0} Karten hinzugefügt', r.cards.length), {
+          label: tr('Rückgängig'),
           run: () => void deleteNotes([r.note.id]),
         });
         onSaved?.(r.note);
@@ -213,7 +215,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
       </div>
     );
   }
-  if (editing && note === null) return <p className="py-10 text-center text-ink-muted">Diese Notiz gibt es nicht mehr.</p>;
+  if (editing && note === null) return <p className="py-10 text-center text-ink-muted">{tr('Diese Notiz gibt es nicht mehr.')}</p>;
 
   const focusProps = (key: string, ref?: boolean) => ({
     onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -225,7 +227,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
 
   const fieldInput = (key: string, label: string, opts: { placeholder?: string; multiline?: boolean; big?: boolean; first?: boolean; hint?: string; lang?: string } = {}) => (
     <div key={key}>
-      <Label hint={opts.hint}>{label}</Label>
+      <Label hint={opts.hint}>{tr(label)}</Label>
       {opts.multiline ? (
         <Textarea
           value={fields[key] ?? ''}
@@ -252,7 +254,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
   const wordForm = (
     <div className="space-y-4">
       <div>
-        <Label hint={hub ? undefined : 'Tipp: „der Tisch“ tippen – der Artikel wird erkannt'}>Deutsch</Label>
+        <Label hint={hub ? undefined : tr('Tipp: „der Tisch“ tippen – der Artikel wird erkannt')}>{tr('Deutsch')}</Label>
         <div className="flex gap-2">
           <Input
             value={fields.german ?? ''}
@@ -261,15 +263,15 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
               const sp = splitArticle(fields.german ?? '');
               if (sp.gender) setFields((f) => ({ ...f, german: sp.word, gender: f.gender || sp.gender!, pos: f.pos || 'noun' }));
             }}
-            placeholder="z. B. die Zeitung, fahren, gemütlich"
+            placeholder={tr('z. B. die Zeitung, fahren, gemütlich')}
             lang="de"
             autoFocus={!editing && !isNative}
             className="h-13 font-display text-[22px] font-semibold"
             {...(focusProps('german', true) as object)}
           />
           {hub && (
-            <Button onClick={aiFill} loading={filling} className="h-13 shrink-0" title="Genus, Plural, Formen und ein Beispiel mit KI ausfüllen" icon={!filling && <Wand2 className="size-4" />}>
-              <span className="hidden sm:inline">Ausfüllen</span>
+            <Button onClick={aiFill} loading={filling} className="h-13 shrink-0" title={tr('Genus, Plural, Formen und ein Beispiel mit KI ausfüllen')} icon={!filling && <Wand2 className="size-4" />}>
+              <span className="hidden sm:inline">{tr('Ausfüllen')}</span>
             </Button>
           )}
         </div>
@@ -279,9 +281,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
             onClick={() => setFields((f) => ({ ...f, gender: hints[0]!.gender, pos: f.pos || 'noun' }))}
             className="mt-2 inline-flex items-center gap-1.5 rounded-sm bg-paper-sunk px-2.5 py-1 text-[13px] text-ink-muted hover:text-ink"
           >
-            <Sparkles className="size-4" />
-            Wahrscheinlich <b style={{ color: GENDER_VAR[hints[0]!.gender] }}>{hints[0]!.gender}</b> ({ruleLabel(hints[0]!.rule)}) – antippen zum Übernehmen
-          </button>
+            <Sparkles className="size-4" />{tr('Wahrscheinlich')}{' '}<b style={{ color: GENDER_VAR[hints[0]!.gender] }}>{hints[0]!.gender}</b> ({ruleLabel(hints[0]!.rule)}{tr(') – antippen zum Übernehmen')}</button>
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -305,21 +305,21 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
               onClick={() => set('pos', fields.pos === p ? '' : p)}
               className={cx('h-9 rounded-full px-3 text-[13px] font-semibold transition-colors duration-[120ms]', fields.pos === p ? 'bg-ink text-paper' : 'text-ink-muted hover:bg-paper-sunk')}
             >
-              {POS_LABEL[p] || 'Andere'}
+              {POS_LABEL[p] || tr('Andere')}
             </button>
           ))}
         </div>
       </div>
-      {fieldInput('english', 'Bedeutung', { placeholder: 'newspaper' })}
-      {(fields.pos === 'noun' || gender) && fieldInput('plural', 'Plural', { placeholder: 'Zeitungen  (oder „-“, wenn es keinen gibt)', lang: 'de' })}
+      {fieldInput('english', 'Bedeutung', { placeholder: tr('newspaper') })}
+      {(fields.pos === 'noun' || gender) && fieldInput('plural', 'Plural', { placeholder: tr('Zeitungen  (oder „-“, wenn es keinen gibt)'), lang: 'de' })}
       {['verb', 'adjective', 'preposition'].includes(fields.pos ?? '') &&
-        fieldInput('forms', fields.pos === 'verb' ? 'Stammformen' : fields.pos === 'adjective' ? 'Komparativ · Superlativ' : 'Kasus', {
-          placeholder: fields.pos === 'verb' ? 'fährt · fuhr · ist gefahren' : fields.pos === 'adjective' ? 'größer · am größten' : '+ Dativ',
+        fieldInput('forms', fields.pos === 'verb' ? 'Verbformen' : fields.pos === 'adjective' ? 'Komparativ · Superlativ' : 'Kasus', {
+          placeholder: fields.pos === 'verb' ? tr('fährt · fuhr · ist gefahren') : fields.pos === 'adjective' ? tr('größer · am größten') : tr('+ Dativ'),
           lang: 'de',
         })}
-      {fieldInput('example', 'Beispielsatz', { placeholder: 'Ich lese jeden Morgen die Zeitung.', multiline: true, lang: 'de' })}
+      {fieldInput('example', 'Beispielsatz', { placeholder: tr('Ich lese jeden Morgen die Zeitung.'), multiline: true, lang: 'de' })}
       {fieldInput('exampleTranslation', 'Übersetzung', { placeholder: 'I read the newspaper every morning.', multiline: true })}
-      {fieldInput('notes', 'Notizen', { placeholder: 'Eselsbrücke, Gebrauch, falsche Freunde …', multiline: true })}
+      {fieldInput('notes', 'Notizen', { placeholder: tr('Eselsbrücke, Gebrauch, falsche Freunde …'), multiline: true })}
     </div>
   );
 
@@ -347,7 +347,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
                     set('text', `${text.slice(0, start)}{{c${n}::${sel}}}${text.slice(end)}`);
                   }}
                 >
-                  {same ? 'Lücke (gleiche Karte)' : '[…] Neue Lücke'}
+                  {same ? tr('Lücke (gleiche Karte)') : tr('[…] Neue Lücke')}
                 </Button>
               ))}
             </div>
@@ -375,20 +375,17 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
 
         {duplicate && (
           <div className="mb-4 flex items-center gap-2 rounded-md bg-sonne px-3.5 py-2 text-[15px] text-on-sonne">
-            <span className="flex-1">
-              Schon in <b>{dupDeck?.name ?? 'deiner Sammlung'}</b>: {duplicate.fields.german || duplicate.fields.front || '…'}
+            <span className="flex-1">{tr('Schon in')}{' '}<b>{dupDeck?.name ?? tr('deiner Sammlung')}</b>: {duplicate.fields.german || duplicate.fields.front || '…'}
             </span>
-            <Button size="sm" variant="ghost" className="text-on-sonne hover:bg-[#3a2a0014] hover:text-on-sonne" onClick={() => navigate(`/edit/${duplicate.id}`)}>
-              Öffnen
-            </Button>
+            <Button size="sm" variant="ghost" className="text-on-sonne hover:bg-[#3a2a0014] hover:text-on-sonne" onClick={() => navigate(`/edit/${duplicate.id}`)}>{tr('Öffnen')}</Button>
           </div>
         )}
 
         {type === 'word' ? wordForm : genericForm}
 
         <div className="mt-4">
-          <Label>Tags</Label>
-          <TagInput value={tags} onChange={setTags} placeholder="A2, küche, verb-trennbar…" />
+          <Label>{tr('Tags')}</Label>
+          <TagInput value={tags} onChange={setTags} placeholder={tr('A2, küche, verb-trennbar…')} />
         </div>
 
         {!isNative && (
@@ -404,18 +401,14 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
 
         <div className="sticky bottom-0 z-10 -mx-1 mt-6 flex flex-wrap items-center gap-2 bg-gradient-to-t from-paper via-paper to-transparent px-1 pt-4 pb-4">
           <Button variant="primary" size="lg" onClick={save} loading={saving} className="min-w-32">
-            {editing ? 'Speichern' : 'Hinzufügen'}
+            {editing ? tr('Speichern') : tr('Hinzufügen')}
           </Button>
-          <span className="hidden text-[13px] text-ink-muted sm:inline">{modKey}+Enter</span>
+          <span className="hidden text-[13px] text-ink-muted sm:inline">{modKey}{tr('+Enter')}</span>
           {!wide && (
-            <Button variant="ghost" onClick={() => setPreview((v) => !v)} icon={<Eye className="size-5" />}>
-              Vorschau
-            </Button>
+            <Button variant="ghost" onClick={() => setPreview((v) => !v)} icon={<Eye className="size-5" />}>{tr('Vorschau')}</Button>
           )}
           {editing && !embedded && (
-            <Button variant="ghost" className="ml-auto" onClick={() => goBack('/browse')}>
-              Fertig
-            </Button>
+            <Button variant="ghost" className="ml-auto" onClick={() => goBack('/browse')}>{tr('Fertig')}</Button>
           )}
         </div>
       </div>
@@ -424,13 +417,13 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
         <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           <Panel className="overflow-hidden">
             <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-              <span className="t-overline text-ink-muted">Vorschau</span>
+              <span className="t-overline text-ink-muted">{tr('Vorschau')}</span>
               {ords.length > 1 && (
                 <Segmented
                   size="sm"
                   value={String(Math.min(previewOrd, ords.length - 1))}
                   onChange={(v) => setPreviewOrd(Number(v))}
-                  options={ords.map((o, i) => ({ value: String(i), label: type === 'cloze' ? `c${o + 1}` : templateDe(type, o).split(' ')[0] ?? `#${i + 1}` }))}
+                  options={ords.map((o, i) => ({ value: String(i), label: type === 'cloze' ? tr('c{0}', o + 1) : templateDe(type, o).split(' ')[0] ?? `#${i + 1}` }))}
                 />
               )}
             </div>
@@ -444,7 +437,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
                   <CardView note={previewNote} ord={ords[Math.min(previewOrd, ords.length - 1)]!} side="answer" />
                 </div>
               ) : (
-                <p className="text-center text-[15px] text-ink-muted">Füll die Felder aus, um deine Karte zu sehen.</p>
+                <p className="text-center text-[15px] text-ink-muted">{tr('Füll die Felder aus, um deine Karte zu sehen.')}</p>
               )}
             </div>
           </Panel>
@@ -457,42 +450,37 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
       {editing && cards && cards.length > 0 && (
         <div className={cx(!embedded && 'lg:col-span-2')}>
           <Panel className="mt-2 p-4">
-            <div className="t-overline mb-3 text-ink-muted">Karten</div>
+            <div className="t-overline mb-3 text-ink-muted">{tr('Karten')}</div>
             <div className="space-y-2">
               {cards
                 .sort((a: Card, b: Card) => a.ord - b.ord)
                 .map((c: Card) => (
                   <div key={c.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
-                    <span className="w-44 font-semibold">{type === 'cloze' ? `Lücke ${c.ord + 1}` : templateDe(type, c.ord)}</span>
-                    <span className="text-ink-muted">{c.suspended ? 'Ausgesetzt' : STATE_LABEL[c.state]}</span>
-                    {c.state !== CardState.New && <span className="text-ink-muted">fällig {relativ(c.due)}</span>}
+                    <span className="w-44 font-semibold">{type === 'cloze' ? tr('Lücke {0}', c.ord + 1) : templateDe(type, c.ord)}</span>
+                    <span className="text-ink-muted">{c.suspended ? tr('Ausgesetzt') : STATE_LABEL[c.state]}</span>
+                    {c.state !== CardState.New && <span className="text-ink-muted">{tr('fällig')}{' '}{relativ(c.due)}</span>}
                     <span className="text-ink-muted">
-                      {c.reps} Wiederholungen · {c.lapses} Fehler
-                    </span>
+                      {c.reps}{' '}{tr('Wiederholungen ·')}{' '}{c.lapses}{' '}{tr('Fehler')}</span>
                   </div>
                 ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" icon={<RotateCcw className="size-4" />} onClick={async () => { await forgetNotes([noteId!]); toast.success('Fortschritt zurückgesetzt – die Karten sind wieder neu'); }}>
-                Fortschritt zurücksetzen
-              </Button>
-              <Button size="sm" onClick={async () => { const s = !cards.every((c) => c.suspended); await suspendNotes([noteId!], s); toast.success(s ? 'Ausgesetzt' : 'Wieder aktiv'); }}>
-                {cards.every((c) => c.suspended) ? 'Wieder aktivieren' : 'Aussetzen'}
+              <Button size="sm" icon={<RotateCcw className="size-4" />} onClick={async () => { await forgetNotes([noteId!]); toast.success(tr('Fortschritt zurückgesetzt – die Karten sind wieder neu')); }}>{tr('Fortschritt zurücksetzen')}</Button>
+              <Button size="sm" onClick={async () => { const s = !cards.every((c) => c.suspended); await suspendNotes([noteId!], s); toast.success(s ? tr('Ausgesetzt') : tr('Wieder aktiv')); }}>
+                {cards.every((c) => c.suspended) ? tr('Wieder aktivieren') : tr('Aussetzen')}
               </Button>
               <Button
                 size="sm"
                 variant="danger"
                 icon={<Trash2 className="size-4" />}
                 onClick={async () => {
-                  if (!(await confirm('Diese Notiz löschen?', { body: 'Ihre Karten und der Lernverlauf werden auf allen Geräten entfernt.', confirm: 'Löschen', danger: true }))) return;
+                  if (!(await confirm(tr('Diese Notiz löschen?'), { body: tr('Ihre Karten und der Lernverlauf werden auf allen Geräten entfernt.'), confirm: tr('Löschen'), danger: true }))) return;
                   await deleteNotes([noteId!]);
-                  toast.success('Gelöscht');
+                  toast.success(tr('Gelöscht'));
                   if (embedded) onSaved?.(note!);
                   else goBack('/browse');
                 }}
-              >
-                Löschen
-              </Button>
+              >{tr('Löschen')}</Button>
             </div>
           </Panel>
         </div>
@@ -515,11 +503,11 @@ export function Editor({ noteId }: { noteId?: string }) {
     <div className="mx-auto max-w-6xl px-5 pt-8 pb-4 md:px-8 md:pt-10">
       <div className="mb-6 flex items-center gap-3">
         {noteId && (
-          <button onClick={() => goBack('/browse')} className="flex size-11 items-center justify-center rounded-md text-ink-muted hover:bg-paper-sunk" aria-label="Zurück">
+          <button onClick={() => goBack('/browse')} className="flex size-11 items-center justify-center rounded-md text-ink-muted hover:bg-paper-sunk" aria-label={tr('Zurück')}>
             <ArrowLeft className="size-5" />
           </button>
         )}
-        <h1 className="t-title">{noteId ? 'Notiz bearbeiten' : 'Neue Karte'}</h1>
+        <h1 className="t-title">{noteId ? tr('Notiz bearbeiten') : tr('Neue Karte')}</h1>
       </div>
       <NoteEditor noteId={noteId} defaults={defaults} onSaved={noteId ? () => goBack('/browse') : undefined} />
     </div>

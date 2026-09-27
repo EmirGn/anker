@@ -29,9 +29,11 @@ import { HOW_DE, ruleLabel, ruleNote } from '../lib/de';
 import { useHub } from '../lib/hooks';
 import { Link, navigate } from '../lib/router';
 import { speak } from '../lib/tts';
+import { lang, tr } from '../lib/i18n';
 
 const G: Gender[] = ['der', 'die', 'das', 'pl'];
-const G_HEAD: Record<Gender, string> = { der: 'Maskulin', die: 'Feminin', das: 'Neutrum', pl: 'Plural' };
+const G_HEAD: Record<Gender, string> =
+  lang === 'de' ? { der: 'Maskulin', die: 'Feminin', das: 'Neutrum', pl: 'Plural' } : { der: 'Masculine', die: 'Feminine', das: 'Neuter', pl: 'Plural' };
 
 function Table({ head, rows, genderCols }: { head: ReactNode[]; rows: ReactNode[][]; genderCols?: boolean }) {
   return (
@@ -73,7 +75,7 @@ function Note({ children }: { children: ReactNode }) {
 function Ex({ de, en }: { de: string; en?: string }) {
   return (
     <div className="flex items-start gap-2 py-1">
-      <button onClick={() => void speak(de)} className="-my-1 flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-paper-sunk hover:text-ink" aria-label="Anhören">
+      <button onClick={() => void speak(de)} className="-my-1 flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-paper-sunk hover:text-ink" aria-label={tr('Anhören')}>
         <Volume2 className="size-5" />
       </button>
       <div>
@@ -103,7 +105,7 @@ function Faelle() {
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={caseRows(INDEFINITE)} genderCols />
       </Panel>
       <Panel className="p-4">
-        <div className="t-label mb-2">Negativartikel (kein) – Possessivartikel (mein, dein …) gehen genauso</div>
+        <div className="t-label mb-2">{tr('Negativartikel (kein) – Possessivartikel (mein, dein …) gehen genauso')}</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={caseRows(NEGATIVE)} genderCols />
       </Panel>
       <Note>
@@ -119,10 +121,10 @@ function Faelle() {
 
 function Praepositionen() {
   const groups: { key: PrepCase; title: string; hint: string }[] = [
-    { key: 'akk', title: 'Immer Akkusativ', hint: 'durch · für · gegen · ohne · um (“DOGFU”)' },
-    { key: 'dat', title: 'Immer Dativ', hint: 'aus · bei · mit · nach · seit · von · zu (+ gegenüber, außer)' },
-    { key: 'wechsel', title: 'Wechselpräpositionen', hint: 'Wo? → Dativ (Ort) · Wohin? → Akkusativ (Richtung)' },
-    { key: 'gen', title: 'Genitiv', hint: 'wegen · trotz · während · (an)statt – gesprochen oft mit Dativ' },
+    { key: 'akk', title: tr('Immer Akkusativ'), hint: tr('durch · für · gegen · ohne · um (“DOGFU”)') },
+    { key: 'dat', title: tr('Immer Dativ'), hint: tr('aus · bei · mit · nach · seit · von · zu (+ gegenüber, außer)') },
+    { key: 'wechsel', title: tr('Wechselpräpositionen'), hint: tr('Wo? → Dativ (Ort) · Wohin? → Akkusativ (Richtung)') },
+    { key: 'gen', title: tr('Genitiv'), hint: tr('wegen · trotz · während · (an)statt – gesprochen oft mit Dativ') },
   ];
   return (
     <div className="space-y-6">
@@ -144,7 +146,7 @@ function Praepositionen() {
         </Panel>
       ))}
       <Panel className="p-4">
-        <div className="t-label mb-2">Verschmelzungen</div>
+        <div className="t-label mb-2">{tr('Verschmelzungen')}</div>
         <div className="flex flex-wrap gap-2">
           {Object.entries(CONTRACTIONS).map(([k, v]) => (
             <span key={k} className="rounded-md bg-paper-sunk px-3 py-1.5 text-[15px]">
@@ -166,8 +168,8 @@ function Genus() {
   return (
     <div className="space-y-6">
       <Panel className="p-4">
-        <div className="t-label mb-2">Probier es aus: Tipp ein Nomen</div>
-        <Input value={word} onChange={(e) => setWord(e.target.value)} placeholder="z. B. Freundschaft, Häuschen, Motor …" className="text-[17px]" />
+        <div className="t-label mb-2">{tr('Probier es aus: Tipp ein Nomen')}</div>
+        <Input value={word} onChange={(e) => setWord(e.target.value)} placeholder={tr('z. B. Freundschaft, Häuschen, Motor …')} className="text-[17px]" />
         <div className="mt-3 min-h-8">
           {word.trim() &&
             (hits.length ? (
@@ -175,12 +177,12 @@ function Genus() {
                 {hits.slice(0, 3).map((h, i) => (
                   <div key={h.rule.id} className={cx('text-[15px]', i > 0 && 'text-ink-muted')}>
                     <b style={{ color: GENDER_VAR[h.gender] }}>{h.gender}</b> {word.trim()} – {ruleLabel(h.rule)}: {HOW_DE[h.rule.reliability]} {h.gender}
-                    {h.rule.exceptions?.length ? <span className="text-ink-muted"> (Ausnahmen: {h.rule.exceptions.join(', ')})</span> : null}
+                    {h.rule.exceptions?.length ? <span className="text-ink-muted">{' '}{tr('(Ausnahmen:')}{' '}{h.rule.exceptions.join(', ')})</span> : null}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-[15px] text-ink-muted">Keine Regel passt – dieses Wort lernst du einfach mit Artikel.</div>
+              <div className="text-[15px] text-ink-muted">{tr('Keine Regel passt – dieses Wort lernst du einfach mit Artikel.')}</div>
             ))}
         </div>
       </Panel>
@@ -216,17 +218,17 @@ function Adjektive() {
   return (
     <div className="space-y-6">
       <Panel className="p-4">
-        <div className="mb-1 font-semibold">Nach der / die / das (schwach)</div>
+        <div className="mb-1 font-semibold">{tr('Nach der / die / das (schwach)')}</div>
         <div className="mb-2 text-[13px] text-ink-muted">der alte Mann · die alte Frau · mit dem alten Auto</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={t(ADJ_WEAK)} genderCols />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-1 font-semibold">Nach ein / kein / mein (gemischt)</div>
+        <div className="mb-1 font-semibold">{tr('Nach ein / kein / mein (gemischt)')}</div>
         <div className="mb-2 text-[13px] text-ink-muted">ein alter Mann · ein altes Haus · meine alten Freunde</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={t(ADJ_MIXED)} genderCols />
       </Panel>
       <Panel className="p-4">
-        <div className="mb-1 font-semibold">Ohne Artikel (stark)</div>
+        <div className="mb-1 font-semibold">{tr('Ohne Artikel (stark)')}</div>
         <div className="mb-2 text-[13px] text-ink-muted">kalter Kaffee · frisches Brot · mit heißem Wasser</div>
         <Table head={['', ...G.map((g) => G_HEAD[g])]} rows={t(ADJ_STRONG)} genderCols />
       </Panel>
@@ -250,11 +252,11 @@ function Pronomen() {
   return (
     <div className="space-y-6">
       <Panel className="p-4">
-        <div className="t-label mb-2">Personalpronomen</div>
+        <div className="t-label mb-2">{tr('Personalpronomen')}</div>
         <Table head={['', 'Nominativ', 'Akkusativ', 'Dativ']} rows={PERSONAL_PRONOUNS.map((p) => [p.person, p.nom, p.akk, p.dat])} />
       </Panel>
       <Panel className="p-4">
-        <div className="t-label mb-2">Possessivartikel (Nominativ)</div>
+        <div className="t-label mb-2">{tr('Possessivartikel (Nominativ)')}</div>
         <Table head={['', 'der / das', 'die / Plural']} rows={poss} />
         <p className="mt-3 text-[13px] text-ink-muted">They decline like <i>kein</i>: meinen Bruder (Akk), mit meiner Schwester (Dat), unseren Freunden (Dat pl).</p>
       </Panel>
@@ -277,17 +279,17 @@ function Zahlen() {
   return (
     <div className="space-y-6">
       <Panel className="space-y-3 p-4">
-        <div className="t-label">Zahl → Deutsch</div>
+        <div className="t-label">{tr('Zahl → Deutsch')}</div>
         <Input value={n} onChange={(e) => setN(e.target.value.replace(/[^\d]/g, ''))} inputMode="numeric" className="font-mono text-[17px]" />
         {valid && (
           <div className="space-y-1">
             <div className="flex items-center gap-2 font-display text-[20px] font-bold" lang="de">
               {numberToGerman(num)}
-              <button onClick={() => void speak(String(num))} className="flex size-9 items-center justify-center rounded-full text-ink-muted hover:bg-paper-sunk hover:text-ink" aria-label="Anhören">
+              <button onClick={() => void speak(String(num))} className="flex size-9 items-center justify-center rounded-full text-ink-muted hover:bg-paper-sunk hover:text-ink" aria-label={tr('Anhören')}>
                 <Volume2 className="size-4" />
               </button>
             </div>
-            {num >= 1100 && num < 2000 && <div className="text-[15px] text-ink-muted">als Jahreszahl: {yearToGerman(num)}</div>}
+            {num >= 1100 && num < 2000 && <div className="text-[15px] text-ink-muted">{tr('als Jahreszahl:')}{' '}{yearToGerman(num)}</div>}
           </div>
         )}
       </Panel>
@@ -338,20 +340,20 @@ function Satzbau() {
   return (
     <div className="space-y-6">
       <Panel className="space-y-2 p-4">
-        <div className="t-label">1 · Das Verb steht immer an Position 2</div>
+        <div className="t-label">{tr('1 · Das Verb steht immer an Position 2')}</div>
         <Ex de="Ich lerne heute Deutsch." />
         <Ex de="Heute lerne ich Deutsch." en="Something else first? The subject moves behind the verb." />
         <Ex de="Was lernst du heute?" en="W-questions: question word + verb." />
         <Ex de="Lernst du heute Deutsch?" en="Yes/no questions: the verb comes first." />
       </Panel>
       <Panel className="space-y-2 p-4">
-        <div className="t-label">2 · Die Satzklammer</div>
+        <div className="t-label">{tr('2 · Die Satzklammer')}</div>
         <Ex de="Ich muss heute Deutsch lernen." en="Modal verb in position 2, infinitive at the end." />
         <Ex de="Ich habe gestern Deutsch gelernt." en="Perfekt: haben/sein in position 2, participle at the end." />
         <Ex de="Ich stehe jeden Tag um sieben Uhr auf." en="Separable verbs (aufstehen): the prefix goes to the end." />
       </Panel>
       <Panel className="space-y-2 p-4">
-        <div className="t-label">3 · Nebensätze: Verb ganz am Ende</div>
+        <div className="t-label">{tr('3 · Nebensätze: Verb ganz am Ende')}</div>
         <Ex de="Ich lerne Deutsch, weil ich in Berlin arbeiten möchte." />
         <Ex de="Weil ich müde bin, gehe ich früh ins Bett." en="Subordinate clause first → the main clause starts with the verb." />
         <p className="text-[13px] text-ink-muted">weil · dass · wenn · ob · als · obwohl · damit · bevor · nachdem · während · bis · seit(dem)</p>
@@ -360,7 +362,7 @@ function Satzbau() {
         </p>
       </Panel>
       <Panel className="space-y-2 p-4">
-        <div className="t-label">4 · TeKaMoLo – die Reihenfolge der Angaben</div>
+        <div className="t-label">{tr('4 · TeKaMoLo – die Reihenfolge der Angaben')}</div>
         <Ex de="Ich fahre morgen wegen des Streiks mit dem Fahrrad zur Arbeit." en="Temporal (wann?) · Kausal (warum?) · Modal (wie?) · Lokal (wo/wohin?)" />
       </Panel>
       <Panel className="p-4">
@@ -379,13 +381,13 @@ function Satzbau() {
 }
 
 export const TOPICS: { id: string; title: string; desc: string; body: () => ReactNode; drill?: string; ask: string }[] = [
-  { id: 'faelle', title: 'Artikel & Fälle', desc: 'der/den/dem/des – alle vier Fälle', body: Faelle, drill: 'kasus', ask: 'Erklär mir die vier Fälle mit einfachen Beispielen und einem Trick, wann ich welchen brauche.' },
-  { id: 'praepositionen', title: 'Präpositionen', desc: 'Welcher Fall nach welcher Präposition', body: Praepositionen, drill: 'kasus', ask: 'Erklär mir die Wechselpräpositionen (Wo? oder Wohin?) mit 6 gegensätzlichen Beispielpaaren.' },
-  { id: 'genus', title: 'Genus-Regeln', desc: 'der, die oder das an der Endung erkennen', body: Genus, drill: 'artikel', ask: 'Bring mir die zuverlässigsten Regeln bei, um das Genus deutscher Nomen zu erraten – mit einprägsamen Beispielen.' },
-  { id: 'adjektive', title: 'Adjektivendungen', desc: 'guter Wein, das gute Brot …', body: Adjektive, ask: 'Erklär mir die Adjektivendungen mit einem einfachen System, das ich beim Sprechen anwenden kann.' },
-  { id: 'pronomen', title: 'Pronomen', desc: 'ich/mich/mir, mein/meine …', body: Pronomen, ask: 'Frag mich Personalpronomen im Akkusativ und Dativ mit 8 kurzen Sätzen ab.' },
-  { id: 'zahlen', title: 'Zahlen & Uhrzeit', desc: 'einundzwanzig, halb acht', body: Zahlen, drill: 'zahlen', ask: 'Gib mir 10 knifflige Zahlen und Uhrzeiten zum Vorlesen, die Lösungen versteckt am Ende.' },
-  { id: 'satzbau', title: 'Satzbau & Verben', desc: 'Verbstellung, Perfekt, Modalverben', body: Satzbau, drill: 'verben', ask: 'Erklär mir den deutschen Satzbau (Verb an Position 2, Verb am Ende im Nebensatz, trennbare Verben) mit Beispielen.' },
+  { id: 'faelle', title: tr('Artikel & Fälle'), desc: tr('der/den/dem/des – alle vier Fälle'), body: Faelle, drill: 'kasus', ask: tr('Erklär mir die vier Fälle mit einfachen Beispielen und einem Trick, wann ich welchen brauche.') },
+  { id: 'praepositionen', title: tr('Präpositionen'), desc: tr('Welcher Fall nach welcher Präposition'), body: Praepositionen, drill: 'kasus', ask: tr('Erklär mir die Wechselpräpositionen (Wo? oder Wohin?) mit 6 gegensätzlichen Beispielpaaren.') },
+  { id: 'genus', title: tr('Genus-Regeln'), desc: tr('der, die oder das an der Endung erkennen'), body: Genus, drill: 'artikel', ask: tr('Bring mir die zuverlässigsten Regeln bei, um das Genus deutscher Nomen zu erraten – mit einprägsamen Beispielen.') },
+  { id: 'adjektive', title: tr('Adjektivendungen'), desc: tr('guter Wein, das gute Brot …'), body: Adjektive, ask: tr('Erklär mir die Adjektivendungen mit einem einfachen System, das ich beim Sprechen anwenden kann.') },
+  { id: 'pronomen', title: tr('Pronomen'), desc: tr('ich/mich/mir, mein/meine …'), body: Pronomen, ask: tr('Frag mich Personalpronomen im Akkusativ und Dativ mit 8 kurzen Sätzen ab.') },
+  { id: 'zahlen', title: tr('Zahlen & Uhrzeit'), desc: tr('einundzwanzig, halb acht'), body: Zahlen, drill: 'zahlen', ask: tr('Gib mir 10 knifflige Zahlen und Uhrzeiten zum Vorlesen, die Lösungen versteckt am Ende.') },
+  { id: 'satzbau', title: tr('Satzbau & Verben'), desc: tr('Verbstellung, Perfekt, Modalverben'), body: Satzbau, drill: 'verben', ask: tr('Erklär mir den deutschen Satzbau (Verb an Position 2, Verb am Ende im Nebensatz, trennbare Verben) mit Beispielen.') },
 ];
 
 export function Grammar({ topic }: { topic: string | null }) {
@@ -394,7 +396,7 @@ export function Grammar({ topic }: { topic: string | null }) {
   if (!t) {
     return (
       <div className="mx-auto max-w-4xl px-5 pt-8 pb-12 md:px-8 md:pt-10">
-        <PageHeader title="Grammatik" subtitle="Kompakte Tabellen und Regeln – mit Beispielen zum Anhören." />
+        <PageHeader title={tr('Grammatik')} subtitle={tr('Kompakte Tabellen und Regeln – mit Beispielen zum Anhören.')} />
         <div className="grid gap-3 sm:grid-cols-2">
           {TOPICS.map((x) => (
             <Link key={x.id} to={`/grammar/${x.id}`} className="flex items-center gap-3 rounded-md border border-line bg-paper-raised p-4 transition-colors duration-[120ms] hover:bg-paper-sunk">
@@ -416,7 +418,7 @@ export function Grammar({ topic }: { topic: string | null }) {
   return (
     <div className="mx-auto max-w-4xl px-5 pt-6 pb-16 md:px-8 md:pt-10">
       <Link to="/grammar" className="t-label mb-5 inline-flex h-9 items-center gap-1.5 text-ink-muted hover:text-ink">
-        <ArrowLeft className="size-5" /> Grammatik
+        <ArrowLeft className="size-5" /> {tr('Grammatik')}
       </Link>
       <PageHeader
         title={t.title}
@@ -425,12 +427,12 @@ export function Grammar({ topic }: { topic: string | null }) {
           <>
             {t.drill && (
               <Button onClick={() => navigate(`/practice/${t.drill}`)} icon={<Zap className="size-5" />}>
-                Üben
+                {tr('Üben')}
               </Button>
             )}
             {hub && (
               <Button variant="primary" onClick={() => navigate(`/tutor?q=${encodeURIComponent(t.ask)}`)} icon={<Sparkles className="size-5" />}>
-                Tutor fragen
+                {tr('Tutor fragen')}
               </Button>
             )}
           </>

@@ -9,6 +9,7 @@ import { haptic } from '../lib/platform';
 import { addNotes, createDeckPath } from '../lib/repo';
 import { speak } from '../lib/tts';
 import { GameShell, missedItems, nounPool, recordItem, Results, saveBest, shuffle, StartScreen, useBest } from './shared';
+import { tr } from '../lib/i18n';
 
 const DURATION = 60_000;
 const OPTIONS: Exclude<Gender, 'pl'>[] = ['der', 'die', 'das'];
@@ -120,25 +121,21 @@ export function ArtikelBlitz() {
 
   if (phase === 'start')
     return (
-      <GameShell title="Artikel-Blitz">
-        <StartScreen game="artikel" title="Artikel-Blitz" onStart={() => void start()} best={best}>
-          60 Sekunden. Ein Nomen erscheint – tipp auf <b style={{ color: GENDER_VAR.der }}>der</b>, <b style={{ color: GENDER_VAR.die }}>die</b> oder <b style={{ color: GENDER_VAR.das }}>das</b>. Bei einem Fehler
-          zeigt Otto dir die passende Regel. Tasten: 1 · 2 · 3.
-        </StartScreen>
+      <GameShell title={tr('Artikel-Blitz')}>
+        <StartScreen game="artikel" title={tr('Artikel-Blitz')} onStart={() => void start()} best={best}>{tr('60 Sekunden. Ein Nomen erscheint – tipp auf')}{' '}<b style={{ color: GENDER_VAR.der }}>{tr('der')}</b>, <b style={{ color: GENDER_VAR.die }}>{tr('die')}</b>{' '}{tr('oder')}{' '}<b style={{ color: GENDER_VAR.das }}>{tr('das')}</b>{tr('. Bei einem Fehler zeigt Otto dir die passende Regel. Tasten: 1 · 2 · 3.')}</StartScreen>
       </GameShell>
     );
 
   if (phase === 'done')
     return (
-      <GameShell title="Artikel-Blitz">
+      <GameShell title={tr('Artikel-Blitz')}>
         <Results score={score} prevBest={prevBest} onAgain={() => void start()}>
           <div className="mb-3 text-center text-[15px] text-ink-muted">
-            {answered} beantwortet · {answered ? Math.round((score / answered) * 100) : 0} % richtig
-          </div>
+            {answered}{' '}{tr('beantwortet ·')}{' '}{answered ? Math.round((score / answered) * 100) : 0}{' '}{tr('% richtig')}</div>
           {missed.length > 0 && (
             <div className="rounded-md border border-line bg-paper-raised p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="t-overline text-ink-muted">Verpasst</span>
+                <span className="t-overline text-ink-muted">{tr('Verpasst')}</span>
                 {missed.some((m) => !m.own) && (
                   <Button
                     size="sm"
@@ -148,11 +145,9 @@ export function ArtikelBlitz() {
                       const r = await addNotes(
                         missed.filter((m) => !m.own).map((m) => ({ deckId: deck.id, type: 'word' as const, fields: { german: m.word, gender: m.gender, plural: m.plural, english: m.meaning, pos: 'noun' }, tags: ['artikel-blitz'] })),
                       );
-                      toast.success(`${r.added} Wörter zu „Artikel-Blitz“ hinzugefügt`);
+                      toast.success(tr('{0} Wörter zu „Artikel-Blitz“ hinzugefügt', r.added));
                     }}
-                  >
-                    Als Karten speichern
-                  </Button>
+                  >{tr('Als Karten speichern')}</Button>
                 )}
               </div>
               <div className="space-y-1.5">
@@ -170,18 +165,16 @@ export function ArtikelBlitz() {
     );
 
   return (
-    <GameShell title="Artikel-Blitz" right={<span className={cx(left < 10_000 && 'text-koralle-ink')}>{Math.ceil(left / 1000)} s</span>} progress={1 - left / DURATION}>
+    <GameShell title={tr('Artikel-Blitz')} right={<span className={cx(left < 10_000 && 'text-koralle-ink')}>{Math.ceil(left / 1000)}{' '}{tr('s')}</span>} progress={1 - left / DURATION}>
       <div className="flex items-center justify-between text-[15px] font-semibold">
-        <span>
-          Punkte <span className="tabular-nums">{score}</span>
+        <span>{tr('Punkte')}{' '}<span className="tabular-nums">{score}</span>
         </span>
         {streak >= 3 && (
           <span className="anim-in inline-flex h-7 items-center gap-1 rounded-full bg-sonne px-2.5 text-[13px] font-bold text-on-sonne">
-            <Flame weight="fill" className="size-4" /> {streak} in Folge
-          </span>
+            <Flame weight="fill" className="size-4" /> {streak}{' '}{tr('in Folge')}</span>
         )}
         <button onClick={() => setShowMeaning((v) => !v)} className="h-9 text-[13px] font-semibold text-ink-muted hover:text-ink">
-          Bedeutung {showMeaning ? 'ausblenden' : 'zeigen'}
+          {showMeaning ? tr('Bedeutung ausblenden') : tr('Bedeutung zeigen')}
         </button>
       </div>
       <div className="flex flex-1 flex-col items-center justify-center py-10">

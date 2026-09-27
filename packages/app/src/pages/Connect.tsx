@@ -8,6 +8,7 @@ import { connectWithToken, pairWithHub, probeHub, setHub } from '../lib/hub';
 import { deviceName } from '../lib/platform';
 import { navigate, useRoute } from '../lib/router';
 import { syncNow } from '../lib/sync';
+import { tr } from '../lib/i18n';
 
 // Survives remounts so a deep link / token link is only redeemed once per page load.
 const redeemed = new Set<string>();
@@ -30,7 +31,7 @@ export function Connect() {
       const token = query.get('token');
       const conn = token ? await connectWithToken(u || window.location.origin, token) : await pairWithHub(u, c.replace(/\D/g, ''), deviceName());
       await setMeta('onboarded', true);
-      toast.success(`Verbunden mit ${conn.name ?? 'deinem Mac'}`);
+      toast.success(tr('Verbunden mit {0}', conn.name ?? tr('deinem Mac')));
       await syncNow();
       navigate('/', { replace: true });
     } catch (e) {
@@ -68,8 +69,8 @@ export function Connect() {
       <div className="mb-6 flex items-center gap-3">
         <OttoBadge size={64} mood="happy" />
         <div>
-          <h1 className="t-title">Mit deinem Mac verbinden</h1>
-          <p className="mt-1 text-[15px] text-ink-muted">Decks und Wiederholungen synchronisieren, den KI-Tutor nutzen.</p>
+          <h1 className="t-title">{tr('Mit deinem Mac verbinden')}</h1>
+          <p className="mt-1 text-[15px] text-ink-muted">{tr('Decks und Wiederholungen synchronisieren, den KI-Tutor nutzen.')}</p>
         </div>
       </div>
 
@@ -78,25 +79,21 @@ export function Connect() {
           <div className="flex items-center gap-3">
             <CheckCircle2 className="size-6 text-wiese" />
             <div className="min-w-0 flex-1">
-              <div className="t-label">Verbunden mit {hub.name ?? 'deinem Mac'}</div>
+              <div className="t-label">{tr('Verbunden mit')}{' '}{hub.name ?? tr('deinem Mac')}</div>
               <div className="truncate text-[13px] text-ink-muted">
-                {hub.url} · {sync.status === 'idle' ? 'synchron' : sync.status === 'syncing' ? 'synchronisiert …' : sync.status === 'offline' ? 'nicht erreichbar' : 'Fehler'}
+                {hub.url} · {sync.status === 'idle' ? tr('synchron') : sync.status === 'syncing' ? tr('synchronisiert …') : sync.status === 'offline' ? tr('nicht erreichbar') : tr('Sync-Fehler')}
               </div>
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <Button variant="primary" onClick={() => navigate('/')}>
-              Fertig
-            </Button>
+            <Button variant="primary" onClick={() => navigate('/')}>{tr('Fertig')}</Button>
             <Button
               variant="ghost"
               onClick={async () => {
                 await setHub(null);
-                toast('Getrennt');
+                toast(tr('Getrennt'));
               }}
-            >
-              Trennen
-            </Button>
+            >{tr('Trennen')}</Button>
           </div>
         </Panel>
       ) : (
@@ -104,26 +101,25 @@ export function Connect() {
           <ol className="mb-6 space-y-3 text-[15px] text-ink-muted">
             <li className="flex gap-3">
               <Laptop className="size-6 shrink-0 text-ink" />
-              <span>
-                Öffne auf deinem Mac <b className="text-ink">Anker → Einstellungen → Sync & Geräte → Handy koppeln</b>.
+              <span>{tr('Öffne auf deinem Mac')}{' '}<b className="text-ink">{tr('Anker → Einstellungen → Sync & Geräte → Handy koppeln')}</b>.
               </span>
             </li>
             <li className="flex gap-3">
               <Smartphone className="size-6 shrink-0 text-ink" />
-              <span>Scanne den QR-Code mit der Kamera – oder gib unten Adresse und 6-stelligen Code ein.</span>
+              <span>{tr('Scanne den QR-Code mit der Kamera – oder gib unten Adresse und 6-stelligen Code ein.')}</span>
             </li>
             <li className="flex gap-3">
               <Wifi className="size-6 shrink-0 text-ink" />
-              <span>Beide Geräte müssen im selben WLAN sein (unterwegs über Tailscale).</span>
+              <span>{tr('Beide Geräte müssen im selben WLAN sein (unterwegs über Tailscale).')}</span>
             </li>
           </ol>
           <Panel className="space-y-4 p-5">
             <div>
-              <Label hint={found ? `„${found}“ gefunden` : undefined}>Adresse des Macs</Label>
+              <Label hint={found ? tr('„{0}“ gefunden', found) : undefined}>{tr('Adresse des Macs')}</Label>
               <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="192.168.1.23:4747" inputMode="url" autoCapitalize="off" autoCorrect="off" />
             </div>
             <div>
-              <Label>Kopplungscode</Label>
+              <Label>{tr('Kopplungscode')}</Label>
               <Input
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -134,13 +130,9 @@ export function Connect() {
               />
             </div>
             {error && <div className="rounded-md bg-koralle-soft px-3.5 py-2.5 text-[13px] font-medium text-koralle-ink">{error}</div>}
-            <Button variant="primary" size="lg" className="w-full" loading={busy} disabled={!url.trim() || code.length !== 6} onClick={() => void connect()}>
-              Verbinden
-            </Button>
+            <Button variant="primary" size="lg" className="w-full" loading={busy} disabled={!url.trim() || code.length !== 6} onClick={() => void connect()}>{tr('Verbinden')}</Button>
           </Panel>
-          <button onClick={() => navigate('/')} className="t-label mt-4 h-11 text-center text-ink-muted hover:text-ink">
-            Erst mal offline nutzen
-          </button>
+          <button onClick={() => navigate('/')} className="t-label mt-4 h-11 text-center text-ink-muted hover:text-ink">{tr('Erst mal offline nutzen')}</button>
         </>
       )}
     </div>

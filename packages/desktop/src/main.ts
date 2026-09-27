@@ -11,6 +11,7 @@ const DEFAULT_SHORTCUT = 'CommandOrControl+Alt+K';
 
 interface DesktopSettings {
   shortcut: string;
+  lang?: 'en' | 'de';
   bounds?: Electron.Rectangle;
   lastReminderDay?: string;
 }
@@ -21,6 +22,9 @@ let quick: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let quitting = false;
 let settings: DesktopSettings = { shortcut: DEFAULT_SHORTCUT };
+
+/** Menu, tray and notification text in the app's language (English unless the app says German). */
+const L = (de: string, en: string) => (settings.lang === 'de' ? de : en);
 
 const res = (...p: string[]) => (app.isPackaged ? path.join(process.resourcesPath, ...p) : path.join(__dirname, '..', ...p));
 const settingsFile = () => path.join(app.getPath('userData'), 'desktop.json');
@@ -183,22 +187,22 @@ function refreshStatus() {
   app.dock?.setBadge(due ? String(due) : '');
   if (tray) {
     tray.setTitle(due ? ` ${due}` : '', { fontType: 'monospacedDigit' });
-    tray.setToolTip(due ? `Anker – ${due} ${due === 1 ? 'Karte' : 'Karten'} fällig` : 'Anker – für heute alles erledigt');
+    tray.setToolTip(due ? L(`Anker – ${due} ${due === 1 ? 'Karte' : 'Karten'} fällig`, `Anker – ${due} ${due === 1 ? 'card' : 'cards'} due`) : L('Anker – für heute alles erledigt', 'Anker – all done for today'));
     tray.setContextMenu(trayMenu(due));
   }
 }
 
 function trayMenu(due: number) {
   return Menu.buildFromTemplate([
-    { label: due ? `${due} cards due today` : 'All done for today 🎉', enabled: false },
-    { label: 'Jetzt lernen', enabled: due > 0, click: () => showMain('/study') },
-    { label: 'Schnell hinzufügen …', accelerator: settings.shortcut, click: toggleQuickAdd },
-    { label: 'Tutor fragen', click: () => showMain('/tutor') },
+    { label: due ? L(`${due} ${due === 1 ? 'Karte' : 'Karten'} heute fällig`, `${due} ${due === 1 ? 'card' : 'cards'} due today`) : L('Für heute alles erledigt', 'All done for today'), enabled: false },
+    { label: L('Jetzt lernen', 'Start studying'), enabled: due > 0, click: () => showMain('/study') },
+    { label: L('Schnell hinzufügen …', 'Quick add…'), accelerator: settings.shortcut, click: toggleQuickAdd },
+    { label: L('Tutor fragen', 'Ask the tutor'), click: () => showMain('/tutor') },
     { type: 'separator' },
-    { label: 'Anker öffnen', click: () => showMain() },
-    { label: 'Einstellungen', click: () => showMain('/settings') },
+    { label: L('Anker öffnen', 'Open Anker'), click: () => showMain() },
+    { label: L('Einstellungen', 'Settings'), click: () => showMain('/settings') },
     { type: 'separator' },
-    { label: 'Anker beenden', role: 'quit' },
+    { label: L('Anker beenden', 'Quit Anker'), role: 'quit' },
   ]);
 }
 
@@ -222,7 +226,13 @@ function checkReminder() {
   settings.lastReminderDay = today;
   saveSettings();
   if (!due || !Notification.isSupported()) return;
-  const n = new Notification({ title: 'Zeit für Deutsch', body: `${due} ${due === 1 ? 'Karte wartet' : 'Karten warten'}. Ein paar Minuten halten deine Serie am Leben.` });
+  const n = new Notification({
+    title: L('Zeit für Deutsch', 'Time for German'),
+    body: L(
+      `${due} ${due === 1 ? 'Karte wartet' : 'Karten warten'}. Ein paar Minuten halten deine Serie am Leben.`,
+      `${due} ${due === 1 ? 'card is' : 'cards are'} waiting. A few minutes keeps your streak alive.`,
+    ),
+  });
   n.on('click', () => showMain('/study'));
   n.show();
 }
@@ -234,7 +244,7 @@ function appMenu() {
       submenu: [
         { role: 'about' },
         { type: 'separator' },
-        { label: 'Einstellungen …', accelerator: 'Command+,', click: () => showMain('/settings') },
+        { label: L('Einstellungen …', 'Settings…'), accelerator: 'Command+,', click: () => showMain('/settings') },
         { type: 'separator' },
         { role: 'hide' },
         { role: 'hideOthers' },
@@ -245,18 +255,18 @@ function appMenu() {
     },
     { role: 'editMenu' },
     {
-      label: 'Gehe zu',
+      label: L('Gehe zu', 'Go'),
       submenu: [
-        { label: 'Heute', accelerator: 'Command+1', click: () => showMain('/') },
+        { label: L('Heute', 'Today'), accelerator: 'Command+1', click: () => showMain('/') },
         { label: 'Decks', accelerator: 'Command+2', click: () => showMain('/decks') },
-        { label: 'Neue Karte', accelerator: 'Command+N', click: () => showMain('/add') },
-        { label: 'Karten suchen', accelerator: 'Command+F', click: () => showMain('/browse') },
-        { label: 'Üben', accelerator: 'Command+3', click: () => showMain('/practice') },
+        { label: L('Neue Karte', 'Add card'), accelerator: 'Command+N', click: () => showMain('/add') },
+        { label: L('Karten suchen', 'Browse'), accelerator: 'Command+F', click: () => showMain('/browse') },
+        { label: L('Üben', 'Practice'), accelerator: 'Command+3', click: () => showMain('/practice') },
         { label: 'Tutor', accelerator: 'Command+4', click: () => showMain('/tutor') },
-        { label: 'Statistik', accelerator: 'Command+5', click: () => showMain('/stats') },
+        { label: L('Statistik', 'Stats'), accelerator: 'Command+5', click: () => showMain('/stats') },
         { type: 'separator' },
-        { label: 'Jetzt lernen', accelerator: 'Command+Return', click: () => showMain('/study') },
-        { label: 'Schnell hinzufügen', click: toggleQuickAdd },
+        { label: L('Jetzt lernen', 'Start studying'), accelerator: 'Command+Return', click: () => showMain('/study') },
+        { label: L('Schnell hinzufügen', 'Quick add'), click: toggleQuickAdd },
       ],
     },
     { role: 'viewMenu' },
@@ -283,6 +293,14 @@ function ipc() {
   });
   ipcMain.on('anker:quick-close', () => quick?.hide());
   ipcMain.handle('anker:settings', () => ({ openAtLogin: app.getLoginItemSettings().openAtLogin, shortcut: settings.shortcut }));
+  ipcMain.handle('anker:lang', (_e, next: string) => {
+    const l = next === 'de' ? 'de' : 'en';
+    if (settings.lang === l) return;
+    settings.lang = l;
+    saveSettings();
+    appMenu();
+    refreshStatus();
+  });
   ipcMain.handle('anker:login-item', (_e, open: boolean) => app.setLoginItemSettings({ openAtLogin: open }));
   ipcMain.handle('anker:shortcut', (_e, accel: string) => {
     const next = accel?.trim() || DEFAULT_SHORTCUT;

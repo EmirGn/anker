@@ -6,6 +6,7 @@ import { useHub } from '../lib/hooks';
 import { renderMarkdown } from '../lib/markdown';
 import { navigate } from '../lib/router';
 import { Button, Modal, Segmented, Spinner } from './ui';
+import { tr } from '../lib/i18n';
 
 export function cardContext(note: Note): string {
   const lines = [`Note type: ${note.type}`];
@@ -72,8 +73,7 @@ export function AISheet({ note, open, onClose, initial = 'explain' }: { note: No
       }}
       title={
         <span className="flex items-center gap-2">
-          <Sparkles className="size-5" /> KI-Hilfe
-        </span>
+          <Sparkles className="size-5" />{' '}{tr('KI-Hilfe')}</span>
       }
       wide
       footer={
@@ -84,14 +84,12 @@ export function AISheet({ note, open, onClose, initial = 'explain' }: { note: No
               onClose();
               navigate(`/tutor?note=${note.id}`);
             }}
-          >
-            Mit dem Tutor besprechen
-          </Button>
+          >{tr('Mit dem Tutor besprechen')}</Button>
         )
       }
     >
       {!hub ? (
-        <p className="text-[15px] text-ink-muted">Verbinde dieses Gerät mit deinem Mac (Einstellungen → Sync), um Claude oder Codex zu nutzen.</p>
+        <p className="text-[15px] text-ink-muted">{tr('Verbinde dieses Gerät mit deinem Mac (Einstellungen → Sync), um Claude oder Codex zu nutzen.')}</p>
       ) : (
         <>
           <Segmented
@@ -99,9 +97,9 @@ export function AISheet({ note, open, onClose, initial = 'explain' }: { note: No
             onChange={setKind}
             className="mb-4"
             options={[
-              { value: 'explain', label: <span className="flex items-center gap-1.5"><Lightbulb className="size-4" />Erklären</span> },
-              { value: 'examples', label: <span className="flex items-center gap-1.5"><ListPlus className="size-4" />Beispiele</span> },
-              { value: 'mnemonic', label: <span className="flex items-center gap-1.5"><Brain className="size-4" />Eselsbrücke</span> },
+              { value: 'explain', label: <span className="flex items-center gap-1.5"><Lightbulb className="size-4" />{tr('Erklären')}</span> },
+              { value: 'examples', label: <span className="flex items-center gap-1.5"><ListPlus className="size-4" />{tr('Beispiele')}</span> },
+              { value: 'mnemonic', label: <span className="flex items-center gap-1.5"><Brain className="size-4" />{tr('Eselsbrücke')}</span> },
             ]}
           />
           {error ? (
@@ -110,8 +108,7 @@ export function AISheet({ note, open, onClose, initial = 'explain' }: { note: No
             <Markdown text={text} className="text-[15px]" />
           ) : (
             <div className="flex items-center gap-3 py-6 text-[15px] text-ink-muted">
-              <Spinner /> Thinking…
-            </div>
+              <Spinner />{' '}{tr('Denkt nach …')}</div>
           )}
           {loading && text && <Spinner className="mt-3 size-4" />}
         </>

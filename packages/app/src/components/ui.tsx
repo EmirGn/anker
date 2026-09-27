@@ -1,6 +1,8 @@
 import { CheckIcon, WarningIcon } from '@phosphor-icons/react';
 import {
   forwardRef,
+  useCallback,
+  useLayoutEffect,
   useEffect,
   useRef,
   useState,
@@ -14,6 +16,7 @@ import {
 import { createPortal } from 'react-dom';
 import { Loader2, X } from './icons';
 import { Otto, type OttoMood } from './Otto';
+import { tr } from '../lib/i18n';
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(' ');
@@ -94,11 +97,35 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   return <input ref={ref} className={cx(field, width(className), 'h-11', className)} {...rest} />;
 });
 
+/** Multi-line input that grows with its content (never resized by hand), up to 60% of the screen. */
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea(
-  { className, ...rest },
+  { className, rows = 2, onInput, ...rest },
   ref,
 ) {
-  return <textarea ref={ref} className={cx(field, width(className), 'min-h-[88px] resize-y py-2.5 leading-[22px]', className)} {...rest} />;
+  const el = useRef<HTMLTextAreaElement | null>(null);
+  const fit = useCallback(() => {
+    const t = el.current;
+    if (!t) return;
+    t.style.height = 'auto';
+    t.style.height = `${t.scrollHeight + 2}px`;
+  }, []);
+  useLayoutEffect(fit, [fit, rest.value]);
+  return (
+    <textarea
+      {...rest}
+      rows={rows}
+      ref={(node) => {
+        el.current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref) ref.current = node;
+      }}
+      onInput={(e) => {
+        fit();
+        onInput?.(e);
+      }}
+      className={cx(field, width(className), 'block max-h-[60vh] resize-none overflow-y-auto py-2.5 leading-[22px]', className)}
+    />
+  );
 });
 
 export function Select({ className, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
@@ -294,7 +321,7 @@ export function Modal({
         {title !== undefined && (
           <div className="flex items-center justify-between gap-3 px-5 pt-3 pb-2 md:pt-5">
             <div className="t-heading min-w-0">{title}</div>
-            <IconButton label="Schließen" onClick={onClose} className="-mr-2">
+            <IconButton label={tr('Schließen')} onClick={onClose} className="-mr-2">
               <X className="size-6" />
             </IconButton>
           </div>
@@ -310,7 +337,7 @@ export function Modal({
 export function useConfirm() {
   const [state, setState] = useState<{ title: string; body?: ReactNode; confirm: string; danger?: boolean; resolve: (v: boolean) => void } | null>(null);
   const ask = (title: string, opts: { body?: ReactNode; confirm?: string; danger?: boolean } = {}) =>
-    new Promise<boolean>((resolve) => setState({ title, body: opts.body, confirm: opts.confirm ?? 'OK', danger: opts.danger, resolve }));
+    new Promise<boolean>((resolve) => setState({ title, body: opts.body, confirm: opts.confirm ?? tr('OK'), danger: opts.danger, resolve }));
   const close = (v: boolean) => {
     state?.resolve(v);
     setState(null);
@@ -322,7 +349,7 @@ export function useConfirm() {
       title={state?.title}
       footer={
         <>
-          <Button onClick={() => close(false)}>Abbrechen</Button>
+          <Button onClick={() => close(false)}>{tr('Abbrechen')}</Button>
           <Button variant={state?.danger ? 'danger' : 'primary'} onClick={() => close(true)} autoFocus>
             {state?.confirm}
           </Button>

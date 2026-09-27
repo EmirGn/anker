@@ -18,6 +18,7 @@ import initSqlJs from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { db } from './db';
 import { commit } from './repo';
+import { tr } from './i18n';
 
 export interface AnkiNote {
   ankiId: number;
@@ -105,7 +106,7 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 export async function parseAnkiPackage(file: File, onStatus: (s: string) => void): Promise<AnkiPackage> {
-  onStatus('Paket wird geöffnet …');
+  onStatus(tr('Paket wird geöffnet …'));
   const zip = await JSZip.loadAsync(file);
   let bytes: Uint8Array;
   let format: string;
@@ -121,9 +122,9 @@ export async function parseAnkiPackage(file: File, onStatus: (s: string) => void
   } else if (f2) {
     bytes = await f2.async('uint8array');
     format = 'Anki 2.0';
-  } else throw new Error('Das ist kein Anki-Paket (.apkg / .colpkg).');
+  } else throw new Error(tr('Das ist kein Anki-Paket (.apkg / .colpkg).'));
 
-  onStatus('Sammlung wird gelesen …');
+  onStatus(tr('Sammlung wird gelesen …'));
   const SQL = await initSqlJs({ locateFile: () => wasmUrl });
   const sdb = new SQL.Database(bytes);
   const rows = (sql: string): unknown[][] => {
@@ -156,7 +157,7 @@ export async function parseAnkiPackage(file: File, onStatus: (s: string) => void
   for (const [id, name] of rows('SELECT id, name FROM notetypes')) if (/cloze|lückentext/i.test(String(name))) clozeModels.add(Number(id));
 
   // Media
-  onStatus('Medien werden gelesen …');
+  onStatus(tr('Medien werden gelesen …'));
   let media = new Map<string, string>();
   const mediaFile = zip.file('media');
   if (mediaFile) {
@@ -207,7 +208,7 @@ export async function parseAnkiPackage(file: File, onStatus: (s: string) => void
     return out.trim();
   };
 
-  onStatus('Notizen werden umgewandelt …');
+  onStatus(tr('Notizen werden umgewandelt …'));
   const cards = rows('SELECT id, nid, did, ord, queue FROM cards').map(([id, nid, did, ord, queue]) => ({
     id: Number(id),
     nid: Number(nid),
@@ -263,7 +264,7 @@ export async function importAnkiPackage(
     deckIdFor.set(name, deck.id);
   }
 
-  onStatus('Notizen werden angelegt …');
+  onStatus(tr('Notizen werden angelegt …'));
   const notes: Note[] = [];
   const cardsById = new Map<string, Card>();
   const noteIdForAnki = new Map<number, string>();
@@ -291,7 +292,7 @@ export async function importAnkiPackage(
   }
 
   if (opts.keepHistory && pkg.revlog.length) {
-    onStatus(`${pkg.revlog.length} Wiederholungen werden mit FSRS nachgerechnet …`);
+    onStatus(tr('{0} Wiederholungen werden mit FSRS nachgerechnet …', pkg.revlog.length));
     const byCard = new Map<number, typeof pkg.revlog>();
     for (const r of pkg.revlog) {
       if (r.ease < 1 || r.ease > 4 || r.type > 2) continue;
@@ -313,7 +314,7 @@ export async function importAnkiPackage(
     }
   }
 
-  onStatus('Wird gespeichert …');
+  onStatus(tr('Wird gespeichert …'));
   if (newDecks.length) await commit([{ table: 'decks', put: newDecks }]);
   const allCards = [...cardsById.values()];
   for (let i = 0; i < notes.length; i += 400) {

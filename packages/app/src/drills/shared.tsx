@@ -6,6 +6,7 @@ import { Button, cx, IconButton } from '../components/ui';
 import { db, getMeta, setMeta } from '../lib/db';
 import { navigate } from '../lib/router';
 import { DRILLS } from '../pages/Today';
+import { tr } from '../lib/i18n';
 
 export function shuffle<T>(a: T[]): T[] {
   const arr = [...a];
@@ -86,7 +87,7 @@ export function GameShell({ title, right, children, progress }: { title: string;
     <div className="flex min-h-full flex-col">
       <div className="pt-safe sticky top-0 z-10 bg-paper/90 backdrop-blur-xl">
         <div className="drag mx-auto flex h-14 max-w-3xl items-center gap-2 px-3 md:h-16 md:px-6">
-          <IconButton label="Beenden" onClick={() => navigate('/practice')} className="no-drag">
+          <IconButton label={tr('Beenden')} onClick={() => navigate('/practice')} className="no-drag">
             <X className="size-6" />
           </IconButton>
           <div className="t-label min-w-0 flex-1 truncate text-center">{title}</div>
@@ -117,13 +118,11 @@ export function StartScreen({ game, title, children, onStart, best, bestLabel }:
       <div className="mt-2 max-w-md text-[15px] text-ink-muted">{children}</div>
       {best !== null && (
         <div className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-full bg-sonne px-3 text-[13px] font-bold text-on-sonne tabular-nums">
-          <Trophy weight="fill" className="size-4" /> Rekord: {best}
+          <Trophy weight="fill" className="size-4" />{' '}{tr('Rekord:')}{' '}{best}
           {bestLabel}
         </div>
       )}
-      <Button variant="primary" size="lg" className="mt-8 w-full max-w-sm" onClick={onStart} autoFocus>
-        Los geht’s
-      </Button>
+      <Button variant="primary" size="lg" className="mt-8 w-full max-w-sm" onClick={onStart} autoFocus>{tr('Los geht’s')}</Button>
     </div>
   );
 }
@@ -145,7 +144,7 @@ export function Results({
 }) {
   const record = prevBest === null || score > prevBest;
   const ratio = total ? score / total : null;
-  const msg = ratio === null ? (record ? 'Neuer Rekord!' : 'Gut gemacht!') : ratio >= 0.9 ? 'Ausgezeichnet!' : ratio >= 0.7 ? 'Sehr gut!' : ratio >= 0.5 ? 'Nicht schlecht.' : 'Übung macht den Meister.';
+  const msg = ratio === null ? (record ? tr('Neuer Rekord!') : tr('Gut gemacht!')) : ratio >= 0.9 ? tr('Ausgezeichnet!') : ratio >= 0.7 ? tr('Sehr gut!') : ratio >= 0.5 ? tr('Nicht schlecht.') : tr('Übung macht den Meister.');
   const mood = record && score > 0 ? 'proud' : ratio !== null && ratio >= 0.7 ? 'happy' : 'thinking';
   return (
     <div className="anim-in flex flex-1 flex-col items-center text-center">
@@ -157,16 +156,12 @@ export function Results({
         {unit}
       </div>
       <div className={cx('mt-2 text-[15px]', record && score > 0 ? 'font-bold text-sonne-ink' : 'text-ink-muted')}>
-        {record && score > 0 ? (prevBest === null ? 'Dein erstes Ergebnis' : `Neuer Rekord (vorher ${prevBest})`) : `Rekord: ${prevBest}`}
+        {record && score > 0 ? (prevBest === null ? tr('Dein erstes Ergebnis') : tr('Neuer Rekord (vorher {0})', prevBest)) : tr('Rekord: {0}', prevBest)}
       </div>
       {children && <div className="mt-8 w-full text-left">{children}</div>}
       <div className="mt-8 flex w-full max-w-sm flex-col gap-2">
-        <Button variant="primary" size="lg" onClick={onAgain} autoFocus>
-          Noch mal spielen
-        </Button>
-        <Button size="lg" variant="ghost" onClick={() => navigate('/practice')}>
-          Andere Spiele
-        </Button>
+        <Button variant="primary" size="lg" onClick={onAgain} autoFocus>{tr('Noch mal spielen')}</Button>
+        <Button size="lg" variant="ghost" onClick={() => navigate('/practice')}>{tr('Andere Spiele')}</Button>
       </div>
     </div>
   );

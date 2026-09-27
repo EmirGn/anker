@@ -13,6 +13,8 @@ export interface AnkerDesktop {
   getSettings(): Promise<{ openAtLogin: boolean; shortcut: string }>;
   setOpenAtLogin(open: boolean): Promise<void>;
   setShortcut(accelerator: string): Promise<boolean>;
+  /** Menu, tray and notification language (older builds lack it). */
+  setLanguage?(lang: 'en' | 'de'): Promise<void>;
 }
 
 declare global {

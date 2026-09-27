@@ -23,27 +23,28 @@ import { useIsWide, useLiveQuery, usePrefs } from '../lib/hooks';
 import { deleteNotes, forgetNotes, moveNotes, suspendNotes, tagNotes } from '../lib/repo';
 import { navigate, useRoute } from '../lib/router';
 import { NoteEditor } from './Editor';
+import { LOCALE, tr } from '../lib/i18n';
 
 const FILTERS = [
-  { label: 'Fällig', q: 'is:due' },
-  { label: 'Neu', q: 'is:new' },
-  { label: 'Nomen', q: 'pos:noun' },
-  { label: 'Verben', q: 'pos:verb' },
-  { label: 'Oft vergessen', q: 'is:leech' },
-  { label: 'Ausgesetzt', q: 'is:suspended' },
-  { label: 'Diese Woche neu', q: 'added:7' },
-  { label: 'Heute wiederholt', q: 'rated:1' },
+  { label: tr('Fällig'), q: 'is:due' },
+  { label: tr('Neu'), q: 'is:new' },
+  { label: tr('Nomen'), q: 'pos:noun' },
+  { label: tr('Verben'), q: 'pos:verb' },
+  { label: tr('Oft vergessen'), q: 'is:leech' },
+  { label: tr('Ausgesetzt'), q: 'is:suspended' },
+  { label: tr('Diese Woche neu'), q: 'added:7' },
+  { label: tr('Heute wiederholt'), q: 'rated:1' },
 ];
 
 type SortKey = 'new' | 'alpha' | 'due' | 'lapses';
 
 function status(cards: Card[], now: number): { label: string; color?: string } {
   if (!cards.length) return { label: '–' };
-  if (cards.every((c) => c.suspended)) return { label: 'Ausgesetzt', color: 'var(--ink-muted)' };
+  if (cards.every((c) => c.suspended)) return { label: tr('Ausgesetzt'), color: 'var(--ink-muted)' };
   const active = cards.filter((c) => !c.suspended);
-  if (active.every((c) => c.state === CardState.New)) return { label: 'Neu', color: 'var(--hafen)' };
+  if (active.every((c) => c.state === CardState.New)) return { label: tr('Neu'), color: 'var(--hafen)' };
   const due = Math.min(...active.filter((c) => c.state !== CardState.New).map((c) => c.due));
-  if (due <= now) return { label: 'Fällig', color: 'var(--wiese)' };
+  if (due <= now) return { label: tr('Fällig'), color: 'var(--wiese)' };
   return { label: relativ(due, now) };
 }
 
@@ -160,7 +161,7 @@ export function Browse() {
 
   return (
     <div className={cx('mx-auto px-5 pt-8 pb-24 md:px-8 md:pt-10', openId && wide ? 'max-w-[1400px]' : 'max-w-5xl')}>
-      <PageHeader title="Karten suchen" subtitle={results ? `${results.length.toLocaleString('de-DE')} ${results.length === 1 ? 'Notiz' : 'Notizen'}` : ' '} />
+      <PageHeader title={tr('Karten suchen')} subtitle={results ? (results.length === 1 ? tr('1 Notiz') : tr('{0} Notizen', results.length.toLocaleString(LOCALE))) : ' '} />
       <div className={cx(openId && wide && 'grid grid-cols-[1fr_520px] gap-6')}>
         <div className="min-w-0">
           <div className="mb-3 flex gap-2">
@@ -169,20 +170,20 @@ export function Browse() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder='Suchen …  z. B. haus deck:"Deutsch::A1" gender:die is:due'
+                placeholder={tr('Suchen …  z. B. haus deck:"Deutsch::A1" gender:die is:due')}
                 className="h-11 w-full rounded-md border border-transparent bg-paper-sunk pr-10 pl-11 text-[15px] outline-none placeholder:text-ink-muted focus:border-hafen focus:bg-paper-raised"
               />
               {q && (
-                <button onClick={() => setQ('')} className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-xs p-1 text-ink-muted hover:text-ink" aria-label="Suche leeren">
+                <button onClick={() => setQ('')} className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-xs p-1 text-ink-muted hover:text-ink" aria-label={tr('Suche leeren')}>
                   <X className="size-4" />
                 </button>
               )}
             </div>
             <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="w-36 shrink-0">
-              <option value="new">Neueste</option>
-              <option value="alpha">A–Z</option>
-              <option value="due">Fälligkeit</option>
-              <option value="lapses">Meiste Fehler</option>
+              <option value="new">{tr('Neueste')}</option>
+              <option value="alpha">{tr('A–Z')}</option>
+              <option value="due">{tr('Fälligkeit')}</option>
+              <option value="lapses">{tr('Meiste Fehler')}</option>
             </Select>
           </div>
           <div className="thin-scroll -mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
@@ -206,21 +207,20 @@ export function Browse() {
             </div>
           ) : results.length === 0 ? (
             <Panel>
-              <Empty mood="thinking" title="Nichts gefunden">
-                Versuch weniger Wörter oder Suchbefehle wie <code className="rounded-xs bg-paper-sunk px-1">tag:A2</code>, <code className="rounded-xs bg-paper-sunk px-1">is:leech</code> oder <code className="rounded-xs bg-paper-sunk px-1">-is:suspended</code>.
+              <Empty mood="thinking" title={tr('Nichts gefunden')}>{tr('Versuch weniger Wörter oder Suchbefehle wie')}{' '}<code className="rounded-xs bg-paper-sunk px-1">{tr('tag:A2')}</code>, <code className="rounded-xs bg-paper-sunk px-1">{tr('is:leech')}</code>{' '}{tr('oder')}{' '}<code className="rounded-xs bg-paper-sunk px-1">{tr('-is:suspended')}</code>.
               </Empty>
             </Panel>
           ) : (
             <Panel className="overflow-hidden">
               <div className="flex items-center gap-2 border-b border-line px-3 py-1.5">
                 <IconButton
-                  label={selected.size ? 'Auswahl aufheben' : 'Alle angezeigten auswählen'}
+                  label={selected.size ? tr('Auswahl aufheben') : tr('Alle angezeigten auswählen')}
                   className="size-8"
                   onClick={() => setSelected(selected.size ? new Set() : new Set(results.slice(0, limit).map((r) => r.note.id)))}
                 >
                   {selected.size ? <CheckSquare className="size-[18px] text-hafen" /> : <Square className="size-[18px]" />}
                 </IconButton>
-                <span className="text-[13px] text-ink-muted">{selected.size ? `${selected.size} ausgewählt` : 'Auswählen, um mehrere auf einmal zu bearbeiten'}</span>
+                <span className="text-[13px] text-ink-muted">{selected.size ? tr('{0} ausgewählt', selected.size) : tr('Auswählen, um mehrere auf einmal zu bearbeiten')}</span>
               </div>
               {results.slice(0, limit).map(({ note, cards, path }) => {
                 const st = status(cards, now);
@@ -231,7 +231,7 @@ export function Browse() {
                     key={note.id}
                     className={cx('group flex items-center gap-2 border-b border-line px-3 py-2.5 last:border-b-0', openId === note.id ? 'bg-hafen-soft' : sel ? 'bg-paper-sunk' : 'hover:bg-paper-sunk/50')}
                   >
-                    <button onClick={() => toggle(note.id)} className="flex size-8 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:text-ink" aria-label="Auswählen">
+                    <button onClick={() => toggle(note.id)} className="flex size-8 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:text-ink" aria-label={tr('Auswählen')}>
                       {sel ? <CheckSquare className="size-[18px] text-hafen" /> : <Square className="size-[18px] opacity-50 group-hover:opacity-100" />}
                     </button>
                     <button onClick={() => (selected.size ? toggle(note.id) : open(note.id))} className="flex min-w-0 flex-1 flex-col text-left">
@@ -248,15 +248,14 @@ export function Browse() {
                       <span className="text-[13px] font-semibold" style={{ color: st.color }}>
                         {st.label}
                       </span>
-                      {lapses >= 3 && <div className="text-[11px] font-semibold text-koralle-ink">{lapses} Fehler</div>}
+                      {lapses >= 3 && <div className="text-[11px] font-semibold text-koralle-ink">{lapses}{' '}{tr('Fehler')}</div>}
                     </div>
                   </div>
                 );
               })}
               {results.length > limit && (
                 <div className="p-3 text-center">
-                  <Button variant="ghost" onClick={() => setLimit((l) => l + 200)}>
-                    Mehr zeigen (noch {results.length - limit})
+                  <Button variant="ghost" onClick={() => setLimit((l) => l + 200)}>{tr('Mehr zeigen (noch')}{' '}{results.length - limit})
                   </Button>
                 </div>
               )}
@@ -268,8 +267,8 @@ export function Browse() {
           <div className="min-w-0">
             <Panel className="sticky top-6 max-h-[calc(100vh-48px)] overflow-y-auto p-5">
               <div className="mb-4 flex items-center justify-between">
-                <span className="t-overline text-ink-muted">Bearbeiten</span>
-                <IconButton label="Schließen" onClick={() => setOpenId(null)}>
+                <span className="t-overline text-ink-muted">{tr('Bearbeiten')}</span>
+                <IconButton label={tr('Schließen')} onClick={() => setOpenId(null)}>
                   <X className="size-5" />
                 </IconButton>
               </div>
@@ -283,30 +282,20 @@ export function Browse() {
         <div className="pb-safe fixed inset-x-0 bottom-[calc(64px+var(--safe-bottom))] z-30 flex justify-center px-3 md:bottom-6">
           <div className="anim-in flex max-w-full flex-wrap items-center justify-center gap-1 rounded-md border border-line bg-paper-raised p-1.5 shadow-2xl">
             <span className="px-2 text-[13px] font-semibold">{selected.size}</span>
-            <Button size="sm" variant="ghost" icon={<FolderInput className="size-4" />} onClick={() => setMoveOpen(true)}>
-              Verschieben
-            </Button>
-            <Button size="sm" variant="ghost" icon={<Tag className="size-4" />} onClick={() => setTagOpen(true)}>
-              Tags
-            </Button>
-            <Button size="sm" variant="ghost" icon={<Pause className="size-4" />} onClick={async () => { await suspendNotes(ids, true); toast.success('Ausgesetzt'); }}>
-              Aussetzen
-            </Button>
-            <Button size="sm" variant="ghost" icon={<Play className="size-4" />} onClick={async () => { await suspendNotes(ids, false); toast.success('Wieder aktiv'); }}>
-              Aktivieren
-            </Button>
+            <Button size="sm" variant="ghost" icon={<FolderInput className="size-4" />} onClick={() => setMoveOpen(true)}>{tr('Verschieben')}</Button>
+            <Button size="sm" variant="ghost" icon={<Tag className="size-4" />} onClick={() => setTagOpen(true)}>{tr('Tags')}</Button>
+            <Button size="sm" variant="ghost" icon={<Pause className="size-4" />} onClick={async () => { await suspendNotes(ids, true); toast.success(tr('Ausgesetzt')); }}>{tr('Aussetzen')}</Button>
+            <Button size="sm" variant="ghost" icon={<Play className="size-4" />} onClick={async () => { await suspendNotes(ids, false); toast.success(tr('Wieder aktiv')); }}>{tr('Aktivieren')}</Button>
             <Button
               size="sm"
               variant="ghost"
               icon={<RotateCcw className="size-4" />}
               onClick={async () => {
-                if (!(await confirm(`${ids.length} Notizen zurücksetzen?`, { body: 'Ihre Karten werden wieder neu (der Lernverlauf bleibt erhalten).', confirm: 'Zurücksetzen' }))) return;
+                if (!(await confirm(tr('{0} Notizen zurücksetzen?', ids.length), { body: tr('Ihre Karten werden wieder neu (der Lernverlauf bleibt erhalten).'), confirm: tr('Zurücksetzen') }))) return;
                 await forgetNotes(ids);
-                toast.success('Zurückgesetzt');
+                toast.success(tr('Zurückgesetzt'));
               }}
-            >
-              Zurücksetzen
-            </Button>
+            >{tr('Zurücksetzen')}</Button>
             <Button
               size="sm"
               variant="ghost"
@@ -319,25 +308,21 @@ export function Browse() {
                 }
                 navigate('/study?mode=cram&sel=1');
               }}
-            >
-              Üben
-            </Button>
+            >{tr('Üben')}</Button>
             <Button
               size="sm"
               variant="ghost"
               className="text-koralle-ink"
               icon={<Trash2 className="size-4" />}
               onClick={async () => {
-                if (!(await confirm(`${ids.length} Notizen löschen?`, { body: 'Notizen, Karten und ihr Lernverlauf werden auf allen Geräten entfernt.', confirm: 'Löschen', danger: true }))) return;
+                if (!(await confirm(tr('{0} Notizen löschen?', ids.length), { body: tr('Notizen, Karten und ihr Lernverlauf werden auf allen Geräten entfernt.'), confirm: tr('Löschen'), danger: true }))) return;
                 await deleteNotes(ids);
                 setSelected(new Set());
                 if (openId && selected.has(openId)) setOpenId(null);
-                toast.success('Gelöscht');
+                toast.success(tr('Gelöscht'));
               }}
-            >
-              Löschen
-            </Button>
-            <IconButton label="Auswahl aufheben" onClick={() => setSelected(new Set())}>
+            >{tr('Löschen')}</Button>
+            <IconButton label={tr('Auswahl aufheben')} onClick={() => setSelected(new Set())}>
               <X className="size-4" />
             </IconButton>
           </div>
@@ -347,23 +332,19 @@ export function Browse() {
       <Modal
         open={moveOpen}
         onClose={() => setMoveOpen(false)}
-        title={`${selected.size} Notizen verschieben`}
+        title={tr('{0} Notizen verschieben', selected.size)}
         footer={
           <>
-            <Button onClick={() => setMoveOpen(false)}>
-              Abbrechen
-            </Button>
+            <Button onClick={() => setMoveOpen(false)}>{tr('Abbrechen')}</Button>
             <Button
               variant="primary"
               disabled={!moveTo}
               onClick={async () => {
                 await moveNotes(ids, moveTo!);
                 setMoveOpen(false);
-                toast.success('Verschoben');
+                toast.success(tr('Verschoben'));
               }}
-            >
-              Verschieben
-            </Button>
+            >{tr('Verschieben')}</Button>
           </>
         }
       >
@@ -372,12 +353,10 @@ export function Browse() {
       <Modal
         open={tagOpen}
         onClose={() => setTagOpen(false)}
-        title={`Tags für ${selected.size} Notizen`}
+        title={tr('Tags für {0} Notizen', selected.size)}
         footer={
           <>
-            <Button onClick={() => setTagOpen(false)}>
-              Abbrechen
-            </Button>
+            <Button onClick={() => setTagOpen(false)}>{tr('Abbrechen')}</Button>
             <Button
               variant="primary"
               disabled={!newTags.length}
@@ -385,11 +364,9 @@ export function Browse() {
                 await tagNotes(ids, newTags);
                 setTagOpen(false);
                 setNewTags([]);
-                toast.success('Tags hinzugefügt');
+                toast.success(tr('Tags hinzugefügt'));
               }}
-            >
-              Tags hinzufügen
-            </Button>
+            >{tr('Tags hinzufügen')}</Button>
           </>
         }
       >

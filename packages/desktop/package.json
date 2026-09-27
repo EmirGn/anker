@@ -1,7 +1,7 @@
 {
   "name": "@anker/desktop",
   "productName": "Anker",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Anker — German spaced-repetition flashcards",
   "author": "EmirGn",
@@ -14,7 +14,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@anker/hub": "0.2.0",
+    "@anker/hub": "0.2.1",
     "electron": "44.4.5",
     "electron-builder": "^26.15.3"
   },

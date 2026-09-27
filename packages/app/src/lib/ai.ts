@@ -1,5 +1,6 @@
 import type { AIProvider, ChatMode } from '@anker/core';
 import { hub, hubFetch, sseStream } from './hub';
+import { tr } from './i18n';
 
 export interface ModelOption {
   id: string;
@@ -107,13 +108,13 @@ export async function streamTask(
         onText(text);
       } else if (e.type === 'done') {
         if (e.ok) resolve(e.result || text);
-        else reject(new Error(e.error ?? 'AI request failed'));
+        else reject(new Error(e.error ?? tr('KI-Anfrage fehlgeschlagen')));
       }
     });
     opts.signal?.addEventListener('abort', () => {
       stop();
       void cancelJob(jobId).catch(() => {});
-      reject(new Error('Cancelled'));
+      reject(new Error(tr('Abgebrochen')));
     });
   });
 }

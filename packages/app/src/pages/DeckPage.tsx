@@ -19,6 +19,7 @@ import { useDeckCounts, useDecks, useLiveQuery, usePrefs } from '../lib/hooks';
 import { deleteDeck, updateDeck, updateDeckConfig } from '../lib/repo';
 import { Link, navigate } from '../lib/router';
 import { NewDeckModal } from './Decks';
+import { LOCALE, tr } from '../lib/i18n';
 
 function NumberField({ label, value, onChange, min = 0, max = 9999, hint }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; hint?: string }) {
   const [draft, setDraft] = useState(String(value));
@@ -57,22 +58,22 @@ function StepsField({ label, value, onChange, hint }: { label: string; value: st
           setDraft(steps.join(' '));
           if (steps.join(' ') !== value.join(' ')) onChange(steps);
         }}
-        placeholder="1m 10m"
+        placeholder={tr('1m 10m')}
       />
     </div>
   );
 }
 
 function Options({ deckId, cfg }: { deckId: string; cfg: DeckConfig }) {
-  const set = (patch: Partial<DeckConfig>) => void updateDeckConfig(deckId, patch).then(() => toast.success('Gespeichert'));
+  const set = (patch: Partial<DeckConfig>) => void updateDeckConfig(deckId, patch).then(() => toast.success(tr('Gespeichert')));
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
-        <NumberField label="Neue Karten pro Tag" value={cfg.newPerDay} onChange={(v) => set({ newPerDay: v })} />
-        <NumberField label="Wiederholungen pro Tag" value={cfg.reviewsPerDay} onChange={(v) => set({ reviewsPerDay: v })} max={99999} />
+        <NumberField label={tr('Neue Karten pro Tag')} value={cfg.newPerDay} onChange={(v) => set({ newPerDay: v })} />
+        <NumberField label={tr('Wiederholungen pro Tag')} value={cfg.reviewsPerDay} onChange={(v) => set({ reviewsPerDay: v })} max={99999} />
       </div>
       <div>
-        <Label hint={`${Math.round(cfg.desiredRetention * 100)} %`}>Gewünschte Behaltensquote (FSRS)</Label>
+        <Label hint={`${Math.round(cfg.desiredRetention * 100)} %`}>{tr('Gewünschte Behaltensquote (FSRS)')}</Label>
         <input
           type="range"
           min={0.75}
@@ -84,24 +85,24 @@ function Options({ deckId, cfg }: { deckId: string; cfg: DeckConfig }) {
           onKeyUp={(e) => set({ desiredRetention: Number((e.target as HTMLInputElement).value) })}
           className="w-full accent-[var(--hafen)]"
         />
-        <p className="mt-1 text-[13px] text-ink-muted">Höher heißt: du behältst mehr, wiederholst aber öfter. 90 % ist ein guter Standard.</p>
+        <p className="mt-1 text-[13px] text-ink-muted">{tr('Höher heißt: du behältst mehr, wiederholst aber öfter. 90 % ist ein guter Standard.')}</p>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <StepsField label="Lernschritte" value={cfg.learningSteps} onChange={(v) => set({ learningSteps: v })} hint="z. B. 1m 10m" />
-        <StepsField label="Wiederlernschritte" value={cfg.relearningSteps} onChange={(v) => set({ relearningSteps: v })} hint="z. B. 10m" />
+        <StepsField label={tr('Lernschritte')} value={cfg.learningSteps} onChange={(v) => set({ learningSteps: v })} hint={tr('z. B. 1m 10m')} />
+        <StepsField label={tr('Wiederlernschritte')} value={cfg.relearningSteps} onChange={(v) => set({ relearningSteps: v })} hint={tr('z. B. 10m')} />
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <NumberField label="Maximales Intervall (Tage)" value={cfg.maximumInterval} onChange={(v) => set({ maximumInterval: v })} min={1} max={36500} />
-        <NumberField label="„Oft vergessen“ ab (Fehlern)" value={cfg.leechThreshold} onChange={(v) => set({ leechThreshold: v })} min={1} max={99} />
+        <NumberField label={tr('Maximales Intervall (Tage)')} value={cfg.maximumInterval} onChange={(v) => set({ maximumInterval: v })} min={1} max={36500} />
+        <NumberField label={tr('„Oft vergessen“ ab (Fehlern)')} value={cfg.leechThreshold} onChange={(v) => set({ leechThreshold: v })} min={1} max={99} />
       </div>
       <div>
-        <Label>Reihenfolge neuer Karten</Label>
+        <Label>{tr('Reihenfolge neuer Karten')}</Label>
         <Segmented
           value={cfg.newOrder}
           onChange={(v) => set({ newOrder: v })}
           options={[
-            { value: 'added', label: 'Wie hinzugefügt' },
-            { value: 'random', label: 'Zufällig' },
+            { value: 'added', label: tr('Wie hinzugefügt') },
+            { value: 'random', label: tr('Zufällig') },
           ]}
         />
       </div>
@@ -115,20 +116,18 @@ function Options({ deckId, cfg }: { deckId: string; cfg: DeckConfig }) {
         ).map(([key, title, desc]) => (
           <div key={key} className="flex items-center gap-4 px-4 py-3">
             <div className="min-w-0 flex-1">
-              <div className="t-label">{title}</div>
-              <div className="t-caption text-ink-muted">{desc}</div>
+              <div className="t-label">{tr(title)}</div>
+              <div className="t-caption text-ink-muted">{tr(desc)}</div>
             </div>
-            <Toggle checked={cfg[key]} onChange={(v) => set({ [key]: v } as Partial<DeckConfig>)} label={title} />
+            <Toggle checked={cfg[key]} onChange={(v) => set({ [key]: v } as Partial<DeckConfig>)} label={tr(title)} />
           </div>
         ))}
       </div>
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => void updateDeck(deckId, { config: {} }).then(() => toast.success('Optionen zurückgesetzt'))}
-      >
-        Auf Standard zurücksetzen
-      </Button>
+        onClick={() => void updateDeck(deckId, { config: {} }).then(() => toast.success(tr('Optionen zurückgesetzt')))}
+      >{tr('Auf Standard zurücksetzen')}</Button>
     </div>
   );
 }
@@ -156,9 +155,7 @@ export function DeckPage({ id }: { id: string }) {
   if (!decks) return <div className="flex justify-center py-20"><Spinner /></div>;
   if (!deck)
     return (
-      <Empty title="Deck nicht gefunden" mood="thinking" action={<Button onClick={() => navigate('/decks')}>Zurück zu den Decks</Button>}>
-        Vielleicht wurde es auf einem anderen Gerät gelöscht.
-      </Empty>
+      <Empty title={tr('Deck nicht gefunden')} mood="thinking" action={<Button onClick={() => navigate('/decks')}>{tr('Zurück zu den Decks')}</Button>}>{tr('Vielleicht wurde es auf einem anderen Gerät gelöscht.')}</Empty>
     );
 
   const cfg = resolveDeckConfig(deck, byId);
@@ -172,8 +169,7 @@ export function DeckPage({ id }: { id: string }) {
   return (
     <div className="mx-auto max-w-4xl px-5 pt-6 pb-12 md:px-8 md:pt-10">
       <Link to="/decks" className="t-label mb-5 inline-flex h-9 items-center gap-1.5 text-ink-muted hover:text-ink">
-        <ArrowLeft className="size-5" /> Decks
-      </Link>
+        <ArrowLeft className="size-5" />{' '}{tr('Decks')}</Link>
       <div className="mb-6 flex items-end gap-5">
         <DeckCover deck={deck} size="lg" />
         <div className="min-w-0 flex-1 pb-1">
@@ -182,26 +178,22 @@ export function DeckPage({ id }: { id: string }) {
             {deck.name}
           </h1>
           <div className="t-caption mt-1.5 text-ink-muted">
-            {data ? `${data.notes} ${data.notes === 1 ? 'Notiz' : 'Notizen'} · ` : ''}
-            {total} fällig
-          </div>
+            {data ? (data.notes === 1 ? tr('1 Notiz · ') : tr('{0} Notizen · ', data.notes)) : ''}
+            {total}{' '}{tr('fällig')}</div>
           {deck.description && <p className="mt-2 text-[15px] text-ink-muted">{deck.description}</p>}
         </div>
       </div>
 
       <div className="mb-2 grid grid-cols-[1fr_1.4fr] gap-2">
-        <Button size="lg" onClick={() => navigate(`/study?mode=cram&q=${encodeURIComponent(`deck:"${path}"`)}`)} icon={<Brain className="size-5" />}>
-          Alle üben
-        </Button>
+        <Button size="lg" onClick={() => navigate(`/study?mode=cram&q=${encodeURIComponent(`deck:"${path}"`)}`)} icon={<Brain className="size-5" />}>{tr('Alle üben')}</Button>
         <Button variant="primary" size="lg" disabled={!total} onClick={() => navigate(`/study/${id}`)}>
-          {total ? 'Lernen' : 'Alles erledigt'}
+          {total ? tr('Lernen') : tr('Alles erledigt')}
         </Button>
       </div>
       {c && (
         <p className="t-caption mb-6 text-center text-ink-muted tabular-nums">
-          <span className="font-bold text-hafen">{c.new}</span> neu · <span className="font-bold text-koralle-ink">{c.learn}</span> in Arbeit ·{' '}
-          <span className="font-bold text-wiese">{c.review}</span> fällig
-        </p>
+          <span className="font-bold text-hafen">{c.new}</span>{' '}{tr('neu ·')}{' '}<span className="font-bold text-koralle-ink">{c.learn}</span>{' '}{tr('in Arbeit ·')}{' '}
+          <span className="font-bold text-wiese">{c.review}</span>{' '}{tr('fällig')}</p>
       )}
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -209,20 +201,14 @@ export function DeckPage({ id }: { id: string }) {
           value={tab}
           onChange={setTab}
           options={[
-            { value: 'overview', label: 'Übersicht' },
-            { value: 'options', label: 'Optionen' },
+            { value: 'overview', label: tr('Übersicht') },
+            { value: 'options', label: tr('Optionen') },
           ]}
         />
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => navigate(`/add?deck=${id}`)} icon={<Plus className="size-4" />}>
-            Karten hinzufügen
-          </Button>
-          <Button size="sm" onClick={() => navigate(`/browse?q=${encodeURIComponent(`deck:"${path}"`)}`)} icon={<Search className="size-4" />}>
-            Durchsuchen
-          </Button>
-          <Button size="sm" onClick={() => setSubOpen(true)} icon={<FolderPlus className="size-4" />}>
-            Unterdeck
-          </Button>
+          <Button size="sm" onClick={() => navigate(`/add?deck=${id}`)} icon={<Plus className="size-4" />}>{tr('Karten hinzufügen')}</Button>
+          <Button size="sm" onClick={() => navigate(`/browse?q=${encodeURIComponent(`deck:"${path}"`)}`)} icon={<Search className="size-4" />}>{tr('Durchsuchen')}</Button>
+          <Button size="sm" onClick={() => setSubOpen(true)} icon={<FolderPlus className="size-4" />}>{tr('Unterdeck')}</Button>
         </div>
       </div>
 
@@ -235,33 +221,33 @@ export function DeckPage({ id }: { id: string }) {
           <>
             <div className="mb-6 grid grid-cols-2 overflow-hidden rounded-md border border-line bg-paper-raised text-center md:grid-cols-4">
               {[
-                ['Notizen', data.notes.toLocaleString('de-DE')],
-                ['Karten', breakdown.total.toLocaleString('de-DE')],
+                ['Notizen', data.notes.toLocaleString(LOCALE)],
+                ['Karten', breakdown.total.toLocaleString(LOCALE)],
                 ['Behalten (30 T.)', ret?.rate == null ? '–' : `${Math.round(ret.rate * 100)} %`],
-                ['Wiederholungen', data.logs.length.toLocaleString('de-DE')],
+                ['Wiederholungen', data.logs.length.toLocaleString(LOCALE)],
               ].map(([k, v], i) => (
                 <div key={k} className={cx('px-2 py-3', i % 2 === 1 && 'border-l border-line', i > 1 && 'border-t border-line md:border-t-0', i === 2 && 'md:border-l')}>
                   <div className="t-stat">{v}</div>
-                  <div className="t-caption text-ink-muted">{k}</div>
+                  <div className="t-caption text-ink-muted">{tr(k)}</div>
                 </div>
               ))}
             </div>
-            <Section title="Karten">
+            <Section title={tr('Karten')}>
               <Panel className="p-5">
                 <StackedBar
                   parts={[
-                    { label: 'Neu', value: breakdown.new, color: 'var(--hafen)' },
-                    { label: 'In Arbeit', value: breakdown.learning, color: 'var(--koralle-ink)' },
-                    { label: 'Jung', value: breakdown.young, color: 'color-mix(in srgb, var(--wiese) 55%, var(--line))' },
-                    { label: 'Gefestigt', value: breakdown.mature, color: 'var(--wiese)' },
-                    { label: 'Ausgesetzt', value: breakdown.suspended, color: 'var(--sonne-ink)' },
+                    { label: tr('Neu'), value: breakdown.new, color: 'var(--hafen)' },
+                    { label: tr('In Arbeit'), value: breakdown.learning, color: 'var(--koralle-ink)' },
+                    { label: tr('Jung'), value: breakdown.young, color: 'color-mix(in srgb, var(--wiese) 55%, var(--line))' },
+                    { label: tr('Gefestigt'), value: breakdown.mature, color: 'var(--wiese)' },
+                    { label: tr('Ausgesetzt'), value: breakdown.suspended, color: 'var(--sonne-ink)' },
                   ]}
                 />
               </Panel>
             </Section>
-            <Section title="Nächste 14 Tage">
+            <Section title={tr('Nächste 14 Tage')}>
               <Panel className="p-5">
-                <Bars values={fc} labels={fc.map((_, i) => (i === 0 ? 'Heute' : i % 2 === 0 ? `+${i}` : null))} height={100} color="var(--wiese)" format={(v) => `${v} fällig`} />
+                <Bars values={fc} labels={fc.map((_, i) => (i === 0 ? tr('Heute') : i % 2 === 0 ? `+${i}` : null))} height={100} color="var(--wiese)" format={(v) => tr('{0} fällig', v)} />
               </Panel>
             </Section>
           </>
@@ -274,23 +260,23 @@ export function DeckPage({ id }: { id: string }) {
           <div className="space-y-4">
             <Panel className="space-y-4 p-5">
               <div>
-                <Label>Name</Label>
+                <Label>{tr('Name')}</Label>
                 <Input defaultValue={deck.name} onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== deck.name && void updateDeck(id, { name: e.target.value.trim().replace(/::/g, ':') })} />
               </div>
               <div>
-                <Label>Beschreibung</Label>
+                <Label>{tr('Beschreibung')}</Label>
                 <Input defaultValue={deck.description ?? ''} onBlur={(e) => void updateDeck(id, { description: e.target.value.trim() || undefined })} />
               </div>
               <div>
-                <Label>Oberdeck</Label>
+                <Label>{tr('Oberdeck')}</Label>
                 <DeckSelect
                   value={deck.parentId}
                   allowNone
-                  noneLabel="– Oberste Ebene –"
+                  noneLabel={tr('– Oberste Ebene –')}
                   onChange={(pid) => {
                     if (pid === id) return;
                     updateDeck(id, { parentId: pid }).then(
-                      () => toast.success('Verschoben'),
+                      () => toast.success(tr('Verschoben')),
                       (e) => toast.error((e as Error).message),
                     );
                   }}
@@ -298,26 +284,24 @@ export function DeckPage({ id }: { id: string }) {
               </div>
             </Panel>
             <Panel className="p-5">
-              <div className="t-label">Deck löschen</div>
-              <p className="mt-1 text-[15px] text-ink-muted">Löscht dieses Deck, seine Unterdecks und alle Karten samt Lernverlauf – auf jedem synchronisierten Gerät.</p>
+              <div className="t-label">{tr('Deck löschen')}</div>
+              <p className="mt-1 text-[15px] text-ink-muted">{tr('Löscht dieses Deck, seine Unterdecks und alle Karten samt Lernverlauf – auf jedem synchronisierten Gerät.')}</p>
               <Button
                 variant="danger"
                 className="mt-3"
                 icon={<Trash2 className="size-4" />}
                 onClick={async () => {
-                  const ok = await confirm(`„${deck.name}“ löschen?`, {
-                    body: `Das entfernt ${ids.size} Deck(s) und ${data?.notes ?? 0} Notizen endgültig.`,
-                    confirm: 'Löschen',
+                  const ok = await confirm(tr('„{0}“ löschen?', deck.name), {
+                    body: tr('Das entfernt {0} Deck(s) und {1} Notizen endgültig.', ids.size, data?.notes ?? 0),
+                    confirm: tr('Löschen'),
                     danger: true,
                   });
                   if (!ok) return;
                   await deleteDeck(id);
-                  toast.success('Deck gelöscht');
+                  toast.success(tr('Deck gelöscht'));
                   navigate('/decks');
                 }}
-              >
-                Deck löschen
-              </Button>
+              >{tr('Deck löschen')}</Button>
             </Panel>
           </div>
         </div>

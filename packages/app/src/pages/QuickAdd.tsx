@@ -9,6 +9,7 @@ import { db } from '../lib/db';
 import { desktop } from '../lib/desktop';
 import { useHub } from '../lib/hooks';
 import { addNote, createDeckPath } from '../lib/repo';
+import { tr } from '../lib/i18n';
 
 /** The small always-on-top window opened with the global shortcut (Mac app). */
 export function QuickAdd() {
@@ -24,7 +25,7 @@ export function QuickAdd() {
     void (async () => {
       const saved = localStorage.getItem('anker-quick-deck');
       if (saved && (await db.decks.get(saved))) setDeckId(saved);
-      else setDeckId((await createDeckPath('Deutsch::Inbox', { description: 'Wörter aus der Schnellerfassung' })).id);
+      else setDeckId((await createDeckPath('Deutsch::Inbox', { description: tr('Wörter aus der Schnellerfassung') })).id);
     })();
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && desktop?.closeQuickAdd();
     window.addEventListener('keydown', onKey);
@@ -46,7 +47,7 @@ export function QuickAdd() {
         const r = await runTask<Record<string, string>>('fill-word', { word: w, hint: meaning.trim() });
         if (r.ok && r.structured) fields = { ...r.structured, german: r.structured.german || w, ...(meaning.trim() ? { english: meaning.trim() } : {}) };
       }
-      if (!fields.english) throw new Error('Bitte eine Bedeutung angeben (die KI ist nicht erreichbar)');
+      if (!fields.english) throw new Error(tr('Bitte eine Bedeutung angeben (die KI ist nicht erreichbar)'));
       makeNote({ deckId, type: 'word', fields }, Date.now());
       const { note } = await addNote({ deckId, type: 'word', fields: normalizeFields('word', fields), tags: ['quick-add'] });
       setLog((l) => [{ text: `${withArticle(note.fields.german ?? '', note.fields.gender)} — ${note.fields.english}`, ok: true }, ...l].slice(0, 4));
@@ -65,8 +66,8 @@ export function QuickAdd() {
     <div className="drag flex h-full flex-col bg-paper-raised p-4">
       <div className="mb-3 flex items-center gap-2">
         <Logo size={22} />
-        <span className="t-label">Schnell hinzufügen</span>
-        <span className="t-caption ml-auto text-ink-muted">Enter: hinzufügen · Esc: schließen</span>
+        <span className="t-label">{tr('Schnell hinzufügen')}</span>
+        <span className="t-caption ml-auto text-ink-muted">{tr('Enter: hinzufügen · Esc: schließen')}</span>
       </div>
       <form
         className="no-drag space-y-2"
@@ -80,7 +81,7 @@ export function QuickAdd() {
           autoFocus
           value={word}
           onChange={(e) => setWord(e.target.value)}
-          placeholder="Deutsches Wort oder Ausdruck …"
+          placeholder={tr('Deutsches Wort oder Ausdruck …')}
           lang="de"
           className="h-12 w-full rounded-md border border-transparent bg-paper-sunk px-3.5 font-display text-[20px] font-semibold outline-none placeholder:font-sans placeholder:text-[17px] placeholder:font-normal placeholder:text-ink-muted focus:border-hafen focus:bg-paper-raised"
         />
@@ -88,12 +89,11 @@ export function QuickAdd() {
           <input
             value={meaning}
             onChange={(e) => setMeaning(e.target.value)}
-            placeholder={hub ? 'Bedeutung (optional – die KI füllt sie aus)' : 'Bedeutung'}
+            placeholder={hub ? tr('Bedeutung (optional – die KI füllt sie aus)') : tr('Bedeutung')}
             className="h-11 min-w-0 flex-1 rounded-md border border-transparent bg-paper-sunk px-3 text-[15px] outline-none placeholder:text-ink-muted focus:border-hafen focus:bg-paper-raised"
           />
           <button type="submit" disabled={busy || !word.trim()} className="flex h-11 items-center gap-1.5 rounded-md bg-hafen px-4 text-[15px] font-semibold text-on-hafen disabled:opacity-45">
-            {busy ? <Loader2 className="size-5 animate-spin" /> : <Sparkles className="size-5" />} Hinzufügen
-          </button>
+            {busy ? <Loader2 className="size-5 animate-spin" /> : <Sparkles className="size-5" />}{' '}{tr('Hinzufügen')}</button>
         </div>
         <div className="flex items-center gap-2">
           <DeckSelect value={deckId} onChange={setDeckId} className="h-10 flex-1 text-[13px]" />

@@ -26,6 +26,7 @@ import {
   type TableName,
 } from '@anker/core';
 import { db, tableOf, TABLES } from './db';
+import { tr } from './i18n';
 
 type Op = { table: TableName; put?: AnyRecord[]; remove?: string[] };
 
@@ -91,7 +92,7 @@ export async function updateDeck(id: string, patch: Partial<Omit<Deck, 'id'>>) {
   if (!d) return;
   if (patch.parentId) {
     const all = await db.decks.toArray();
-    if (subtreeIds(id, all).has(patch.parentId)) throw new Error("A deck can't be moved inside itself.");
+    if (subtreeIds(id, all).has(patch.parentId)) throw new Error(tr('Ein Deck kann nicht in sich selbst verschoben werden.'));
   }
   await commit([{ table: 'decks', put: [stamp({ ...d, ...patch })] }]);
 }
@@ -162,7 +163,7 @@ export async function updateNote(
   patch: { fields?: Record<string, unknown>; tags?: string[]; deckId?: string; type?: NoteType },
 ): Promise<Note> {
   const note = await db.notes.get(id);
-  if (!note) throw new Error('Notiz nicht gefunden');
+  if (!note) throw new Error(tr('Notiz nicht gefunden'));
   const now = Date.now();
   const next = patchNote(note, { ...patch, tags: patch.tags ? cleanTags(patch.tags) : undefined }, now);
   const existing = await db.cards.where('noteId').equals(id).toArray();

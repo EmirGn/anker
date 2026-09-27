@@ -11,25 +11,26 @@ import { useHub, useIsWide, useLiveQuery, usePrefs } from '../lib/hooks';
 import { deleteChat } from '../lib/repo';
 import { Link, navigate, useRoute } from '../lib/router';
 import { syncNow } from '../lib/sync';
+import { tr } from '../lib/i18n';
 
 const MODES: { id: ChatMode; label: string; icon: typeof GraduationCap; blurb: string }[] = [
-  { id: 'tutor', label: 'Tutor', icon: GraduationCap, blurb: 'Grammatik, Bedeutungen, Beispiele – und er kann deine Decks bearbeiten.' },
-  { id: 'builder', label: 'Deck-Bauer', icon: Hammer, blurb: 'Erstellt und verbessert Karten für dich und sagt dir dann Bescheid.' },
-  { id: 'conversation', label: 'Gespräch', icon: MessagesSquare, blurb: 'Chatte auf Deutsch. Fehler werden korrigiert, neue Wörter kannst du speichern.' },
+  { id: 'tutor', label: tr('Tutor'), icon: GraduationCap, blurb: tr('Grammatik, Bedeutungen, Beispiele – und er kann deine Decks bearbeiten.') },
+  { id: 'builder', label: tr('Deck-Bauer'), icon: Hammer, blurb: tr('Erstellt und verbessert Karten für dich und sagt dir dann Bescheid.') },
+  { id: 'conversation', label: tr('Gespräch'), icon: MessagesSquare, blurb: tr('Chatte auf Deutsch. Fehler werden korrigiert, neue Wörter kannst du speichern.') },
 ];
 
 const STARTERS: Record<ChatMode, string[]> = {
   tutor: [
-    'Was ist der Unterschied zwischen „seit“ und „vor“? Mit Beispielen, bitte.',
-    'Wann nehmen Wechselpräpositionen den Dativ, wann den Akkusativ?',
-    'Frag mich 5 Wörter ab, die ich neu hinzugefügt habe.',
-    'Warum heißt es „das Mädchen“ und nicht „die Mädchen“?',
+    tr('Was ist der Unterschied zwischen „seit“ und „vor“? Mit Beispielen, bitte.'),
+    tr('Wann nehmen Wechselpräpositionen den Dativ, wann den Akkusativ?'),
+    tr('Frag mich 5 Wörter ab, die ich neu hinzugefügt habe.'),
+    tr('Warum heißt es „das Mädchen“ und nicht „die Mädchen“?'),
   ],
   builder: [
-    'Erstelle ein Deck „Deutsch::Küche“ mit 25 A2-Wörtern rund ums Kochen.',
-    'Füge die 15 häufigsten trennbaren Verben mit Beispielen hinzu.',
-    'Finde meine schwierigsten Karten und ergänze zu jeder eine kurze Eselsbrücke.',
-    'Mach 10 Lückentext-Karten zum Dativ nach mit, bei, nach, von, zu.',
+    tr('Erstelle ein Deck „Deutsch::Küche“ mit 25 A2-Wörtern rund ums Kochen.'),
+    tr('Füge die 15 häufigsten trennbaren Verben mit Beispielen hinzu.'),
+    tr('Finde meine schwierigsten Karten und ergänze zu jeder eine kurze Eselsbrücke.'),
+    tr('Mach 10 Lückentext-Karten zum Dativ nach mit, bei, nach, von, zu.'),
   ],
   conversation: [
     'Hallo! Lass uns über mein Wochenende sprechen.',
@@ -67,39 +68,40 @@ function toolLabel(name: string, input: any, output?: string, status?: string): 
   const n = (x: unknown) => (Array.isArray(x) ? x.length : 0);
   switch (name) {
     case 'get_overview':
-      return running ? 'Schaut sich deine Decks an …' : 'Deine Decks angesehen';
+      return running ? tr('Schaut sich deine Decks an …') : tr('Deine Decks angesehen');
     case 'list_decks':
-      return 'Decks aufgelistet';
+      return tr('Decks aufgelistet');
     case 'create_deck':
-      return `Deck ${out?.path ?? input?.path ?? ''} ${running ? 'wird erstellt' : 'erstellt'}`;
+      return tr('Deck {0} {1}', out?.path ?? input?.path ?? '', running ? tr('wird erstellt') : tr('erstellt'));
     case 'update_deck':
-      return `Deck ${out?.path ?? input?.deck ?? ''} aktualisiert`;
+      return tr('Deck {0} aktualisiert', out?.path ?? input?.deck ?? '');
     case 'delete_deck':
-      return `Deck ${input?.deck ?? ''} gelöscht`;
+      return tr('Deck {0} gelöscht', input?.deck ?? '');
     case 'add_words':
     case 'add_notes': {
       const count = out?.added ?? n(input?.words ?? input?.notes);
-      const what = name === 'add_words' ? 'Wörter' : 'Notizen';
-      if (running) return `Fügt ${count} ${what} zu ${input?.deck ?? '…'} hinzu`;
-      const skipped = out?.skippedDuplicates?.length ? ` · ${out.skippedDuplicates.length} Duplikate übersprungen` : '';
-      return `${count} ${what} zu ${out?.deck ?? input?.deck ?? ''} hinzugefügt${skipped}`;
+      const words = name === 'add_words';
+      const deck = out?.deck ?? input?.deck ?? '…';
+      if (running) return words ? tr('Fügt {0} Wörter zu {1} hinzu', count, deck) : tr('Fügt {0} Notizen zu {1} hinzu', count, deck);
+      const skipped = out?.skippedDuplicates?.length ? tr(' · {0} Duplikate übersprungen', out.skippedDuplicates.length) : '';
+      return words ? tr('{0} Wörter zu {1} hinzugefügt{2}', count, deck, skipped) : tr('{0} Notizen zu {1} hinzugefügt{2}', count, deck, skipped);
     }
     case 'find_notes':
-      return `„${input?.query ?? ''}“ gesucht${out ? ` · ${out.total} gefunden` : ''}`;
+      return tr('„{0}“ gesucht{1}', input?.query ?? '', out ? tr(' · {0} gefunden', out.total) : '');
     case 'get_notes':
-      return `${n(input?.ids)} Notizen gelesen`;
+      return tr('{0} Notizen gelesen', n(input?.ids));
     case 'lookup_words':
-      return `${n(input?.words)} Wörter auf Duplikate geprüft`;
+      return tr('{0} Wörter auf Duplikate geprüft', n(input?.words));
     case 'update_notes':
-      return `${out?.updated ?? n(input?.updates)} Notizen ${running ? 'werden aktualisiert' : 'aktualisiert'}`;
+      return tr('{0} Notizen {1}', out?.updated ?? n(input?.updates), running ? tr('werden aktualisiert') : tr('aktualisiert'));
     case 'move_notes':
-      return `${out?.moved ?? n(input?.ids)} Notizen nach ${out?.deck ?? input?.deck ?? ''} verschoben`;
+      return tr('{0} Notizen nach {1} verschoben', out?.moved ?? n(input?.ids), out?.deck ?? input?.deck ?? '');
     case 'delete_notes':
-      return `${out?.deleted ?? n(input?.ids)} Notizen gelöscht`;
+      return tr('{0} Notizen gelöscht', out?.deleted ?? n(input?.ids));
     case 'set_card_state':
-      return `Kartenstatus von ${n(input?.note_ids)} Notizen geändert${input?.action ? ` (${String(input.action)})` : ''}`;
+      return tr('Kartenstatus von {0} Notizen geändert{1}', n(input?.note_ids), input?.action ? ` (${String(input.action)})` : '');
     case 'get_study_stats':
-      return running ? 'Analysiert deine Statistik …' : 'Deine Statistik analysiert';
+      return running ? tr('Analysiert deine Statistik …') : tr('Deine Statistik analysiert');
     default:
       return name;
   }
@@ -163,7 +165,7 @@ function ChatList({ chats, active }: { chats: Chat[]; active: string | null }) {
           <div className="min-w-0 flex-1">
             <div className="t-label truncate">{c.title}</div>
             <div className="truncate text-[13px] text-ink-muted">
-              {c.provider === 'claude' ? 'Claude' : 'Codex'} · {MODES.find((m) => m.id === c.mode)?.label} · {relativ(c.updatedAt)}
+              {c.provider === 'claude' ? tr('Claude') : tr('Codex')} · {MODES.find((m) => m.id === c.mode)?.label} · {relativ(c.updatedAt)}
             </div>
           </div>
           {c.status === 'running' && <Loader2 className="size-3.5 animate-spin text-hafen" />}
@@ -317,11 +319,9 @@ export function Tutor({ chatId }: { chatId: string | null }) {
       <div className="mx-auto max-w-xl px-5 pt-10">
         <Empty
           mood="sleepy"
-          title="Otto wohnt auf deinem Mac"
-          action={<Button variant="primary" onClick={() => navigate('/connect')}>Mit meinem Mac verbinden</Button>}
-        >
-          Claude und Codex laufen über deine eigenen Abos auf dem Mac. Verbinde dieses Gerät, um zu chatten, Decks zu bauen und Gespräche zu üben.
-        </Empty>
+          title={tr('Otto wohnt auf deinem Mac')}
+          action={<Button variant="primary" onClick={() => navigate('/connect')}>{tr('Mit meinem Mac verbinden')}</Button>}
+        >{tr('Claude und Codex laufen über deine eigenen Abos auf dem Mac. Verbinde dieses Gerät, um zu chatten, Decks zu bauen und Gespräche zu üben.')}</Empty>
       </div>
     );
   }
@@ -330,17 +330,17 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   const header = (
     <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5 md:px-6">
       {!wide && !!chats?.length && (
-        <IconButton label="Chats" onClick={() => navigate('/tutor')}>
+        <IconButton label={tr('Chats')} onClick={() => navigate('/tutor')}>
           <ArrowLeft className="size-5" />
         </IconButton>
       )}
       {!empty && <OttoBadge size={36} mood={running ? 'listening' : 'neutral'} />}
-      <div className="t-label min-w-0 flex-1 truncate">{chat?.title ?? 'Neues Gespräch'}</div>
+      <div className="t-label min-w-0 flex-1 truncate">{chat?.title ?? tr('Neues Gespräch')}</div>
       <Select value={provider} onChange={(e) => setProvider(e.target.value as AIProvider)} className="h-9 w-32 text-[13px]" disabled={running}>
         {(providers ?? [{ id: 'claude', name: 'Claude' } as ProviderStatus, { id: 'codex', name: 'Codex' } as ProviderStatus]).map((p) => (
           <option key={p.id} value={p.id} disabled={providers ? !(p.installed && p.loggedIn) : false}>
             {p.name}
-            {providers && !(p.installed && p.loggedIn) ? ' (aus)' : ''}
+            {providers && !(p.installed && p.loggedIn) ? tr(' (aus)') : ''}
           </option>
         ))}
       </Select>
@@ -355,7 +355,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
       )}
       {chat && (
         <IconButton
-          label="Chat löschen"
+          label={tr('Chat löschen')}
           onClick={async () => {
             await deleteChat(chat.id);
             navigate('/tutor');
@@ -376,7 +376,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
             <div className="anim-in">
               <div className="mb-6 flex flex-col items-center text-center">
                 <OttoBadge size={104} mood="listening" />
-                <h2 className="t-title mt-4">Worüber sprechen wir?</h2>
+                <h2 className="t-title mt-4">{tr('Worüber sprechen wir?')}</h2>
               </div>
               <div className="mb-5 grid gap-2 sm:grid-cols-3">
                 {MODES.map((m) => (
@@ -399,11 +399,8 @@ export function Tutor({ chatId }: { chatId: string | null }) {
                 ))}
               </div>
               {noAI && (
-                <div className="mt-5 rounded-md bg-sonne px-4 py-3 text-[15px] text-on-sonne">
-                  Weder Claude noch Codex ist auf deinem Mac angemeldet.{' '}
-                  <Link to="/settings" className="font-bold underline">
-                    Einstellungen → KI öffnen
-                  </Link>
+                <div className="mt-5 rounded-md bg-sonne px-4 py-3 text-[15px] text-on-sonne">{tr('Weder Claude noch Codex ist auf deinem Mac angemeldet.')}{' '}
+                  <Link to="/settings" className="font-bold underline">{tr('Einstellungen → KI öffnen')}</Link>
                 </div>
               )}
             </div>
@@ -423,8 +420,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
                 <span className="size-1.5 animate-bounce rounded-full bg-krake-deep [animation-delay:-0.15s]" />
                 <span className="size-1.5 animate-bounce rounded-full bg-krake-deep" />
               </span>
-              {activeProvider?.name ?? 'Die KI'} denkt nach …
-            </div>
+              {activeProvider?.name ?? tr('Die KI')}{' '}{tr('denkt nach …')}</div>
           )}
           {live?.error && live.chatId === chatId && <div className="rounded-md bg-koralle-soft px-4 py-3 text-[15px] text-koralle-ink">{live.error}</div>}
         </div>
@@ -432,9 +428,8 @@ export function Tutor({ chatId }: { chatId: string | null }) {
       <div className="border-t border-line bg-paper px-3 py-3 md:px-6">
         <div className="mx-auto max-w-3xl">
           {contextNote && (
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-paper-sunk px-3 py-1.5 text-[13px]">
-              Zur Karte: <b>{noteTitle(contextNote)}</b>
-              <button onClick={() => setContextNote(null)} className="text-ink-muted hover:text-ink" aria-label="Kartenkontext entfernen">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-paper-sunk px-3 py-1.5 text-[13px]">{tr('Zur Karte:')}{' '}<b>{noteTitle(contextNote)}</b>
+              <button onClick={() => setContextNote(null)} className="text-ink-muted hover:text-ink" aria-label={tr('Kartenkontext entfernen')}>
                 <X className="size-3.5" />
               </button>
             </div>
@@ -455,15 +450,15 @@ export function Tutor({ chatId }: { chatId: string | null }) {
                 }
               }}
               rows={1}
-              placeholder={mode === 'conversation' ? 'Schreib auf Deutsch …' : 'Frag etwas oder sag, welche Karten du brauchst …'}
+              placeholder={mode === 'conversation' ? tr('Schreib auf Deutsch …') : tr('Frag etwas oder sag, welche Karten du brauchst …')}
               className="max-h-56 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[17px] leading-6 outline-none placeholder:text-ink-muted"
             />
             {running ? (
-              <Button variant="secondary" onClick={() => live && void cancelJob(live.jobId)} aria-label="Stopp" className="size-11 !px-0">
+              <Button variant="secondary" onClick={() => live && void cancelJob(live.jobId)} aria-label={tr('Stopp')} className="size-11 !px-0">
                 <Square className="size-4 fill-current" />
               </Button>
             ) : (
-              <Button variant="primary" onClick={() => void send()} disabled={!text.trim() || !!noAI} aria-label="Senden" className="size-11 !px-0">
+              <Button variant="primary" onClick={() => void send()} disabled={!text.trim() || !!noAI} aria-label={tr('Senden')} className="size-11 !px-0">
                 <ArrowUp className="size-5" />
               </Button>
             )}
@@ -472,7 +467,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
             <span>
               {MODES.find((m) => m.id === mode)?.label} · {activeProvider?.plan ?? ''}
             </span>
-            {live?.rate !== undefined && <span>{Math.round((live.rate ?? 0) * 100)} % deines 5-Stunden-Limits bei Claude verbraucht</span>}
+            {live?.rate !== undefined && <span>{Math.round((live.rate ?? 0) * 100)}{' '}{tr('% deines 5-Stunden-Limits bei Claude verbraucht')}</span>}
           </div>
         </div>
       </div>
@@ -484,10 +479,8 @@ export function Tutor({ chatId }: { chatId: string | null }) {
     return (
       <div className="mx-auto max-w-xl px-5 pt-8 pb-10">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="t-title">Tutor</h1>
-          <Button variant="primary" icon={<Plus className="size-5" />} onClick={() => navigate('/tutor?new=1')}>
-            Neuer Chat
-          </Button>
+          <h1 className="t-title">{tr('Tutor')}</h1>
+          <Button variant="primary" icon={<Plus className="size-5" />} onClick={() => navigate('/tutor?new=1')}>{tr('Neuer Chat')}</Button>
         </div>
         {!chats ? <Spinner /> : <ChatList chats={chats} active={null} />}
       </div>
@@ -497,9 +490,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   return (
     <div className="flex h-full">
       <aside className="thin-scroll flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-r border-line p-3 pt-10">
-        <Button variant="secondary" icon={<Plus className="size-5" />} onClick={() => navigate('/tutor')} className="w-full">
-          Neuer Chat
-        </Button>
+        <Button variant="secondary" icon={<Plus className="size-5" />} onClick={() => navigate('/tutor')} className="w-full">{tr('Neuer Chat')}</Button>
         {chats && <ChatList chats={chats} active={chatId} />}
       </aside>
       {view}

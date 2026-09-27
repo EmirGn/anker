@@ -14,13 +14,14 @@ import { anzahl, dauer } from '../lib/format';
 import { useDeckCounts, useDecks, useHub, useLiveQuery, usePrefs, useTodayLogs } from '../lib/hooks';
 import { Link, navigate } from '../lib/router';
 import { renderField } from '../lib/sanitize';
+import { LOCALE, tr } from '../lib/i18n';
 
 function greeting(h: number) {
-  if (h < 5) return 'Gute Nacht';
-  if (h < 11) return 'Guten Morgen';
-  if (h < 17) return 'Guten Tag';
-  if (h < 22) return 'Guten Abend';
-  return 'Gute Nacht';
+  if (h < 5) return tr('Gute Nacht');
+  if (h < 11) return tr('Guten Morgen');
+  if (h < 17) return tr('Guten Tag');
+  if (h < 22) return tr('Guten Abend');
+  return tr('Gute Nacht');
 }
 
 const TINT = {
@@ -33,12 +34,12 @@ const TINT = {
 } as const;
 
 export const DRILLS = [
-  { id: 'artikel', title: 'Artikel-Blitz', desc: 'der, die oder das? 60 Sekunden.', icon: Zap, tint: TINT.koralle },
-  { id: 'zahlen', title: 'Zahlen-Diktat', desc: 'Zahlen hören und tippen.', icon: Calculator, tint: TINT.hafen },
-  { id: 'uhrzeit', title: 'Wie spät ist es?', desc: '„Viertel vor drei“ und Co.', icon: Clock, tint: TINT.sonne },
-  { id: 'kasus', title: 'Kasus-Trainer', desc: 'Präposition → der richtige Artikel.', icon: Target, tint: TINT.krake },
-  { id: 'verben', title: 'Stammformen', desc: 'fahren · fuhr · ist gefahren', icon: Brain, tint: TINT.tanne },
-  { id: 'diktat', title: 'Diktat', desc: 'Hör zu und schreib deine Wörter.', icon: Headphones, tint: TINT.neutral },
+  { id: 'artikel', title: tr('Artikel-Blitz'), desc: tr('der, die oder das? 60 Sekunden.'), icon: Zap, tint: TINT.koralle },
+  { id: 'zahlen', title: tr('Zahlen-Diktat'), desc: tr('Zahlen hören und tippen.'), icon: Calculator, tint: TINT.hafen },
+  { id: 'uhrzeit', title: tr('Wie spät ist es?'), desc: tr('„Viertel vor drei“ und Co.'), icon: Clock, tint: TINT.sonne },
+  { id: 'kasus', title: tr('Kasus-Trainer'), desc: tr('Präposition → der richtige Artikel.'), icon: Target, tint: TINT.krake },
+  { id: 'verben', title: tr('Stammformen'), desc: tr('fahren · fuhr · ist gefahren'), icon: Brain, tint: TINT.tanne },
+  { id: 'diktat', title: tr('Diktat'), desc: tr('Hör zu und schreib deine Wörter.'), icon: Headphones, tint: TINT.neutral },
 ] as const;
 
 /** Word of the day: a sonne card, text in on-sonne; the gender shows as a chip. */
@@ -47,7 +48,7 @@ function WordOfTheDay({ note }: { note: Note }) {
   return (
     <div className="rounded-md bg-sonne p-4 text-on-sonne">
       <div className="flex items-center justify-between">
-        <span className="t-overline">Wort des Tages</span>
+        <span className="t-overline">{tr('Wort des Tages')}</span>
         <SpeakButton text={withArticle(f.german ?? '', f.gender)} className="-my-2 -mr-1 bg-transparent text-on-sonne hover:bg-[#3a2a0014] hover:text-on-sonne" />
       </div>
       <Link to={`/edit/${note.id}`} className="block">
@@ -84,7 +85,7 @@ function MissionSheet({ open, onClose, missions }: { open: boolean; onClose: () 
     <Modal
       open={open}
       onClose={onClose}
-      title={<span className="t-title">Deine Tagesmission</span>}
+      title={<span className="t-title">{tr('Deine Tagesmission')}</span>}
       footer={
         <Button
           variant="primary"
@@ -94,9 +95,7 @@ function MissionSheet({ open, onClose, missions }: { open: boolean; onClose: () 
             onClose();
             if (!all) navigate('/study');
           }}
-        >
-          Weiter
-        </Button>
+        >{tr('Weiter')}</Button>
       }
     >
       <div>
@@ -110,16 +109,16 @@ function MissionSheet({ open, onClose, missions }: { open: boolean; onClose: () 
               {m.detail && <span className="t-caption block text-ink-muted">{m.detail}</span>}
             </span>
             {m.done ? (
-              <span className="anim-pop flex size-6 items-center justify-center rounded-full bg-wiese text-on-wiese" aria-label="Geschafft">
+              <span className="anim-pop flex size-6 items-center justify-center rounded-full bg-wiese text-on-wiese" aria-label={tr('Geschafft')}>
                 <CheckIcon weight="bold" className="size-3.5" />
               </span>
             ) : (
-              <span className="size-[22px] rounded-full border-2 border-line" aria-label="Offen" />
+              <span className="size-[22px] rounded-full border-2 border-line" aria-label={tr('Offen')} />
             )}
           </div>
         ))}
         <div className={cx('t-overline mt-2 rounded-sm px-3 py-1.5 text-center', all ? 'bg-wiese text-on-wiese' : 'bg-paper-sunk text-ink-muted')}>
-          {all ? `${missions.length} Missionen geschafft` : `${done} von ${missions.length} geschafft`}
+          {all ? tr('{0} Missionen geschafft', missions.length) : tr('{0} von {1} geschafft', done, missions.length)}
         </div>
       </div>
     </Modal>
@@ -186,11 +185,11 @@ export function Today({ due }: { due: number }) {
   const goal = Math.max(1, prefs.dailyGoal);
   const newTarget = Math.min(5, today.learned + totals.new);
   const missions: Mission[] = [
-    { text: 'Serie fortsetzen', detail: st.current ? `${anzahl(st.current, 'Tag', 'Tage')} in Folge` : undefined, done: today.reviews > 0, icon: Flame, tint: TINT.koralle },
-    { text: `${goal} Karten wiederholen`, detail: `${Math.min(today.reviews, goal)} von ${goal}`, done: today.reviews >= goal, icon: Layers, tint: TINT.hafen },
+    { text: tr('Serie fortsetzen'), detail: st.current ? tr('{0} in Folge', anzahl(st.current, '{0} Tag', '{0} Tage')) : undefined, done: today.reviews > 0, icon: Flame, tint: TINT.koralle },
+    { text: tr('{0} Karten wiederholen', goal), detail: tr('{0} von {1}', Math.min(today.reviews, goal), goal), done: today.reviews >= goal, icon: Layers, tint: TINT.hafen },
     {
-      text: newTarget ? `${newTarget} neue Wörter lernen` : 'Neue Wörter lernen',
-      detail: newTarget ? `${Math.min(today.learned, newTarget)} von ${newTarget}` : 'Heute keine neuen Karten übrig',
+      text: newTarget ? tr('{0} neue Wörter lernen', newTarget) : tr('Neue Wörter lernen'),
+      detail: newTarget ? tr('{0} von {1}', Math.min(today.learned, newTarget), newTarget) : tr('Heute keine neuen Karten übrig'),
       done: newTarget === 0 || today.learned >= newTarget,
       icon: BookOpenTextIcon,
       tint: TINT.krake,
@@ -198,7 +197,7 @@ export function Today({ due }: { due: number }) {
   ];
 
   const hour = new Date().getHours();
-  const dateStr = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  const dateStr = new Date().toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
   const allDone = due === 0 && (cards?.length ?? 0) > 0;
   const empty = decks !== undefined && decks.length === 0;
   const minutes = Math.round(today.timeMs / 60_000);
@@ -222,15 +221,11 @@ export function Today({ due }: { due: number }) {
         <Panel className="mt-6 flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center">
           <OttoBadge size={96} mood="happy" />
           <div className="min-w-0 flex-1">
-            <h2 className="t-heading">Dein erstes Deck</h2>
-            <p className="mt-1 text-[15px] text-ink-muted">Starte mit einem Starter-Deck, füge eigene Wörter hinzu oder importiere aus Anki.</p>
+            <h2 className="t-heading">{tr('Dein erstes Deck')}</h2>
+            <p className="mt-1 text-[15px] text-ink-muted">{tr('Starte mit einem Starter-Deck, füge eigene Wörter hinzu oder importiere aus Anki.')}</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button variant="primary" size="lg" onClick={() => navigate('/welcome')} icon={<Library className="size-5" />}>
-                Starter-Decks
-              </Button>
-              <Button size="lg" onClick={() => navigate('/add')} icon={<Plus className="size-5" />}>
-                Wörter hinzufügen
-              </Button>
+              <Button variant="primary" size="lg" onClick={() => navigate('/welcome')} icon={<Library className="size-5" />}>{tr('Starter-Decks')}</Button>
+              <Button size="lg" onClick={() => navigate('/add')} icon={<Plus className="size-5" />}>{tr('Wörter hinzufügen')}</Button>
             </div>
           </div>
         </Panel>
@@ -240,22 +235,22 @@ export function Today({ due }: { due: number }) {
           <div className="mt-6 overflow-hidden rounded-md border border-line bg-paper-raised">
             <div className="grid grid-cols-4 py-3 text-center">
               {[
-                { n: st.current, l: st.current === 1 ? 'Tag' : 'Tage', c: 'var(--koralle-ink)', flame: true },
-                { n: known, l: 'Wörter', c: 'var(--hafen)' },
+                { n: st.current, l: st.current === 1 ? tr('Tag') : tr('Tage'), c: 'var(--koralle-ink)', flame: true },
+                { n: known, l: tr('Wörter'), c: 'var(--hafen)' },
                 { n: minutes, l: 'Min.', c: 'var(--wiese)' },
-                { n: today.reviews, l: 'Karten', c: 'var(--ink)' },
+                { n: today.reviews, l: tr('Karten'), c: 'var(--ink)' },
               ].map((s, i) => (
                 <div key={s.l} className={cx('px-1', i > 0 && 'border-l border-line')}>
                   <div className="t-stat flex items-center justify-center gap-0.5" style={{ color: s.c }}>
                     {s.flame && <Flame weight="fill" className="size-[18px]" />}
-                    {s.n.toLocaleString('de-DE')}
+                    {s.n.toLocaleString(LOCALE)}
                   </div>
                   <div className="t-caption text-ink-muted">{s.l}</div>
                 </div>
               ))}
             </div>
             <button onClick={() => setMissionOpen(true)} className="t-overline flex w-full items-center justify-between bg-hafen px-3 py-2 text-on-hafen">
-              <span>Deine Tagesmission · {missions.filter((m) => m.done).length}/3</span>
+              <span>{tr('Deine Tagesmission ·')}{' '}{missions.filter((m) => m.done).length}/3</span>
               <CaretRightIcon weight="bold" className="size-4" />
             </button>
           </div>
@@ -264,22 +259,21 @@ export function Today({ due }: { due: number }) {
             <div className="mt-4 flex items-center gap-3 rounded-md bg-wiese-soft px-4 py-3.5">
               <CheckCircleIcon weight="fill" className="size-7 shrink-0 text-wiese" />
               <div className="min-w-0">
-                <div className="t-label">Alles erledigt!</div>
+                <div className="t-label">{tr('Alles erledigt!')}</div>
                 <div className="t-caption text-ink-muted">
-                  {today.reviews ? `${anzahl(today.reviews, 'Karte', 'Karten')} in ${dauer(today.timeMs)}. ` : ''}
-                  {tomorrow ? `Morgen ${tomorrow === 1 ? 'ist 1 Karte' : `sind ${tomorrow} Karten`} fällig.` : ''}
+                  {today.reviews ? tr('{0} in {1}. ', anzahl(today.reviews, '{0} Karte', '{0} Karten'), dauer(today.timeMs)) : ''}
+                  {tomorrow ? (tomorrow === 1 ? tr('Morgen ist 1 Karte fällig.') : tr('Morgen sind {0} Karten fällig.', tomorrow)) : ''}
                 </div>
               </div>
             </div>
           ) : (
             <div className="mt-4">
               <Button variant="primary" size="lg" className="w-full" onClick={() => navigate('/study')}>
-                {anzahl(due, 'Karte', 'Karten')} wiederholen
+                {due === 1 ? tr('1 Karte wiederholen') : tr('{0} Karten wiederholen', due)}
               </Button>
               <p className="t-caption mt-2 text-center text-ink-muted tabular-nums">
-                <span className="font-bold text-hafen">{totals.new}</span> neu · <span className="font-bold text-koralle-ink">{totals.learn}</span> in Arbeit ·{' '}
-                <span className="font-bold text-wiese">{totals.review}</span> fällig
-              </p>
+                <span className="font-bold text-hafen">{totals.new}</span>{' '}{tr('neu ·')}{' '}<span className="font-bold text-koralle-ink">{totals.learn}</span>{' '}{tr('in Arbeit ·')}{' '}
+                <span className="font-bold text-wiese">{totals.review}</span>{' '}{tr('fällig')}</p>
             </div>
           )}
         </>
@@ -288,10 +282,8 @@ export function Today({ due }: { due: number }) {
       {forYou.length > 0 && (
         <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="t-heading">Decks für dich</h2>
-            <Link to="/decks" className="t-label text-hafen">
-              Alle
-            </Link>
+            <h2 className="t-heading">{tr('Decks für dich')}</h2>
+            <Link to="/decks" className="t-label text-hafen">{tr('Alle')}</Link>
           </div>
           <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
             {forYou.map(({ d, c }) => {
@@ -299,7 +291,7 @@ export function Today({ due }: { due: number }) {
               return (
                 <Link key={d.id} to={`/decks/${d.id}`} className="w-[104px] shrink-0 rounded-sm">
                   <DeckCover deck={d} />
-                  <div className="t-caption mt-1.5 text-ink-muted">{n ? `${n} fällig` : 'Erledigt'}</div>
+                  <div className="t-caption mt-1.5 text-ink-muted">{n ? tr('{0} fällig', n) : tr('Erledigt')}</div>
                 </Link>
               );
             })}
@@ -326,10 +318,10 @@ export function Today({ due }: { due: number }) {
           <input
             value={ask}
             onChange={(e) => setAsk(e.target.value)}
-            placeholder="Frag den Tutor – „Wann benutzt man ‚seit‘?“"
+            placeholder={tr('Frag den Tutor – „Wann benutzt man ‚seit‘?“')}
             className="h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink-muted"
           />
-          <button type="submit" disabled={!ask.trim()} aria-label="Fragen" className="flex size-11 items-center justify-center rounded-md bg-paper-sunk text-ink disabled:opacity-40">
+          <button type="submit" disabled={!ask.trim()} aria-label={tr('Fragen')} className="flex size-11 items-center justify-center rounded-md bg-paper-sunk text-ink disabled:opacity-40">
             <Send className="size-5" />
           </button>
         </form>
@@ -337,10 +329,8 @@ export function Today({ due }: { due: number }) {
 
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="t-heading">Übungen</h2>
-          <Link to="/practice" className="t-label text-hafen">
-            Alle
-          </Link>
+          <h2 className="t-heading">{tr('Übungen')}</h2>
+          <Link to="/practice" className="t-label text-hafen">{tr('Alle')}</Link>
         </div>
         <Panel className="divide-y divide-line overflow-hidden">
           {DRILLS.slice(0, 4).map((d) => {
@@ -363,10 +353,8 @@ export function Today({ due }: { due: number }) {
 
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="t-heading">Dein Jahr</h2>
-          <Link to="/stats" className="t-label text-hafen">
-            Statistik
-          </Link>
+          <h2 className="t-heading">{tr('Dein Jahr')}</h2>
+          <Link to="/stats" className="t-label text-hafen">{tr('Statistik')}</Link>
         </div>
         <Panel className="p-4">
           <Heatmap days={days} weeks={26} rolloverHour={prefs.rolloverHour} />
@@ -376,10 +364,10 @@ export function Today({ due }: { due: number }) {
       {!hub && (
         <Panel className="mt-6 flex flex-wrap items-center gap-4 p-4">
           <div className="min-w-0 flex-1">
-            <div className="t-label">Mit deinem Mac verbinden</div>
-            <div className="t-caption text-ink-muted">Decks zwischen Geräten synchronisieren und den KI-Tutor nutzen (Claude & Codex).</div>
+            <div className="t-label">{tr('Mit deinem Mac verbinden')}</div>
+            <div className="t-caption text-ink-muted">{tr('Decks zwischen Geräten synchronisieren und den KI-Tutor nutzen (Claude & Codex).')}</div>
           </div>
-          <Button onClick={() => navigate('/connect')}>Verbinden</Button>
+          <Button onClick={() => navigate('/connect')}>{tr('Verbinden')}</Button>
         </Panel>
       )}
       <MissionSheet open={missionOpen} onClose={() => setMissionOpen(false)} missions={missions} />

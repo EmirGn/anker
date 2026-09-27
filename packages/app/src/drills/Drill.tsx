@@ -5,6 +5,7 @@ import { Kasus } from './Kasus';
 import { Uhrzeit } from './Uhrzeit';
 import { Verben } from './Verben';
 import { Zahlen } from './Zahlen';
+import { tr } from '../lib/i18n';
 
 export function Drill({ game }: { game: string }) {
   switch (game) {
@@ -21,6 +22,6 @@ export function Drill({ game }: { game: string }) {
     case 'diktat':
       return <Diktat />;
     default:
-      return <Empty title="Unknown game" />;
+      return <Empty title={tr('Unbekanntes Spiel')} />;
   }
 }

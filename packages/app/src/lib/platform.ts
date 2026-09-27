@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { desktop } from './desktop';
+import { tr } from './i18n';
 
 export const isNative = Capacitor.isNativePlatform();
 export const isAndroid = Capacitor.getPlatform() === 'android';
@@ -41,8 +42,8 @@ export async function scheduleDailyReminder(time: string | null): Promise<boolea
       notifications: [
         {
           id: 4747,
-          title: 'Zeit für Deutsch',
-          body: 'Deine Karten warten. Ein paar Minuten halten deine Serie am Leben.',
+          title: tr('Zeit für Deutsch'),
+          body: tr('Deine Karten warten. Ein paar Minuten halten deine Serie am Leben.'),
           schedule: { on: { hour, minute }, repeats: true, allowWhileIdle: true },
           smallIcon: 'ic_stat_anker',
         },

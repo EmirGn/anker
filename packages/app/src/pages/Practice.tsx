@@ -4,6 +4,7 @@ import { db } from '../lib/db';
 import { useLiveQuery } from '../lib/hooks';
 import { Link } from '../lib/router';
 import { DRILLS } from './Today';
+import { tr } from '../lib/i18n';
 
 export function Practice() {
   const bests = useLiveQuery(async () => {
@@ -12,7 +13,7 @@ export function Practice() {
   }, []);
   return (
     <div className="mx-auto max-w-4xl px-5 pt-8 pb-10 md:px-8 md:pt-10">
-      <PageHeader title="Üben" subtitle="Kurze Spiele für die kniffligen Stellen im Deutschen. Sie ändern deinen Wiederholungsplan nicht." />
+      <PageHeader title={tr('Üben')} subtitle={tr('Kurze Spiele für die kniffligen Stellen im Deutschen. Sie ändern deinen Wiederholungsplan nicht.')} />
       <div className="grid gap-3 sm:grid-cols-2">
         {DRILLS.map((d) => {
           const Icon = d.icon;
@@ -31,7 +32,7 @@ export function Practice() {
                 <div className="mt-1 text-[15px] text-ink-muted">{d.desc}</div>
                 {best !== undefined && (
                   <div className="t-caption mt-2 inline-flex items-center gap-1 text-ink-muted">
-                    <Trophy className="size-4" /> Rekord: {best}
+                    <Trophy className="size-4" />{' '}{tr('Rekord:')}{' '}{best}
                   </div>
                 )}
               </div>

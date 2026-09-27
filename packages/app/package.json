@@ -1,6 +1,6 @@
 {
   "name": "@anker/app",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,7 @@
     "android:debug": "cap sync android && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
-    "@anker/core": "0.2.0",
+    "@anker/core": "0.2.1",
     "@capacitor-community/text-to-speech": "^8.0.2",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.1",

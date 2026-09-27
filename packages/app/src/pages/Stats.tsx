@@ -21,6 +21,7 @@ import { db } from '../lib/db';
 import { dauer } from '../lib/format';
 import { useHub, useLiveQuery, usePrefs } from '../lib/hooks';
 import { Link, navigate } from '../lib/router';
+import { LOCALE, tr } from '../lib/i18n';
 
 export function Stats() {
   const prefs = usePrefs();
@@ -42,7 +43,7 @@ export function Stats() {
     for (let i = n - 1; i >= 0; i--) {
       const k = addDaysKey(today, -i);
       perDay.push(days.get(k)?.count ?? 0);
-      labels.push(i === 0 ? 'Heute' : i % Math.ceil(n / 6) === 0 ? `${Number(k.slice(8))}.${Number(k.slice(5, 7))}.` : null);
+      labels.push(i === 0 ? tr('Heute') : i % Math.ceil(n / 6) === 0 ? `${Number(k.slice(8))}.${Number(k.slice(5, 7))}.` : null);
     }
     const since = now - n * DAY;
     const inRange = data.logs.filter((l) => l.review >= since);
@@ -92,16 +93,16 @@ export function Stats() {
   return (
     <div className="mx-auto max-w-5xl px-5 pt-8 pb-16 md:px-8 md:pt-10">
       <PageHeader
-        title="Statistik"
-        subtitle="So geht es deinem deutschen Gedächtnis."
+        title={tr('Statistik')}
+        subtitle={tr('So geht es deinem deutschen Gedächtnis.')}
         actions={
           <Segmented
             value={range}
             onChange={setRange}
             options={[
-              { value: '30', label: '30 Tage' },
-              { value: '90', label: '90 Tage' },
-              { value: '365', label: 'Jahr' },
+              { value: '30', label: tr('30 Tage') },
+              { value: '90', label: tr('90 Tage') },
+              { value: '365', label: tr('Jahr') },
             ]}
           />
         }
@@ -116,12 +117,12 @@ export function Stats() {
                 {s.streak.current}
               </span>
             ),
-            l: 'Tage in Folge',
-            d: `Rekord: ${s.streak.longest}`,
+            l: tr('Tage in Folge'),
+            d: tr('Rekord: {0}', s.streak.longest),
           },
-          { v: s.retention.rate == null ? '–' : `${Math.round(s.retention.rate * 100)} %`, l: 'Behalten', d: `${s.retention.reviews} gefestigte Wiederholungen` },
-          { v: s.totalReviews.toLocaleString('de-DE'), l: 'Wiederholungen', d: `${dauer(s.totalTime)} · ${s.activeDays} aktive Tage` },
-          { v: <span className="text-hafen">{s.known.toLocaleString('de-DE')}</span>, l: 'Wörter gelernt', d: `${s.breakdown.mature} gefestigte Karten` },
+          { v: s.retention.rate == null ? '–' : `${Math.round(s.retention.rate * 100)} %`, l: tr('Behalten'), d: tr('{0} gefestigte Wiederholungen', s.retention.reviews) },
+          { v: s.totalReviews.toLocaleString(LOCALE), l: tr('Wiederholungen'), d: tr('{0} · {1} aktive Tage', dauer(s.totalTime), s.activeDays) },
+          { v: <span className="text-hafen">{s.known.toLocaleString(LOCALE)}</span>, l: tr('Wörter gelernt'), d: tr('{0} gefestigte Karten', s.breakdown.mature) },
         ].map((x, i) => (
           <div key={x.l} className={cx('px-2 py-3', i % 2 === 1 && 'border-l border-line', i > 1 && 'border-t border-line md:border-t-0', i === 2 && 'md:border-l')}>
             <div className="t-stat">{x.v}</div>
@@ -131,41 +132,41 @@ export function Stats() {
         ))}
       </div>
 
-      <Section title="Kalender">
+      <Section title={tr('Kalender')}>
         <Panel className="p-4 md:p-5">
           <Heatmap days={s.days} weeks={53} rolloverHour={prefs.rolloverHour} />
         </Panel>
       </Section>
 
       <div className="grid gap-x-6 md:grid-cols-2">
-        <Section title="Wiederholungen pro Tag">
+        <Section title={tr('Wiederholungen pro Tag')}>
           <Panel className="p-4">
-            <Bars values={s.perDay} labels={s.labels} format={(v) => `${v} Wiederholungen`} />
+            <Bars values={s.perDay} labels={s.labels} format={(v) => tr('{0} Wiederholungen', v)} />
           </Panel>
         </Section>
-        <Section title="Fällig in den nächsten 30 Tagen">
+        <Section title={tr('Fällig in den nächsten 30 Tagen')}>
           <Panel className="p-4">
-            <Bars values={s.forecast} labels={s.forecast.map((_, i) => (i === 0 ? 'Heute' : i % 5 === 0 ? `+${i}` : null))} color="var(--wiese)" format={(v) => `${v} fällig`} />
+            <Bars values={s.forecast} labels={s.forecast.map((_, i) => (i === 0 ? tr('Heute') : i % 5 === 0 ? `+${i}` : null))} color="var(--wiese)" format={(v) => tr('{0} fällig', v)} />
           </Panel>
         </Section>
       </div>
 
-      <Section title="Deine Karten">
+      <Section title={tr('Deine Karten')}>
         <Panel className="p-4">
           <StackedBar
             parts={[
-              { label: 'Neu', value: s.breakdown.new, color: 'var(--hafen)' },
-              { label: 'In Arbeit', value: s.breakdown.learning, color: 'var(--koralle-ink)' },
-              { label: 'Jung', value: s.breakdown.young, color: 'color-mix(in srgb, var(--wiese) 55%, var(--line))' },
-              { label: 'Gefestigt (21+ Tage)', value: s.breakdown.mature, color: 'var(--wiese)' },
-              { label: 'Ausgesetzt', value: s.breakdown.suspended, color: 'var(--ink-muted)' },
+              { label: tr('Neu'), value: s.breakdown.new, color: 'var(--hafen)' },
+              { label: tr('In Arbeit'), value: s.breakdown.learning, color: 'var(--koralle-ink)' },
+              { label: tr('Jung'), value: s.breakdown.young, color: 'color-mix(in srgb, var(--wiese) 55%, var(--line))' },
+              { label: tr('Gefestigt (21+ Tage)'), value: s.breakdown.mature, color: 'var(--wiese)' },
+              { label: tr('Ausgesetzt'), value: s.breakdown.suspended, color: 'var(--ink-muted)' },
             ]}
           />
         </Panel>
       </Section>
 
       <div className="grid gap-x-6 md:grid-cols-2">
-        <Section title="Antworten">
+        <Section title={tr('Antworten')}>
           <Panel className="space-y-3 p-4">
             {(
               [
@@ -176,7 +177,7 @@ export function Stats() {
               ] as const
             ).map(([label, color], i) => (
               <div key={label} className="flex items-center gap-3 text-[13px]">
-                <span className="w-16 font-semibold">{label}</span>
+                <span className="w-16 font-semibold">{tr(label)}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-paper-sunk">
                   <div className="h-full rounded-full" style={{ width: `${(s.buttons[i]! / totalButtons) * 100}%`, background: color }} />
                 </div>
@@ -187,20 +188,20 @@ export function Stats() {
             ))}
           </Panel>
         </Section>
-        <Section title="Tageszeit">
+        <Section title={tr('Tageszeit')}>
           <Panel className="p-4">
-            <Bars values={s.hours.map((h) => h.reviews)} labels={s.hours.map((_, i) => (i % 6 === 0 ? `${i} Uhr` : null))} height={90} format={(v) => `${v} Wiederholungen`} />
+            <Bars values={s.hours.map((h) => h.reviews)} labels={s.hours.map((_, i) => (i % 6 === 0 ? tr('{0} Uhr', i) : null))} height={90} format={(v) => tr('{0} Wiederholungen', v)} />
             <p className="t-caption text-ink-muted">
               {s.bestHour
-                ? `Am besten merkst du dir Wörter gegen ${s.bestHour.i} Uhr (${Math.round(s.bestHour.rate * 100)} % richtig).`
-                : 'Wiederhol noch etwas mehr, dann zeigt sich deine beste Tageszeit.'}
+                ? tr('Am besten merkst du dir Wörter gegen {0} Uhr ({1} % richtig).', s.bestHour.i, Math.round(s.bestHour.rate * 100))
+                : tr('Wiederhol noch etwas mehr, dann zeigt sich deine beste Tageszeit.')}
             </p>
           </Panel>
         </Section>
       </div>
 
       <Section
-        title="Schwierigste Wörter"
+        title={tr('Schwierigste Wörter')}
         action={
           hub &&
           s.hardest.length > 0 && (
@@ -208,15 +209,13 @@ export function Stats() {
               size="sm"
               variant="ghost"
               icon={<Sparkles className="size-4" />}
-              onClick={() => navigate(`/tutor?q=${encodeURIComponent('Sieh dir meine schwierigsten Karten an (get_study_stats) und ergänze bei den 10 schwersten eine kurze, anschauliche Eselsbrücke im Notizfeld. Behalte vorhandene Notizen.')}`)}
-            >
-              Eselsbrücken von der KI
-            </Button>
+              onClick={() => navigate(`/tutor?q=${encodeURIComponent(tr('Sieh dir meine schwierigsten Karten an (get_study_stats) und ergänze bei den 10 schwersten eine kurze, anschauliche Eselsbrücke im Notizfeld. Behalte vorhandene Notizen.'))}`)}
+            >{tr('Eselsbrücken von der KI')}</Button>
           )
         }
       >
         {s.hardest.length === 0 ? (
-          <Panel className="p-4 text-[15px] text-ink-muted">Noch keine Sorgenkinder.</Panel>
+          <Panel className="p-4 text-[15px] text-ink-muted">{tr('Noch keine Sorgenkinder.')}</Panel>
         ) : (
           <Panel className="divide-y divide-line">
             {s.hardest.map(({ note, lapses }) => (
@@ -225,7 +224,7 @@ export function Stats() {
                   {note.type === 'word' ? <GenderWord word={note.fields.german ?? ''} gender={note.fields.gender} /> : noteTitle(note)}
                 </span>
                 <span className="t-caption truncate text-ink-muted">{note.fields.english ?? note.fields.back ?? ''}</span>
-                <span className="w-20 shrink-0 text-right text-[13px] font-bold text-koralle-ink">{lapses} Fehler</span>
+                <span className="w-20 shrink-0 text-right text-[13px] font-bold text-koralle-ink">{lapses}{' '}{tr('Fehler')}</span>
               </Link>
             ))}
           </Panel>

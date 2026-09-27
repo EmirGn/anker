@@ -2,6 +2,7 @@ import { buildDeckTree, flattenTree } from '@anker/core';
 import { useMemo } from 'react';
 import { useDecks } from '../lib/hooks';
 import { Select } from './ui';
+import { tr } from '../lib/i18n';
 
 export function useDeckOptions() {
   const decks = useDecks();
@@ -13,7 +14,7 @@ export function DeckSelect({
   onChange,
   className,
   allowNone,
-  noneLabel = 'Alle Decks',
+  noneLabel = tr('Alle Decks'),
 }: {
   value: string | null;
   onChange: (id: string | null) => void;
@@ -25,7 +26,7 @@ export function DeckSelect({
   return (
     <Select value={value ?? ''} onChange={(e) => onChange(e.target.value || null)} className={className}>
       {allowNone && <option value="">{noneLabel}</option>}
-      {!allowNone && !value && <option value="">Deck wählen …</option>}
+      {!allowNone && !value && <option value="">{tr('Deck wählen …')}</option>}
       {options.map((o) => (
         <option key={o.id} value={o.id}>
           {'  '.repeat(o.depth)}

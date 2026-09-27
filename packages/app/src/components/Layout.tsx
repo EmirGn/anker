@@ -8,17 +8,18 @@ import { syncNow } from '../lib/sync';
 import { BarChart3, BookOpen, CloudOff, Flame, Layers, LayoutGrid, Loader2, MessageCircle, RefreshCw, Search, Settings, Sparkles, Sun, Zap } from './icons';
 import { Wordmark } from './Logo';
 import { cx } from './ui';
+import { lang, tr } from '../lib/i18n';
 
 export const NAV = [
-  { to: '/', label: 'Heute', icon: Sun },
-  { to: '/decks', label: 'Decks', icon: Layers },
-  { to: '/add', label: 'Neue Karte', icon: PlusCircleIcon },
-  { to: '/browse', label: 'Karten suchen', icon: Search },
-  { to: '/practice', label: 'Üben', icon: Zap },
-  { to: '/tutor', label: 'Tutor', icon: Sparkles },
-  { to: '/stats', label: 'Statistik', icon: BarChart3 },
-  { to: '/grammar', label: 'Grammatik', icon: BookOpen },
-  { to: '/settings', label: 'Einstellungen', icon: Settings },
+  { to: '/', label: tr('Heute'), icon: Sun },
+  { to: '/decks', label: tr('Decks'), icon: Layers },
+  { to: '/add', label: tr('Neue Karte'), icon: PlusCircleIcon },
+  { to: '/browse', label: tr('Karten suchen'), icon: Search },
+  { to: '/practice', label: tr('Üben'), icon: Zap },
+  { to: '/tutor', label: tr('Tutor'), icon: Sparkles },
+  { to: '/stats', label: tr('Statistik'), icon: BarChart3 },
+  { to: '/grammar', label: tr('Grammatik'), icon: BookOpen },
+  { to: '/settings', label: tr('Einstellungen'), icon: Settings },
 ] as const;
 
 function isActive(to: string, path: string) {
@@ -33,18 +34,18 @@ export function SyncPill({ compact }: { compact?: boolean }) {
   const icon = s.status === 'syncing' ? <Loader2 className="size-4 animate-spin" /> : bad ? <CloudOff className="size-4" /> : <RefreshCw className="size-4" />;
   const label =
     s.status === 'syncing'
-      ? 'Synchronisiert …'
+      ? tr('Synchronisiert …')
       : s.status === 'offline'
-        ? 'Mac nicht erreichbar'
+        ? tr('Mac nicht erreichbar')
         : s.status === 'error'
-          ? 'Sync-Fehler'
+          ? tr('Sync-Fehler')
           : s.pending
-            ? `${s.pending} ausstehend`
-            : 'Synchron';
+            ? tr('{0} ausstehend', s.pending)
+            : tr('Synchron');
   return (
     <button
       onClick={() => void syncNow()}
-      title={s.error ?? (s.lastSync ? `Zuletzt synchronisiert um ${uhrzeit(s.lastSync)}` : '')}
+      title={s.error ?? (s.lastSync ? tr('Zuletzt synchronisiert um {0}', uhrzeit(s.lastSync)) : '')}
       className={cx(
         'flex h-9 items-center gap-1.5 rounded-sm px-2 text-[13px] font-semibold transition-colors hover:bg-paper-sunk',
         bad ? 'text-koralle-ink' : 'text-ink-muted',
@@ -61,7 +62,7 @@ export function StreakBadge({ days }: { days: number }) {
   return (
     <span
       className={cx('inline-flex h-8 items-center gap-1 rounded-full px-3 text-[15px] font-bold tabular-nums', days > 0 ? 'bg-sonne text-on-sonne' : 'bg-paper-sunk text-ink-muted')}
-      title="Tage in Folge"
+      title={tr('Tage in Folge')}
     >
       <Flame weight="fill" className="size-[18px]" />
       {days}
@@ -108,11 +109,11 @@ function Sidebar({ due, streak }: { due: number; streak: number }) {
 function BottomNav({ due }: { due: number }) {
   const { path } = useRoute();
   const items = [
-    { to: '/', label: 'Heute', icon: Sun },
-    { to: '/decks', label: 'Decks', icon: Layers },
-    { to: '/add', label: 'Neu', icon: PlusCircleIcon },
-    { to: '/tutor', label: 'Tutor', icon: MessageCircle },
-    { to: '/more', label: 'Mehr', icon: LayoutGrid },
+    { to: '/', label: tr('Heute'), icon: Sun },
+    { to: '/decks', label: tr('Decks'), icon: Layers },
+    { to: '/add', label: tr('Neu'), icon: PlusCircleIcon },
+    { to: '/tutor', label: tr('Tutor'), icon: MessageCircle },
+    { to: '/more', label: tr('Mehr'), icon: LayoutGrid },
   ];
   const moreActive = ['/more', '/browse', '/practice', '/stats', '/grammar', '/settings', '/import'].some((p) => isActive(p, path));
   return (
@@ -146,7 +147,7 @@ export function Layout({ children, due, streak }: { children: ReactNode; due: nu
   const immersive = path.startsWith('/study') || path.startsWith('/practice/') || path === '/quick-add' || path === '/connect' || path === '/welcome';
   if (wide) {
     return (
-      <div className="flex h-full" lang="de">
+      <div className="flex h-full" lang={lang}>
         {!immersive && <Sidebar due={due} streak={streak} />}
         <main className="thin-scroll relative min-w-0 flex-1 overflow-y-auto">
           {isDesktop && <div className="drag sticky top-0 z-20 -mb-8 h-8" />}
@@ -156,7 +157,7 @@ export function Layout({ children, due, streak }: { children: ReactNode; due: nu
     );
   }
   return (
-    <div className="flex h-full flex-col" lang="de">
+    <div className="flex h-full flex-col" lang={lang}>
       <main className="thin-scroll pt-safe relative min-h-0 flex-1 overflow-y-auto">{children}</main>
       {!immersive && <BottomNav due={due} />}
     </div>

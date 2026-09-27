@@ -5,6 +5,7 @@ import { Button, cx } from '../components/ui';
 import { haptic } from '../lib/platform';
 import { speak } from '../lib/tts';
 import { GameShell, Results, saveBest, shuffle, StartScreen, useBest } from './shared';
+import { tr } from '../lib/i18n';
 
 const ROUNDS = 10;
 type T = { h: number; m: number };
@@ -16,7 +17,7 @@ function Clock({ t, size = 200 }: { t: T; size?: number }) {
   const hourA = ((t.h % 12) + t.m / 60) * 30;
   const minA = t.m * 6;
   return (
-    <svg viewBox="0 0 200 200" width={size} height={size} aria-label={`Uhr zeigt ${digital(t)}`}>
+    <svg viewBox="0 0 200 200" width={size} height={size} aria-label={tr('Uhr zeigt {0}', digital(t))}>
       <circle cx="100" cy="100" r="94" fill="var(--paper-raised)" stroke="var(--line)" strokeWidth="3" />
       {Array.from({ length: 60 }, (_, i) => (
         <line
@@ -108,22 +109,21 @@ export function Uhrzeit() {
 
   if (phase === 'start')
     return (
-      <GameShell title="Wie spät ist es?">
-        <StartScreen game="uhrzeit" title="Wie spät ist es?" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
-          <b>halb acht</b> ist 7:30, nicht 8:30. Lies die Uhr oder hör die Uhrzeit und wähl die richtige Antwort.
-        </StartScreen>
+      <GameShell title={tr('Wie spät ist es?')}>
+        <StartScreen game="uhrzeit" title={tr('Wie spät ist es?')} onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
+          <b>{tr('halb acht')}</b>{' '}{tr('ist 7:30, nicht 8:30. Lies die Uhr oder hör die Uhrzeit und wähl die richtige Antwort.')}</StartScreen>
       </GameShell>
     );
   if (phase === 'done')
     return (
-      <GameShell title="Wie spät ist es?">
+      <GameShell title={tr('Wie spät ist es?')}>
         <Results score={score} total={ROUNDS} prevBest={prevBest} onAgain={start} />
       </GameShell>
     );
 
   const answered = picked !== null;
   return (
-    <GameShell title="Wie spät ist es?" right={`${round + 1}/${ROUNDS}`} progress={(round + (answered ? 1 : 0)) / ROUNDS}>
+    <GameShell title={tr('Wie spät ist es?')} right={`${round + 1}/${ROUNDS}`} progress={(round + (answered ? 1 : 0)) / ROUNDS}>
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         {q.mode === 'read' ? (
           <>
@@ -152,7 +152,7 @@ export function Uhrzeit() {
           </>
         ) : (
           <>
-            <Button className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => void speak(informalTime(q.t.h, q.t.m))} aria-label="Noch mal anhören">
+            <Button className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => void speak(informalTime(q.t.h, q.t.m))} aria-label={tr('Noch mal anhören')}>
               <Volume2 className="size-8" />
             </Button>
             {answered && <div className="anim-in font-display text-[22px]">„{informalTime(q.t.h, q.t.m)}“</div>}
@@ -182,7 +182,7 @@ export function Uhrzeit() {
         )}
         {answered && (
           <Button variant="primary" size="lg" className="w-full max-w-md" onClick={() => (round + 1 >= ROUNDS ? setPhase('done') : next(round + 1))} autoFocus>
-            {round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
+            {round + 1 >= ROUNDS ? tr('Fertig') : tr('Weiter')}
           </Button>
         )}
       </div>

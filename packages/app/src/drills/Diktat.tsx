@@ -6,6 +6,7 @@ import { diffAnswer, judgeAnswer } from '../lib/diff';
 import { haptic, isNative } from '../lib/platform';
 import { speak } from '../lib/tts';
 import { GameShell, Results, saveBest, sentencePool, shuffle, StartScreen, useBest } from './shared';
+import { tr } from '../lib/i18n';
 
 const ROUNDS = 8;
 
@@ -66,15 +67,13 @@ export function Diktat() {
 
   if (phase === 'start')
     return (
-      <GameShell title="Diktat">
-        <StartScreen game="diktat" title="Diktat" onStart={() => void start()} best={best} bestLabel={`/${ROUNDS}`}>
-          Hör einen Satz – aus deinen eigenen Karten, sobald du genug hast – und schreib ihn auf. Großschreibung, Umlaute und ß zählen.
-        </StartScreen>
+      <GameShell title={tr('Diktat')}>
+        <StartScreen game="diktat" title={tr('Diktat')} onStart={() => void start()} best={best} bestLabel={`/${ROUNDS}`}>{tr('Hör einen Satz – aus deinen eigenen Karten, sobald du genug hast – und schreib ihn auf. Großschreibung, Umlaute und ß zählen.')}</StartScreen>
       </GameShell>
     );
   if (phase === 'done')
     return (
-      <GameShell title="Diktat">
+      <GameShell title={tr('Diktat')}>
         <Results score={score} total={ROUNDS} prevBest={prevBest} onAgain={() => void start()} />
       </GameShell>
     );
@@ -82,13 +81,13 @@ export function Diktat() {
   const diff = verdict ? diffAnswer(text.trim(), item.de) : null;
 
   return (
-    <GameShell title="Diktat" right={`${round + 1}/${ROUNDS}`} progress={(round + (verdict ? 1 : 0)) / ROUNDS}>
+    <GameShell title={tr('Diktat')} right={`${round + 1}/${ROUNDS}`} progress={(round + (verdict ? 1 : 0)) / ROUNDS}>
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         <div className="flex gap-3">
-          <Button className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => play()} aria-label="Anhören">
+          <Button className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => play()} aria-label={tr('Anhören')}>
             <Volume2 className="size-8" />
           </Button>
-          <Button className="size-20 rounded-full !px-0" onClick={() => play(0.6)} aria-label="Langsam anhören">
+          <Button className="size-20 rounded-full !px-0" onClick={() => play(0.6)} aria-label={tr('Langsam anhören')}>
             <Turtle className="size-7" />
           </Button>
         </div>
@@ -104,7 +103,7 @@ export function Diktat() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             readOnly={!!verdict}
-            placeholder="Schreib, was du hörst …"
+            placeholder={tr('Schreib, was du hörst …')}
             autoCapitalize="sentences"
             autoCorrect="off"
             spellCheck={false}
@@ -126,12 +125,12 @@ export function Diktat() {
               </div>
               <div className="t-caption text-ink-muted">{item.en}</div>
               <div className={cx('text-[15px] font-bold', verdict === 'exact' ? 'text-wiese' : verdict === 'close' ? 'text-sonne-ink' : 'text-koralle-ink')}>
-                {verdict === 'exact' ? 'Perfekt!' : verdict === 'close' ? 'Fast – nur Großschreibung, Umlaute oder Satzzeichen weichen ab.' : 'Unterstrichen: was gefehlt hat oder anders war.'}
+                {verdict === 'exact' ? tr('Perfekt!') : verdict === 'close' ? tr('Fast – nur Großschreibung, Umlaute oder Satzzeichen weichen ab.') : tr('Unterstrichen: was gefehlt hat oder anders war.')}
               </div>
             </div>
           )}
           <Button type="submit" variant="primary" size="lg" className="mt-4 w-full">
-            {!verdict ? 'Prüfen' : round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
+            {!verdict ? tr('Prüfen') : round + 1 >= ROUNDS ? tr('Fertig') : tr('Weiter')}
           </Button>
         </form>
       </div>

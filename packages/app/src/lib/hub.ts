@@ -1,5 +1,6 @@
 import { desktop } from './desktop';
 import { getMeta, setMeta } from './db';
+import { tr } from './i18n';
 
 export interface HubConn {
   url: string;
@@ -70,7 +71,7 @@ export async function hubFetch<T = any>(
   init: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<T> {
   const c = conn;
-  if (!c) throw new HubError(0, 'Nicht mit einem Mac verbunden');
+  if (!c) throw new HubError(0, tr('Nicht mit einem Mac verbunden'));
   const candidates = [c.url, ...(c.urls ?? []).filter((u) => u !== c.url)];
   let lastErr: unknown = null;
   for (const base of candidates) {
@@ -95,7 +96,7 @@ export async function hubFetch<T = any>(
     if (!res.ok) throw new HubError(res.status, (data as { error?: string }).error ?? res.statusText);
     return data as T;
   }
-  throw new HubError(0, lastErr instanceof Error && lastErr.name === 'TimeoutError' ? 'Der Mac antwortet nicht' : 'Mac nicht erreichbar');
+  throw new HubError(0, lastErr instanceof Error && lastErr.name === 'TimeoutError' ? tr('Der Mac antwortet nicht') : tr('Mac nicht erreichbar'));
 }
 
 /** Minimal SSE client over fetch (EventSource can't send auth headers). */
@@ -105,9 +106,9 @@ export async function sseStream(
   signal: AbortSignal,
 ): Promise<void> {
   const c = conn;
-  if (!c) throw new HubError(0, 'Nicht verbunden');
+  if (!c) throw new HubError(0, tr('Nicht verbunden'));
   const res = await fetch(c.url + path, { headers: { Authorization: `Bearer ${c.token}`, Accept: 'text/event-stream' }, signal });
-  if (!res.ok || !res.body) throw new HubError(res.status, `Stream fehlgeschlagen (${res.status})`);
+  if (!res.ok || !res.body) throw new HubError(res.status, tr('Stream fehlgeschlagen ({0})', res.status));
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
   let buf = '';
   for (;;) {
@@ -156,10 +157,10 @@ export async function pairWithHub(url: string, code: string, deviceName: string)
       signal: AbortSignal.timeout(8000),
     });
   } catch {
-    throw new HubError(0, `Can't reach ${base}. Same Wi‑Fi (or Tailscale)? Is Anker running on the Mac?`);
+    throw new HubError(0, tr('{0} ist nicht erreichbar. Gleiches WLAN (oder Tailscale)? Läuft Anker auf dem Mac?', base));
   }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new HubError(res.status, data.error ?? 'Kopplung fehlgeschlagen');
+  if (!res.ok) throw new HubError(res.status, data.error ?? tr('Kopplung fehlgeschlagen'));
   const c: HubConn = { url: base, token: data.token, hubId: data.hubId, name: data.name, urls: [base] };
   await setHub(c);
   try {

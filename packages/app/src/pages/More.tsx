@@ -2,20 +2,21 @@ import { BarChart3, BookOpen, ChevronRight, Import, Search, Settings, Zap } from
 import { SyncPill } from '../components/Layout';
 import { PageHeader, Panel } from '../components/ui';
 import { Link } from '../lib/router';
+import { tr } from '../lib/i18n';
 
 const ITEMS = [
-  { to: '/browse', label: 'Karten suchen', desc: 'Alle Karten finden und bearbeiten', icon: Search },
-  { to: '/practice', label: 'Üben', desc: 'Artikel-Blitz, Zahlen, Uhrzeit, Fälle …', icon: Zap },
-  { to: '/stats', label: 'Statistik', desc: 'Kalender, Trefferquote, Prognose', icon: BarChart3 },
-  { to: '/grammar', label: 'Grammatik', desc: 'Tabellen und Regeln auf einen Blick', icon: BookOpen },
-  { to: '/import', label: 'Import & Export', desc: 'Anki-Decks, CSV, Sicherungen', icon: Import },
-  { to: '/settings', label: 'Einstellungen', desc: 'Sync, KI, Stimme, Lernoptionen', icon: Settings },
+  { to: '/browse', label: tr('Karten suchen'), desc: tr('Alle Karten finden und bearbeiten'), icon: Search },
+  { to: '/practice', label: tr('Üben'), desc: tr('Artikel-Blitz, Zahlen, Uhrzeit, Fälle …'), icon: Zap },
+  { to: '/stats', label: tr('Statistik'), desc: tr('Kalender, Trefferquote, Prognose'), icon: BarChart3 },
+  { to: '/grammar', label: tr('Grammatik'), desc: tr('Tabellen und Regeln auf einen Blick'), icon: BookOpen },
+  { to: '/import', label: tr('Import & Export'), desc: tr('Anki-Decks, CSV, Sicherungen'), icon: Import },
+  { to: '/settings', label: tr('Einstellungen'), desc: tr('Sync, KI, Stimme, Lernoptionen'), icon: Settings },
 ];
 
 export function More() {
   return (
     <div className="mx-auto max-w-xl px-5 pt-8 pb-10">
-      <PageHeader title="Mehr" actions={<SyncPill />} />
+      <PageHeader title={tr('Mehr')} actions={<SyncPill />} />
       <Panel className="divide-y divide-line overflow-hidden">
         {ITEMS.map((it) => (
           <Link key={it.to} to={it.to} className="flex min-h-16 items-center gap-3 px-4 py-3 active:bg-paper-sunk">

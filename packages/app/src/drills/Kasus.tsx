@@ -6,6 +6,7 @@ import { useHotkeys } from '../lib/hooks';
 import { haptic } from '../lib/platform';
 import { speak } from '../lib/tts';
 import { GameShell, nounPool, pick, recordItem, Results, saveBest, StartScreen, useBest } from './shared';
+import { tr } from '../lib/i18n';
 
 const ROUNDS = 15;
 const OPTIONS = ['der', 'die', 'das', 'den', 'dem', 'des'];
@@ -94,15 +95,13 @@ export function Kasus() {
 
   if (phase === 'start')
     return (
-      <GameShell title="Kasus-Trainer">
-        <StartScreen game="kasus" title="Kasus-Trainer" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
-          mit, für, auf, wegen … Wähl den Artikel, der folgt. Bei Wechselpräpositionen zählt die Frage: <b>Wo?</b> → Dativ, <b>Wohin?</b> → Akkusativ.
-        </StartScreen>
+      <GameShell title={tr('Kasus-Trainer')}>
+        <StartScreen game="kasus" title={tr('Kasus-Trainer')} onStart={start} best={best} bestLabel={`/${ROUNDS}`}>{tr('mit, für, auf, wegen … Wähl den Artikel, der folgt. Bei Wechselpräpositionen zählt die Frage:')}{' '}<b>{tr('Wo?')}</b>{' '}{tr('→ Dativ,')}{' '}<b>{tr('Wohin?')}</b>{' '}{tr('→ Akkusativ.')}</StartScreen>
       </GameShell>
     );
   if (phase === 'done')
     return (
-      <GameShell title="Kasus-Trainer">
+      <GameShell title={tr('Kasus-Trainer')}>
         <Results score={score} total={ROUNDS} prevBest={prevBest} onAgain={start} />
       </GameShell>
     );
@@ -111,12 +110,12 @@ export function Kasus() {
   const ok = picked === q.answer;
   const contracted = CONTRACTIONS[`${q.prep.word} ${q.answer}`];
   return (
-    <GameShell title="Kasus-Trainer" right={`${round + 1}/${ROUNDS}`} progress={(round + (picked ? 1 : 0)) / ROUNDS}>
+    <GameShell title={tr('Kasus-Trainer')} right={`${round + 1}/${ROUNDS}`} progress={(round + (picked ? 1 : 0)) / ROUNDS}>
       <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
         <div className="space-y-3">
           {q.context && (
             <span className={cx('inline-block rounded-full px-3 py-1 text-[13px] font-semibold', q.context === 'Wo?' ? 'bg-paper-sunk text-ink' : 'bg-sonne text-on-sonne')}>
-              {q.context} {q.context === 'Wo?' ? '(Ort)' : '(Richtung)'}
+              {q.context} {q.context === 'Wo?' ? tr('(Ort)') : tr('(Richtung)')}
             </span>
           )}
           <div className="t-title md:text-[44px] md:leading-[46px]" lang="de">
@@ -128,7 +127,7 @@ export function Kasus() {
           </div>
           <div className="text-[15px] text-ink-muted">
             ({GENDER_ARTICLE[q.gender]} <span style={{ color: GENDER_VAR[q.gender] }}>{q.word}</span>
-            {q.gender === 'pl' ? ', Plural' : ''}) · {q.prep.meaning}
+            {q.gender === 'pl' ? tr(', Plural') : ''}) · {q.prep.meaning}
           </div>
         </div>
         <div className="grid w-full max-w-md grid-cols-3 gap-2">
@@ -156,15 +155,14 @@ export function Kasus() {
               <b>{CASE_NAME[q.kase]}</b>: {GENDER_ARTICLE[q.gender]} → <b>{q.answer}</b>
               {contracted && (
                 <span className="text-ink-muted">
-                  {' '}
-                  · meist verkürzt: <b>{contracted}</b>
+                  {' '}{tr('· meist verkürzt:')}{' '}<b>{contracted}</b>
                 </span>
               )}
-              {q.kase === 'dat' && q.gender === 'pl' && <div className="mt-1 text-[13px] text-ink-muted">Dativ Plural: Das Nomen bekommt auch ein -n (außer es endet schon auf -n oder -s).</div>}
-              {q.kase === 'gen' && (q.gender === 'der' || q.gender === 'das') && <div className="mt-1 text-[13px] text-ink-muted">Genitiv: Maskuline und neutrale Nomen bekommen -(e)s, z. B. des Wetters.</div>}
+              {q.kase === 'dat' && q.gender === 'pl' && <div className="mt-1 text-[13px] text-ink-muted">{tr('Dativ Plural: Das Nomen bekommt auch ein -n (außer es endet schon auf -n oder -s).')}</div>}
+              {q.kase === 'gen' && (q.gender === 'der' || q.gender === 'das') && <div className="mt-1 text-[13px] text-ink-muted">{tr('Genitiv: Maskuline und neutrale Nomen bekommen -(e)s, z. B. des Wetters.')}</div>}
             </div>
             <Button variant="primary" size="lg" className="w-full" onClick={next} autoFocus>
-              {round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
+              {round + 1 >= ROUNDS ? tr('Fertig') : tr('Weiter')}
             </Button>
           </div>
         )}

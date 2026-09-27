@@ -6,6 +6,7 @@ import { Button, cx, Segmented } from '../components/ui';
 import { haptic } from '../lib/platform';
 import { speak } from '../lib/tts';
 import { GameShell, Results, saveBest, StartScreen, useBest } from './shared';
+import { tr } from '../lib/i18n';
 
 type Level = 'easy' | 'tens' | 'hundreds' | 'thousands' | 'years' | 'prices';
 const LEVELS: { value: Level; label: string }[] = [
@@ -13,8 +14,8 @@ const LEVELS: { value: Level; label: string }[] = [
   { value: 'tens', label: '21–99' },
   { value: 'hundreds', label: '100–999' },
   { value: 'thousands', label: '1.000+' },
-  { value: 'years', label: 'Jahre' },
-  { value: 'prices', label: 'Preise' },
+  { value: 'years', label: tr('Jahre') },
+  { value: 'prices', label: tr('Preise') },
 ];
 const ROUNDS = 10;
 const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
@@ -116,10 +117,8 @@ export function Zahlen() {
 
   if (phase === 'start')
     return (
-      <GameShell title="Zahlen-Diktat">
-        <StartScreen game="zahlen" title="Zahlen-Diktat" onStart={start} best={best} bestLabel={`/${ROUNDS}`}>
-          Im Deutschen kommen die Einer zuerst: <b>vierundzwanzig</b> = vier und zwanzig. Hör zu und tipp die Zahl.
-          <div className="mt-5 flex justify-center">
+      <GameShell title={tr('Zahlen-Diktat')}>
+        <StartScreen game="zahlen" title={tr('Zahlen-Diktat')} onStart={start} best={best} bestLabel={`/${ROUNDS}`}>{tr('Im Deutschen kommen die Einer zuerst:')}{' '}<b>{tr('vierundzwanzig')}</b>{' '}{tr('= vier und zwanzig. Hör zu und tipp die Zahl.')}<div className="mt-5 flex justify-center">
             <Segmented value={level} onChange={setLevel} options={LEVELS} size="sm" className="flex-wrap" />
           </div>
         </StartScreen>
@@ -128,19 +127,19 @@ export function Zahlen() {
 
   if (phase === 'done')
     return (
-      <GameShell title="Zahlen-Diktat">
+      <GameShell title={tr('Zahlen-Diktat')}>
         <Results score={score} total={ROUNDS} prevBest={prevBest} onAgain={start} />
       </GameShell>
     );
 
   return (
-    <GameShell title="Zahlen-Diktat" right={`${round + 1}/${ROUNDS}`} progress={(round + (checked !== null ? 1 : 0)) / ROUNDS}>
+    <GameShell title={tr('Zahlen-Diktat')} right={`${round + 1}/${ROUNDS}`} progress={(round + (checked !== null ? 1 : 0)) / ROUNDS}>
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         <div className="flex gap-3">
-          <Button size="lg" className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => item && void speak(item.spoken)} aria-label="Noch mal anhören">
+          <Button size="lg" className="size-20 rounded-full bg-krake-soft !px-0 text-krake-deep hover:bg-krake-soft hover:brightness-95" onClick={() => item && void speak(item.spoken)} aria-label={tr('Noch mal anhören')}>
             <Volume2 className="size-8" />
           </Button>
-          <Button size="lg" className="size-20 rounded-full !px-0" onClick={() => item && void speak(item.spoken, { rate: 0.6 })} aria-label="Langsam anhören">
+          <Button size="lg" className="size-20 rounded-full !px-0" onClick={() => item && void speak(item.spoken, { rate: 0.6 })} aria-label={tr('Langsam anhören')}>
             <Turtle className="size-7" />
           </Button>
         </div>
@@ -164,14 +163,14 @@ export function Zahlen() {
             )}
           />
           <Button type="submit" variant="primary" size="lg" className="mt-3 w-full">
-            {checked === null ? 'Prüfen' : round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
+            {checked === null ? tr('Prüfen') : round + 1 >= ROUNDS ? tr('Fertig') : tr('Weiter')}
           </Button>
         </form>
         {checked !== null && item && (
           <div className="anim-in text-center">
             <div className={cx('t-label mb-1 flex items-center justify-center gap-1.5', checked ? 'text-wiese' : 'text-koralle-ink')}>
               {checked ? <CheckCircleIcon weight="fill" className="anim-pop size-5" /> : <XCircleIcon weight="fill" className="size-5" />}
-              {checked ? 'Richtig' : 'Nicht ganz'}
+              {checked ? tr('Richtig') : tr('Nicht ganz')}
             </div>
             <div className="t-title tabular-nums">{item.display}</div>
             <div className="mt-1 font-display text-[20px] text-ink-muted">{item.words}</div>

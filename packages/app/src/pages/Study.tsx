@@ -37,6 +37,7 @@ import { buryCards, deleteNotes, getPrefs, recordAnswer, setCardsSuspended, undo
 import { navigate, useRoute } from '../lib/router';
 import { speak, stopSpeaking } from '../lib/tts';
 import { NoteEditor } from './Editor';
+import { tr } from '../lib/i18n';
 
 type Phase = 'loading' | 'question' | 'answer' | 'wait' | 'done' | 'empty';
 type QueueKind = 'learning' | 'review' | 'new';
@@ -56,10 +57,10 @@ interface UndoEntry {
 
 // "Nochmal" is koralle-ink (never red: red belongs to die); the suggested answer is an ink fill.
 const RATINGS: { r: Rating; label: string; key: string }[] = [
-  { r: 1, label: 'Nochmal', key: '1' },
-  { r: 2, label: 'Schwer', key: '2' },
-  { r: 3, label: 'Gut', key: '3' },
-  { r: 4, label: 'Leicht', key: '4' },
+  { r: 1, label: tr('Nochmal'), key: '1' },
+  { r: 2, label: tr('Schwer'), key: '2' },
+  { r: 3, label: tr('Gut'), key: '3' },
+  { r: 4, label: tr('Leicht'), key: '4' },
 ];
 
 function shuffle<T>(a: T[]): T[] {
@@ -207,7 +208,7 @@ export function Study({ deckId }: { deckId: string | null }) {
       decksRef.current = new Map(decks.map((d) => [d.id, d]));
       const t = Date.now();
       const root = deckId ? decksRef.current.get(deckId) : undefined;
-      setTitle(mode === 'cram' ? 'Üben' : root ? root.name : 'Alle Decks');
+      setTitle(mode === 'cram' ? tr('Üben') : root ? root.name : tr('Alle Decks'));
       if (mode === 'cram') {
         const [allNotes, allCards] = await Promise.all([db.notes.toArray(), db.cards.toArray()]);
         const terms = parseQuery(q);
@@ -307,7 +308,7 @@ export function Study({ deckId }: { deckId: string | null }) {
       }
       advance();
     } catch (e) {
-      toast.error(`Speichern fehlgeschlagen: ${(e as Error).message}`);
+      toast.error(tr('Speichern fehlgeschlagen: {0}', (e as Error).message));
     } finally {
       busy.current = false;
     }
@@ -327,7 +328,7 @@ export function Study({ deckId }: { deckId: string | null }) {
       }
       setStats((s) => ({ ...s, done: Math.max(0, s.done - 1) }));
       await show(e.prev, e.queue);
-      toast('Rückgängig gemacht');
+      toast(tr('Rückgängig gemacht'));
     } finally {
       busy.current = false;
     }
@@ -345,20 +346,20 @@ export function Study({ deckId }: { deckId: string | null }) {
     if (!current) return;
     const siblings = await db.cards.where('noteId').equals(current.note.id).primaryKeys();
     await buryCards(siblings);
-    toast('Bis morgen zurückgestellt');
+    toast(tr('Bis morgen zurückgestellt'));
     removeCurrent(true);
   };
 
   const suspend = async () => {
     if (!current) return;
     await setCardsSuspended([current.card.id], true);
-    toast('Karte ausgesetzt – zu finden unter Karten suchen → Ausgesetzt');
+    toast(tr('Karte ausgesetzt – zu finden unter Karten suchen → Ausgesetzt'));
     removeCurrent(false);
   };
 
   const del = async () => {
     if (!current) return;
-    const ok = await confirm('Diese Notiz löschen?', { body: 'Die Notiz und alle ihre Karten werden auf jedem Gerät entfernt.', confirm: 'Löschen', danger: true });
+    const ok = await confirm(tr('Diese Notiz löschen?'), { body: tr('Die Notiz und alle ihre Karten werden auf jedem Gerät entfernt.'), confirm: tr('Löschen'), danger: true });
     if (!ok) return;
     await deleteNotes([current.note.id]);
     removeCurrent(true);
@@ -433,7 +434,7 @@ export function Study({ deckId }: { deckId: string | null }) {
   const topBar = (
     <div className="pt-safe sticky top-0 z-10 bg-paper/90 backdrop-blur-xl">
       <div className="drag mx-auto flex h-14 max-w-3xl items-center gap-1 px-3 md:h-16 md:px-6">
-        <IconButton label="Beenden (Esc)" onClick={exit} className="no-drag">
+        <IconButton label={tr('Beenden (Esc)')} onClick={exit} className="no-drag">
           <X className="size-6" />
         </IconButton>
         <div className="t-label min-w-0 flex-1 truncate text-center text-ink-muted">{title}</div>
@@ -450,7 +451,7 @@ export function Study({ deckId }: { deckId: string | null }) {
                 key={k}
                 style={{ color: v ? color : undefined }}
                 className={cx(!v && 'text-ink-muted', current?.queue === k && 'underline decoration-2 underline-offset-4')}
-                title={label}
+                title={tr(label)}
               >
                 {v}
               </span>
@@ -459,11 +460,11 @@ export function Study({ deckId }: { deckId: string | null }) {
         ) : (
           <span className="px-1 text-[15px] font-bold text-ink-muted tabular-nums">{remaining}</span>
         )}
-        <IconButton label="Rückgängig (U)" onClick={() => void undo()} disabled={!undoStack.current.length} className="no-drag">
+        <IconButton label={tr('Rückgängig (U)')} onClick={() => void undo()} disabled={!undoStack.current.length} className="no-drag">
           <Undo2 className="size-5" />
         </IconButton>
         <div className="no-drag relative">
-          <IconButton label="Mehr" onClick={() => setMenuOpen((v) => !v)} disabled={!current}>
+          <IconButton label={tr('Mehr')} onClick={() => setMenuOpen((v) => !v)} disabled={!current}>
             <MoreHorizontal className="size-6" />
           </IconButton>
           {menuOpen && current && (
@@ -471,11 +472,11 @@ export function Study({ deckId }: { deckId: string | null }) {
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
               <div className="anim-in absolute right-0 z-20 mt-1 w-64 overflow-hidden rounded-md border border-line bg-paper-raised py-1.5 shadow-xl">
                 {[
-                  { icon: Pencil, label: 'Notiz bearbeiten', key: 'E', run: () => setEditing(true) },
-                  ...(hub ? [{ icon: Sparkles, label: 'KI-Hilfe', key: 'A', run: () => setAiOpen(true) }] : []),
-                  { icon: EyeOff, label: 'Bis morgen zurückstellen', key: 'B', run: () => void bury() },
-                  { icon: Ban, label: 'Karte aussetzen', key: '!', run: () => void suspend() },
-                  { icon: Trash2, label: 'Notiz löschen', key: '', run: () => void del(), danger: true },
+                  { icon: Pencil, label: tr('Notiz bearbeiten'), key: 'E', run: () => setEditing(true) },
+                  ...(hub ? [{ icon: Sparkles, label: tr('KI-Hilfe'), key: 'A', run: () => setAiOpen(true) }] : []),
+                  { icon: EyeOff, label: tr('Bis morgen zurückstellen'), key: 'B', run: () => void bury() },
+                  { icon: Ban, label: tr('Karte aussetzen'), key: '!', run: () => void suspend() },
+                  { icon: Trash2, label: tr('Notiz löschen'), key: '', run: () => void del(), danger: true },
                 ].map((item) => (
                   <button
                     key={item.label}
@@ -517,11 +518,11 @@ export function Study({ deckId }: { deckId: string | null }) {
         {topBar}
         <div className="anim-in mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-5 py-10 text-center">
           <OttoBadge size={132} mood={done ? 'proud' : 'sleepy'} />
-          <h1 className="t-title mt-6">{done ? 'Otto ist stolz!' : 'Hier ist nichts fällig'}</h1>
+          <h1 className="t-title mt-6">{done ? tr('Otto ist stolz!') : tr('Hier ist nichts fällig')}</h1>
           <p className="mt-2 text-[15px] text-ink-muted">
             {done
-              ? `Du hast ${anzahl(stats.done, 'Karte', 'Karten')} wiederholt${stats.learned ? ` und ${stats.learned} neue gelernt` : ''}.`
-              : 'In diesem Deck ist gerade nichts fällig. Üb trotzdem oder füge neue Wörter hinzu.'}
+              ? tr('Du hast {0} wiederholt{1}.', anzahl(stats.done, '{0} Karte', '{0} Karten'), stats.learned ? tr(' und {0} neue gelernt', stats.learned) : '')
+              : tr('In diesem Deck ist gerade nichts fällig. Üb trotzdem oder füge neue Wörter hinzu.')}
           </p>
           {done && stats.done > 0 && (
             <div className="mt-8 grid w-full grid-cols-3 overflow-hidden rounded-md border border-line bg-paper-raised py-3">
@@ -532,23 +533,19 @@ export function Study({ deckId }: { deckId: string | null }) {
               ].map(([k, v], i) => (
                 <div key={k} className={cx('px-1', i > 0 && 'border-l border-line')}>
                   <div className="t-stat">{v}</div>
-                  <div className="t-caption text-ink-muted">{k}</div>
+                  <div className="t-caption text-ink-muted">{tr(k)}</div>
                 </div>
               ))}
             </div>
           )}
           <div className="mt-8 flex w-full flex-col gap-2">
-            <Button variant="primary" size="lg" onClick={() => navigate('/')}>
-              Zurück zu Heute
-            </Button>
+            <Button variant="primary" size="lg" onClick={() => navigate('/')}>{tr('Zurück zu Heute')}</Button>
             {mode === 'review' && (
               <Button size="lg" onClick={() => navigate(`/study?mode=cram&q=${encodeURIComponent(deckId ? `deck:"${deckPath(decksRef.current.get(deckId)!, decksRef.current)}"` : 'rated:1')}`)}>
-                {deckId ? 'Dieses Deck üben' : 'Heutige Karten nochmal üben'}
+                {deckId ? tr('Dieses Deck üben') : tr('Heutige Karten nochmal üben')}
               </Button>
             )}
-            <Button size="lg" variant="ghost" onClick={() => navigate('/practice')}>
-              Ein Übungsspiel spielen
-            </Button>
+            <Button size="lg" variant="ghost" onClick={() => navigate('/practice')}>{tr('Ein Übungsspiel spielen')}</Button>
           </div>
         </div>
       </div>
@@ -568,8 +565,8 @@ export function Study({ deckId }: { deckId: string | null }) {
               {mm}:{String(ss).padStart(2, '0')}
             </span>
           </Ring>
-          <h2 className="t-title mt-6">Kurze Pause</h2>
-          <p className="mt-2 text-[15px] text-ink-muted">Deine nächste Lernkarte ist gleich wieder dran. Abstand hilft beim Merken.</p>
+          <h2 className="t-title mt-6">{tr('Kurze Pause')}</h2>
+          <p className="mt-2 text-[15px] text-ink-muted">{tr('Deine nächste Lernkarte ist gleich wieder dran. Abstand hilft beim Merken.')}</p>
           <div className="mt-6 flex gap-2">
             <Button
               variant="primary"
@@ -577,10 +574,8 @@ export function Study({ deckId }: { deckId: string | null }) {
                 const n = session.current?.next(waitUntil);
                 if (n?.kind === 'card') void show(n.card, n.queue);
               }}
-            >
-              Jetzt weiter
-            </Button>
-            <Button onClick={exit}>Beenden</Button>
+            >{tr('Jetzt weiter')}</Button>
+            <Button onClick={exit}>{tr('Beenden')}</Button>
           </div>
         </div>
       </div>
@@ -619,8 +614,8 @@ export function Study({ deckId }: { deckId: string | null }) {
         >
           {(leech || current.queue === 'new') && (
             <div className="mb-5 flex gap-2">
-              {current.queue === 'new' && <span className="rounded-full bg-hafen-soft px-2.5 py-0.5 text-[13px] font-bold text-hafen">neu</span>}
-              {leech && <span className="rounded-full bg-koralle-soft px-2.5 py-0.5 text-[13px] font-bold text-koralle-ink">Oft vergessen</span>}
+              {current.queue === 'new' && <span className="rounded-full bg-hafen-soft px-2.5 py-0.5 text-[13px] font-bold text-hafen">{tr('neu')}</span>}
+              {leech && <span className="rounded-full bg-koralle-soft px-2.5 py-0.5 text-[13px] font-bold text-koralle-ink">{tr('Oft vergessen')}</span>}
             </div>
           )}
           <div className="anim-in w-full">
@@ -639,7 +634,7 @@ export function Study({ deckId }: { deckId: string | null }) {
                 autoFocus
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
-                placeholder="Antwort eintippen …"
+                placeholder={tr('Antwort eintippen …')}
                 autoCapitalize="off"
                 autoCorrect="off"
                 autoComplete="off"
@@ -653,12 +648,12 @@ export function Study({ deckId }: { deckId: string | null }) {
           {diff && (
             <div className="mt-8 w-full space-y-1.5 rounded-md bg-paper-raised px-4 py-3 text-left">
               <div className="flex items-baseline gap-3">
-                <span className="t-overline w-16 shrink-0 text-ink-muted">Du</span>
-                {typed.trim() ? <Diff segs={diff.typed} kind="typed" /> : <span className="text-[15px] text-ink-muted">(nichts)</span>}
+                <span className="t-overline w-16 shrink-0 text-ink-muted">{tr('Du')}</span>
+                {typed.trim() ? <Diff segs={diff.typed} kind="typed" /> : <span className="text-[15px] text-ink-muted">{tr('(nichts)')}</span>}
               </div>
               {verdict !== 'exact' && (
                 <div className="flex items-baseline gap-3">
-                  <span className="t-overline w-16 shrink-0 text-ink-muted">Lösung</span>
+                  <span className="t-overline w-16 shrink-0 text-ink-muted">{tr('Lösung')}</span>
                   <Diff segs={diff.expected} kind="expected" />
                 </div>
               )}
@@ -667,13 +662,11 @@ export function Study({ deckId }: { deckId: string | null }) {
                   <>
                     <span className="anim-pop inline-flex size-6 items-center justify-center rounded-full bg-wiese text-on-wiese">
                       <CheckIcon weight="bold" className="size-3.5" />
-                    </span>
-                    Perfekt!
-                  </>
+                    </span>{tr('Perfekt!')}</>
                 ) : verdict === 'close' ? (
-                  'Fast – prüf Großschreibung, Umlaute oder Satzzeichen.'
+                  tr('Fast – prüf Großschreibung, Umlaute oder Satzzeichen.')
                 ) : (
-                  'Nicht ganz.'
+                  tr('Nicht ganz.')
                 )}
               </div>
             </div>
@@ -682,7 +675,7 @@ export function Study({ deckId }: { deckId: string | null }) {
         {hub && phase === 'answer' && (
           <div className="mt-3 flex justify-center">
             <button onClick={() => setAiOpen(true)} className="flex h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold text-ink-muted hover:bg-paper-sunk hover:text-ink">
-              <Sparkles className="size-5" /> Karte erklären {wide && <Kbd>A</Kbd>}
+              <Sparkles className="size-5" />{' '}{tr('Karte erklären')}{' '}{wide && <Kbd>{tr('A')}</Kbd>}
             </button>
           </div>
         )}
@@ -692,7 +685,7 @@ export function Study({ deckId }: { deckId: string | null }) {
         <div className="mx-auto max-w-2xl px-5 pb-4 md:px-6 md:pb-6">
           {phase === 'question' ? (
             <Button variant="primary" size="lg" className="w-full" onClick={reveal}>
-              {typing ? 'Prüfen' : 'Antwort zeigen'} {wide && <Kbd>Leertaste</Kbd>}
+              {typing ? tr('Prüfen') : tr('Antwort zeigen')} {wide && <Kbd>{tr('Leertaste')}</Kbd>}
             </Button>
           ) : (
             <div className="grid grid-cols-4 gap-2">
@@ -710,7 +703,7 @@ export function Study({ deckId }: { deckId: string | null }) {
                   >
                     <span className="text-[15px] leading-[18px] font-semibold">{label}</span>
                     <span className={cx('text-[13px] leading-4 font-medium tabular-nums', main ? 'text-paper-sunk' : 'text-ink-muted')}>
-                      {mode === 'cram' ? (r === 1 ? 'gleich' : '–') : previews ? intervall(previews[r].due - Date.now()) : ''}
+                      {mode === 'cram' ? (r === 1 ? tr('gleich') : '–') : previews ? intervall(previews[r].due - Date.now()) : ''}
                       {wide && <span className="ml-1.5 opacity-60">{key}</span>}
                     </span>
                   </button>
@@ -718,11 +711,11 @@ export function Study({ deckId }: { deckId: string | null }) {
               })}
             </div>
           )}
-          {!wide && phase === 'answer' && <p className="t-caption mt-2 text-center text-ink-muted">Karte wischen: → Gut · ← Nochmal</p>}
+          {!wide && phase === 'answer' && <p className="t-caption mt-2 text-center text-ink-muted">{tr('Karte wischen: → Gut · ← Nochmal')}</p>}
         </div>
       </div>
 
-      <Modal open={editing} onClose={() => setEditing(false)} title="Notiz bearbeiten" wide>
+      <Modal open={editing} onClose={() => setEditing(false)} title={tr('Notiz bearbeiten')} wide>
         {editing && (
           <NoteEditor
             noteId={current.note.id}

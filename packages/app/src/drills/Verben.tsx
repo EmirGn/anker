@@ -7,6 +7,7 @@ import { judgeAnswer } from '../lib/diff';
 import { haptic, isNative } from '../lib/platform';
 import { speak } from '../lib/tts';
 import { GameShell, missedItems, recordItem, Results, saveBest, shuffle, StartScreen, useBest, verbPool } from './shared';
+import { tr } from '../lib/i18n';
 
 const ROUNDS = 8;
 const LABELS = ['er / sie / es … (Präsens)', 'Präteritum (er …)', 'Perfekt (er …)'];
@@ -75,22 +76,21 @@ export function Verben() {
 
   if (phase === 'start')
     return (
-      <GameShell title="Stammformen">
-        <StartScreen game="verben" title="Stammformen" onStart={() => void start()} best={best} bestLabel={`/${ROUNDS * 3}`}>
-          Die drei Formen, die jedes Verb braucht: <b>fahren → fährt · fuhr · ist gefahren</b>. Denk im Perfekt an <b>haben</b> oder <b>sein</b>.
+      <GameShell title={tr('Stammformen')}>
+        <StartScreen game="verben" title={tr('Stammformen')} onStart={() => void start()} best={best} bestLabel={`/${ROUNDS * 3}`}>{tr('Die drei Formen, die jedes Verb braucht:')}{' '}<b>{tr('fahren → fährt · fuhr · ist gefahren')}</b>{tr('. Denk im Perfekt an')}{' '}<b>{tr('haben')}</b>{' '}{tr('oder')}{' '}<b>{tr('sein')}</b>.
         </StartScreen>
       </GameShell>
     );
   if (phase === 'done')
     return (
-      <GameShell title="Stammformen">
+      <GameShell title={tr('Stammformen')}>
         <Results score={score} total={ROUNDS * 3} prevBest={prevBest} onAgain={() => void start()} />
       </GameShell>
     );
   if (!verb) return null;
 
   return (
-    <GameShell title="Stammformen" right={`${round + 1}/${ROUNDS}`} progress={(round + (result ? 1 : 0)) / ROUNDS}>
+    <GameShell title={tr('Stammformen')} right={`${round + 1}/${ROUNDS}`} progress={(round + (result ? 1 : 0)) / ROUNDS}>
       <div className="flex flex-1 flex-col items-center justify-center gap-7">
         <div className="text-center">
           <div className="t-word" lang="de">
@@ -149,7 +149,7 @@ export function Verben() {
             />
           )}
           <Button type="submit" variant="primary" size="lg" className="w-full">
-            {!result ? 'Prüfen' : round + 1 >= ROUNDS ? 'Fertig' : 'Weiter'}
+            {!result ? tr('Prüfen') : round + 1 >= ROUNDS ? tr('Fertig') : tr('Weiter')}
           </Button>
         </form>
       </div>
