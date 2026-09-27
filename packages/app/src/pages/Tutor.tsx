@@ -318,7 +318,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
 
   const header = (
     <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 md:px-6">
-      {!wide && (
+      {!wide && !!chats?.length && (
         <IconButton label="Chats" onClick={() => navigate('/tutor')}>
           <ArrowLeft className="size-5" />
         </IconButton>
@@ -465,7 +465,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   );
 
   if (!wide) {
-    if (chatId || query.get('new') === '1' || query.get('q') || query.get('note')) return <div className="flex h-full flex-col">{view}</div>;
+    if (chatId || query.get('new') === '1' || query.get('q') || query.get('note') || chats?.length === 0) return <div className="flex h-full flex-col">{view}</div>;
     return (
       <div className="mx-auto max-w-xl px-4 pt-6 pb-10">
         <div className="mb-5 flex items-center justify-between">
@@ -474,7 +474,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
             New chat
           </Button>
         </div>
-        {!chats ? <Spinner /> : chats.length === 0 ? <div className="-mx-4">{view}</div> : <ChatList chats={chats} active={null} />}
+        {!chats ? <Spinner /> : <ChatList chats={chats} active={null} />}
       </div>
     );
   }

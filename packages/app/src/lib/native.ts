@@ -23,12 +23,6 @@ export async function initNative() {
     }
   });
   try {
-    const { StatusBar } = await import('@capacitor/status-bar');
-    await StatusBar.setOverlaysWebView({ overlay: true });
-  } catch {
-    // ignore
-  }
-  try {
     const { Keyboard } = await import('@capacitor/keyboard');
     await Keyboard.setAccessoryBarVisible({ isVisible: false }).catch(() => {});
   } catch {

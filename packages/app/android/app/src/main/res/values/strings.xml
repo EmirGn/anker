@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Anker</string>
+    <string name="title_activity_main">Anker</string>
+    <string name="package_name">com.emirgn.anker</string>
+    <string name="custom_url_scheme">com.emirgn.anker</string>
+</resources>
