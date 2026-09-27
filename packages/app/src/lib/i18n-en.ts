@@ -362,7 +362,7 @@ export const EN: Record<string, string> = {
   'Zur Karte:': 'About:',
   'Kartenkontext entfernen': 'Remove card context',
   'Schreib auf Deutsch …': 'Write in German…',
-  'Frag etwas oder sag, welche Karten du brauchst …': 'Ask anything, or tell it what cards to make…',
+  'Frag etwas oder sag, welche Karten du brauchst …': 'Ask anything…',
   Stopp: 'Stop',
   Senden: 'Send',
   '% deines 5-Stunden-Limits bei Claude verbraucht': '% of your 5-hour Claude limit used',
