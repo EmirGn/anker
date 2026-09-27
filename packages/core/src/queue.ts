@@ -71,19 +71,38 @@ export function buildQueue(opts: BuildQueueOptions): QueueSnapshot {
     return m.get(deckId)!;
   };
 
-  let rootNewLeft = Infinity;
-  let rootRevLeft = Infinity;
-  if (rootDeckId && scope) {
-    const rc = cfgOf(rootDeckId);
-    let n = 0;
-    let r = 0;
-    for (const id of scope) {
-      n += newDone.get(id) ?? 0;
-      r += revDone.get(id) ?? 0;
+  // The deck you study caps its whole subtree; when studying everything, each
+  // top-level deck caps its own subtree (so "Deutsch: 20 new/day" holds overall).
+  const rootOf = new Map<string, string>();
+  if (rootDeckId && scope) for (const id of scope) rootOf.set(id, rootDeckId);
+  else {
+    for (const d of decks) {
+      let cur: Deck | undefined = d;
+      const seen = new Set<string>();
+      while (cur?.parentId && byId.has(cur.parentId) && !seen.has(cur.id)) {
+        seen.add(cur.id);
+        cur = byId.get(cur.parentId);
+      }
+      rootOf.set(d.id, cur?.id ?? d.id);
     }
-    rootNewLeft = Math.max(0, rc.newPerDay - n);
-    rootRevLeft = Math.max(0, rc.reviewsPerDay - r);
   }
+  const rootLeft = new Map<string, { n: number; r: number }>();
+  const capsFor = (deckId: string) => {
+    const rid = rootOf.get(deckId) ?? deckId;
+    let caps = rootLeft.get(rid);
+    if (!caps) {
+      const rc = cfgOf(rid);
+      let n = 0;
+      let r = 0;
+      for (const id of byId.has(rid) ? subtreeIds(rid, decks) : [rid]) {
+        n += newDone.get(id) ?? 0;
+        r += revDone.get(id) ?? 0;
+      }
+      caps = { n: Math.max(0, rc.newPerDay - n), r: Math.max(0, rc.reviewsPerDay - r) };
+      rootLeft.set(rid, caps);
+    }
+    return caps;
+  };
 
   const learning: Card[] = [];
   const reviewCandidates: Card[] = [];
@@ -108,13 +127,14 @@ export function buildQueue(opts: BuildQueueOptions): QueueSnapshot {
   reviewCandidates.sort((a, b) => a.due - b.due || a.id.localeCompare(b.id));
   const review: Card[] = [];
   for (const c of reviewCandidates) {
-    if (rootRevLeft <= 0) break;
+    const caps = capsFor(c.deckId);
+    if (caps.r <= 0) continue;
     if (skipSibling(c)) continue;
     const cfg = cfgOf(c.deckId);
     const left = leftFor(revLeft, c.deckId, cfg.reviewsPerDay, revDone);
     if (left <= 0) continue;
     revLeft.set(c.deckId, left - 1);
-    rootRevLeft--;
+    caps.r--;
     review.push(c);
     notesInQueue.add(c.noteId);
   }
@@ -132,13 +152,14 @@ export function buildQueue(opts: BuildQueueOptions): QueueSnapshot {
   );
   const fresh: Card[] = [];
   for (const c of [...ordered, ...shuffled]) {
-    if (rootNewLeft <= 0) break;
+    const caps = capsFor(c.deckId);
+    if (caps.n <= 0) continue;
     if (skipSibling(c)) continue;
     const cfg = cfgOf(c.deckId);
     const left = leftFor(newLeft, c.deckId, cfg.newPerDay, newDone);
     if (left <= 0) continue;
     newLeft.set(c.deckId, left - 1);
-    rootNewLeft--;
+    caps.n--;
     fresh.push(c);
     notesInQueue.add(c.noteId);
   }

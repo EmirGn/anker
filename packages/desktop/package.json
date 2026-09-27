@@ -8,13 +8,81 @@
   "main": "dist/main.cjs",
   "scripts": {
     "build": "node build.mjs",
-    "start": "node build.mjs && electron .",
-    "dist": "node build.mjs && electron-builder --mac --publish never"
+    "start": "npm run build -w @anker/app --prefix ../.. && npm run build -w @anker/hub --prefix ../.. && node build.mjs && electron .",
+    "dist": "node build.mjs && electron-builder --mac --publish never",
+    "dist:dir": "node build.mjs && electron-builder --mac --dir --publish never"
   },
   "dependencies": {},
   "devDependencies": {
     "@anker/hub": "0.1.0",
-    "electron": "^44.4.5",
+    "electron": "44.4.5",
     "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.emirgn.anker",
+    "productName": "Anker",
+    "copyright": "© 2026 EmirGn",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../app/dist",
+        "to": "web"
+      },
+      {
+        "from": "../hub/dist/mcp-stdio.cjs",
+        "to": "mcp-stdio.cjs"
+      },
+      {
+        "from": "build/trayTemplate.png",
+        "to": "build/trayTemplate.png"
+      },
+      {
+        "from": "build/trayTemplate@2x.png",
+        "to": "build/trayTemplate@2x.png"
+      }
+    ],
+    "npmRebuild": false,
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.education",
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "darkModeSupport": true,
+      "extendInfo": {
+        "LSApplicationCategoryType": "public.app-category.education",
+        "NSHumanReadableCopyright": "© 2026 EmirGn"
+      }
+    },
+    "dmg": {
+      "title": "Anker ${version}",
+      "artifactName": "Anker-${version}-${arch}.dmg"
+    },
+    "extraMetadata": {
+      "main": "dist/main.cjs"
+    },
+    "electronVersion": "44.4.5"
   }
 }

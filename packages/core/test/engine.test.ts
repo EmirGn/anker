@@ -90,6 +90,16 @@ describe('queue', () => {
     expect(q.fresh.filter((c) => c.deckId === 'child').length).toBeLessThanOrEqual(2);
   });
 
+  it('studying all decks respects each top-level deck cap', () => {
+    const tree = [deck('top', null, { newPerDay: 5 }), deck('a', 'top', { newPerDay: 4 }), deck('b', 'top', { newPerDay: 4 }), deck('solo', null, { newPerDay: 2 })];
+    const cards = ['a', 'b', 'solo'].flatMap((d) =>
+      [1, 2, 3, 4, 5].map((i) => newCard({ noteId: `${d}${i}`, deckId: d, ord: 0, now: NOW + i })),
+    );
+    const q = buildQueue({ decks: tree, rootDeckId: null, cards, todayLogs: [], now: NOW, rolloverHour: 4 });
+    expect(q.fresh.filter((c) => c.deckId !== 'solo').length).toBe(5);
+    expect(q.fresh.filter((c) => c.deckId === 'solo').length).toBe(2);
+  });
+
   it('buries siblings of new cards', () => {
     const cards = [0, 1].map((ord) => newCard({ noteId: 'w', deckId: 'root', ord, now: NOW }));
     const q = buildQueue({ decks, rootDeckId: 'root', cards, todayLogs: [], now: NOW, rolloverHour: 4 });

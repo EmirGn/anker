@@ -9,6 +9,9 @@ import { deviceName } from '../lib/platform';
 import { navigate, useRoute } from '../lib/router';
 import { syncNow } from '../lib/sync';
 
+// Survives remounts so a deep link / token link is only redeemed once per page load.
+const redeemed = new Set<string>();
+
 export function Connect() {
   const { query } = useRoute();
   const hub = useHub();
@@ -43,7 +46,9 @@ export function Connect() {
     const token = query.get('token');
     const qUrl = query.get('url');
     const qCode = query.get('code');
-    if (token || (qUrl && qCode && qCode.length === 6)) {
+    const linkKey = `${token ?? ''}|${qUrl ?? ''}|${qCode ?? ''}`;
+    if ((token || (qUrl && qCode && qCode.length === 6)) && !redeemed.has(linkKey)) {
+      redeemed.add(linkKey);
       auto.current = true;
       void connect(qUrl ?? window.location.origin, qCode ?? '');
     } else if (!qUrl && /^https?:/.test(window.location.origin) && !/^(capacitor|https:\/\/localhost$)/.test(window.location.origin)) {

@@ -1,6 +1,6 @@
 import { STARTER_DECKS, type Prefs } from '@anker/core';
 import { ArrowRight, Check, Laptop, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Logo } from '../components/Logo';
 import { Button, cx, Input, Label, Select, toast } from '../components/ui';
 import { setMeta } from '../lib/db';
@@ -28,6 +28,13 @@ export function Welcome() {
   const [lang, setLang] = useState(prefs.nativeLanguage);
   const [picked, setPicked] = useState<Set<string>>(new Set(['a1', 'faelle', 'redemittel', 'verben']));
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (prefs.updatedAt) {
+      setName((n) => n || prefs.name || '');
+      setLevel(prefs.level);
+      setLang(prefs.nativeLanguage);
+    }
+  }, [prefs.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const finish = async () => {
     setBusy(true);

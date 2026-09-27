@@ -6,8 +6,8 @@ import { Button, Chip, cx, Input, Modal, PageHeader, Panel, Section, Segmented, 
 import { aiLogin, aiStatus, type ProviderStatus } from '../lib/ai';
 import { db } from '../lib/db';
 import { desktop } from '../lib/desktop';
-import { usePrefs, useHub, useSyncState, useTheme } from '../lib/hooks';
-import { hubFetch, isDesktopHub, setHub } from '../lib/hub';
+import { useIsAdmin, usePrefs, useHub, useSyncState, useTheme } from '../lib/hooks';
+import { hubFetch, setHub } from '../lib/hub';
 import { isDesktop, isNative, openExternal, scheduleDailyReminder } from '../lib/platform';
 import { savePrefs } from '../lib/repo';
 import { navigate } from '../lib/router';
@@ -607,7 +607,7 @@ export function Settings() {
   useTheme();
   const [theme, setTheme] = useState<ThemePref>(getThemePref());
   const [confirm, confirmNode] = useConfirm();
-  const admin = isDesktopHub();
+  const admin = useIsAdmin();
 
   const exportBackup = async () => {
     const dump: Record<string, unknown> = { app: 'anker', version: 1, exportedAt: Date.now() };

@@ -11,7 +11,7 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { db } from './db';
-import { hub, onHubChange } from './hub';
+import { hub, hubFetch, isDesktopHub, onHubChange } from './hub';
 import { getSyncState, onSyncState } from './sync';
 import { getThemePref, onThemeChange, resolvedTheme } from './theme';
 
@@ -71,6 +71,24 @@ export function useSyncState() {
 
 export function useHub() {
   return useSyncExternalStore(onHubChange, hub);
+}
+
+/** True on the hub computer (Mac app) or when this browser holds the hub's admin token. */
+export function useIsAdmin(): boolean {
+  const conn = useHub();
+  const [admin, setAdmin] = useState(isDesktopHub());
+  useEffect(() => {
+    if (isDesktopHub()) return setAdmin(true);
+    if (!conn) return setAdmin(false);
+    let alive = true;
+    hubFetch<{ you?: string }>('/api/hub')
+      .then((h) => alive && setAdmin(h.you === 'admin'))
+      .catch(() => alive && setAdmin(false));
+    return () => {
+      alive = false;
+    };
+  }, [conn]);
+  return admin;
 }
 
 export function useTheme(): 'light' | 'dark' {
