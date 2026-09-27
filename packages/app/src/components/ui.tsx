@@ -81,22 +81,25 @@ export function IconButton({
 
 // ------------------------------------------------------------------ Inputs
 const field =
-  'w-full rounded-xl border border-line bg-surface px-3.5 text-[15px] text-ink placeholder:text-faint outline-none transition-[border,box-shadow] focus:border-accent focus:ring-4 focus:ring-accent/15';
+  'rounded-xl border border-line bg-surface px-3.5 text-[15px] text-ink placeholder:text-faint outline-none transition-[border,box-shadow] focus:border-accent focus:ring-4 focus:ring-accent/15';
+
+/** Full width unless the caller sets an explicit width (Tailwind can't reliably override w-full). */
+const width = (className?: string) => (className && /(^|\s)(w-|min-w-|max-w-|flex-1)/.test(className) ? '' : 'w-full');
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...rest }, ref) {
-  return <input ref={ref} className={cx(field, 'h-11', className)} {...rest} />;
+  return <input ref={ref} className={cx(field, width(className), 'h-11', className)} {...rest} />;
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea(
   { className, ...rest },
   ref,
 ) {
-  return <textarea ref={ref} className={cx(field, 'min-h-[88px] resize-y py-2.5 leading-relaxed', className)} {...rest} />;
+  return <textarea ref={ref} className={cx(field, width(className), 'min-h-[88px] resize-y py-2.5 leading-relaxed', className)} {...rest} />;
 });
 
 export function Select({ className, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={cx(field, 'h-11 appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-9', className)} style={{ backgroundImage: CHEVRON }} {...rest}>
+    <select className={cx(field, width(className), 'h-11 appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-9', className)} style={{ backgroundImage: CHEVRON }} {...rest}>
       {children}
     </select>
   );

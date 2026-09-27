@@ -18,8 +18,11 @@ android {
         applicationId "com.emirgn.anker"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode ((System.getenv('ANKER_VERSION_CODE') ?: '1') as Integer)
-        versionName new groovy.json.JsonSlurper().parse(file('../../../../package.json')).version
+        // 1.2.3 → 10203, so every release installs as an update.
+        def ankerVersion = new groovy.json.JsonSlurper().parse(file('../../../../package.json')).version
+        def v = ankerVersion.tokenize('.-')
+        versionCode (v[0].toInteger() * 10000 + v[1].toInteger() * 100 + v[2].toInteger())
+        versionName ankerVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

@@ -13,13 +13,13 @@
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "dev:app": "npm run dev -w @anker/app",
-    "hub": "npm run start -w @anker/hub",
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/core && tsc -p packages/hub && tsc -p packages/app && tsc -p packages/desktop",
     "build": "npm run build -w @anker/app && npm run build -w @anker/hub && npm run build -w @anker/desktop",
     "build:mac": "npm run build && npm run dist -w @anker/desktop",
-    "build:android": "npm run build -w @anker/app && npm run android:build -w @anker/app",
-    "typecheck": "tsc -p packages/core && tsc -p packages/hub && tsc -p packages/app && tsc -p packages/desktop",
-    "test": "vitest run"
+    "build:android": "npm run build -w @anker/app && cd packages/app && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "hub": "npm run build -w @anker/app && npm run build -w @anker/hub && node packages/hub/dist/cli.cjs",
+    "icons": "node scripts/icons.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
