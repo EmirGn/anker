@@ -1,13 +1,17 @@
 // Full-screen voice chat with Otto (Codex realtime voice): Otto reacts to who
 // is talking, the transcript builds up underneath, and hanging up keeps it as a chat.
 import { useEffect, useRef, useState } from 'react';
+import { useProviders } from '../lib/ai';
 import { useIsWide } from '../lib/hooks';
 import { tr } from '../lib/i18n';
-import { startVoiceCall, type VoiceCall, type VoiceEvent } from '../lib/voice';
+import type { OttoActivity } from '../lib/otto';
+import { navigate } from '../lib/router';
+import { syncNow } from '../lib/sync';
+import { startVoiceCall, voiceSupported, type VoiceCall, type VoiceEvent } from '../lib/voice';
 import { Mic, MicOff, PhoneOff, X } from './icons';
 import { Otto, type OttoMood } from './Otto';
 import { ToolChip } from './ToolChip';
-import { Button, cx, IconButton } from './ui';
+import { Button, cx, IconButton, toast } from './ui';
 
 type Item =
   | { kind: 'turn'; id: string; role: 'user' | 'assistant'; text: string; done: boolean }
@@ -15,7 +19,7 @@ type Item =
 
 type Phase = 'connecting' | 'live' | 'ending' | 'failed';
 
-export function VoiceChat({ chatId, onClose }: { chatId?: string; onClose: (chatId?: string) => void }) {
+export function VoiceChat({ chatId, activity, onClose }: { chatId?: string; activity?: OttoActivity; onClose: (chatId?: string) => void }) {
   const wide = useIsWide();
   const [phase, setPhase] = useState<Phase>('connecting');
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +107,8 @@ export function VoiceChat({ chatId, onClose }: { chatId?: string; onClose: (chat
     setError(null);
     startVoiceCall({
       chatId: saved.current,
+      // A retry continues the saved chat instead of opening the activity again.
+      activity: saved.current && saved.current !== chatId ? undefined : activity,
       onEvent: (e) => !cancelled && handle(e),
       onConnection: (state) => {
         if (cancelled) return;
@@ -187,12 +193,12 @@ export function VoiceChat({ chatId, onClose }: { chatId?: string; onClose: (chat
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={tr('Sprachchat mit Otto')}
+      aria-label={activity?.title ?? tr('Sprachchat mit Otto')}
       className="fixed inset-0 z-50 flex flex-col bg-paper pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
     >
       <div className="flex items-center gap-3 px-4 py-3 md:px-6">
         <div className="min-w-0 flex-1">
-          <div className="t-label">{tr('Sprachchat mit Otto')}</div>
+          <div className="t-label truncate">{activity?.title ?? tr('Sprachchat mit Otto')}</div>
           <div className="t-caption text-ink-muted">{tr('Codex Realtime · über dein Codex-Abo')}</div>
         </div>
         <IconButton label={tr('Schließen')} onClick={() => void end()}>
@@ -217,7 +223,11 @@ export function VoiceChat({ chatId, onClose }: { chatId?: string; onClose: (chat
       <div ref={scroller} className="thin-scroll min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-xl flex-col gap-2 px-5 pb-4">
           {phase === 'live' && !items.length && (
-            <p className="t-caption text-center text-ink-muted">{tr('Sprich einfach los: auf Deutsch, oder auf Englisch, wenn du nicht weiterweißt. Sag „Speicher das Wort …“, dann legt Otto Karten an.')}</p>
+            <p className="t-caption text-center text-ink-muted">
+              {activity
+                ? tr('Otto fängt an. Antworte einfach auf Deutsch, und sag Bescheid, wenn du aufhören willst.')
+                : tr('Sprich einfach los: auf Deutsch, oder auf Englisch, wenn du nicht weiterweißt. Sag „Speicher das Wort …“, dann legt Otto Karten an.')}
+            </p>
           )}
           {items.map((it) =>
             it.kind === 'tool' ? (
@@ -280,4 +290,31 @@ export function VoiceChat({ chatId, onClose }: { chatId?: string; onClose: (chat
       </div>
     </div>
   );
+}
+
+/**
+ * Opens a voice chat with Otto from anywhere: checks Codex and the microphone,
+ * and afterwards opens the chat that keeps the conversation.
+ */
+export function useVoiceLauncher(chatId?: string) {
+  const providers = useProviders();
+  const [call, setCall] = useState<{ activity?: OttoActivity } | null>(null);
+  const open = (activity?: OttoActivity) => {
+    const codex = providers?.find((p) => p.id === 'codex');
+    if (providers && !(codex?.installed && codex.loggedIn)) return void toast.error(tr('Sprachchat läuft über Codex. Melde Codex unter Einstellungen → Otto an.'));
+    if (!voiceSupported()) return void toast.error(tr('Hier gibt es kein Mikrofon. Nutze die Anker-App auf dem Mac oder auf Android.'));
+    setCall({ activity });
+  };
+  const element = call ? (
+    <VoiceChat
+      chatId={chatId}
+      activity={call.activity}
+      onClose={(id) => {
+        setCall(null);
+        void syncNow();
+        if (id && id !== chatId) navigate(`/otto/${id}`);
+      }}
+    />
+  ) : null;
+  return { open, element };
 }

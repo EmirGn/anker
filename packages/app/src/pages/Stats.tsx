@@ -209,7 +209,7 @@ export function Stats() {
               size="sm"
               variant="ghost"
               icon={<Sparkles className="size-4" />}
-              onClick={() => navigate(`/tutor?q=${encodeURIComponent(tr('Sieh dir meine schwierigsten Karten an (get_study_stats) und ergänze bei den 10 schwersten eine kurze, anschauliche Eselsbrücke im Notizfeld. Behalte vorhandene Notizen.'))}`)}
+              onClick={() => navigate(`/otto?go=1&q=${encodeURIComponent(tr('Sieh dir meine schwierigsten Karten an (get_study_stats) und ergänze bei den 10 schwersten eine kurze, anschauliche Eselsbrücke im Notizfeld. Behalte vorhandene Notizen.'))}`)}
             >{tr('Eselsbrücken von der KI')}</Button>
           )
         }

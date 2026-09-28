@@ -5,6 +5,7 @@ import type { ChatToolCall } from '@anker/core';
 import { desktop } from './desktop';
 import { hubFetch, sseStream } from './hub';
 import { tr } from './i18n';
+import type { OttoActivity } from './otto';
 
 export type VoiceEvent =
   | { type: 'transcript'; id: string; role: 'user' | 'assistant'; delta: string }
@@ -32,6 +33,7 @@ export function voiceSupported(): boolean {
 /** Calls Otto. Start it from a tap so the browser lets Otto's voice play. */
 export async function startVoiceCall(opts: {
   chatId?: string;
+  activity?: OttoActivity;
   onEvent: (e: VoiceEvent) => void;
   onConnection: (state: RTCPeerConnectionState) => void;
 }): Promise<VoiceCall> {
@@ -83,7 +85,7 @@ export async function startVoiceCall(opts: {
   try {
     await pc.setLocalDescription(await pc.createOffer());
     const r = await hubFetch<{ sessionId: string; sdp: string }>('/api/voice/start', {
-      body: { sdp: pc.localDescription!.sdp, chatId: opts.chatId },
+      body: { sdp: pc.localDescription!.sdp, chatId: opts.chatId, activity: opts.activity },
       timeoutMs: 60_000,
     });
     id = r.sessionId;

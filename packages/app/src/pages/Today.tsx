@@ -4,14 +4,15 @@ import { useMemo, useState } from 'react';
 import { Heatmap } from '../components/charts';
 import { GenderTag, SpeakButton } from '../components/CardView';
 import { DeckCover } from '../components/DeckCover';
-import { Brain, Calculator, Clock, Flame, Headphones, Layers, Library, Plus, Send, Sparkles, Target, Zap } from '../components/icons';
+import { Brain, Calculator, Clock, Flame, Headphones, Layers, Library, Plus, Target, Zap } from '../components/icons';
 import { StreakBadge } from '../components/Layout';
 import { Wordmark } from '../components/Logo';
 import { OttoBadge } from '../components/Otto';
+import { OttoHome } from '../components/OttoHome';
 import { Button, cx, Modal, Panel } from '../components/ui';
 import { db } from '../lib/db';
 import { anzahl, dauer } from '../lib/format';
-import { useDeckCounts, useDecks, useHub, useLiveQuery, usePrefs, useTodayLogs } from '../lib/hooks';
+import { useDeckCounts, useDecks, useLiveQuery, usePrefs, useTodayLogs } from '../lib/hooks';
 import { Link, navigate } from '../lib/router';
 import { renderField } from '../lib/sanitize';
 import { LOCALE, tr } from '../lib/i18n';
@@ -130,8 +131,6 @@ export function Today({ due }: { due: number }) {
   const decks = useDecks();
   const counts = useDeckCounts();
   const todayLogs = useTodayLogs();
-  const hub = useHub();
-  const [ask, setAsk] = useState('');
   const [missionOpen, setMissionOpen] = useState(false);
   const now = Date.now();
   const since = now - 371 * DAY;
@@ -216,6 +215,13 @@ export function Today({ due }: { due: number }) {
         {greeting(hour)}
         {prefs.name ? `, ${prefs.name}` : ''}.
       </h1>
+
+      {/* Otto is half of the app: he greets you first. */}
+      {!empty && (
+        <div className="mt-6">
+          <OttoHome due={due} />
+        </div>
+      )}
 
       {empty ? (
         <Panel className="mt-6 flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center">
@@ -305,28 +311,6 @@ export function Today({ due }: { due: number }) {
         </section>
       )}
 
-      {hub && (
-        <form
-          className="mt-6 flex items-center gap-2 rounded-md border border-line bg-paper-raised py-1.5 pr-1.5 pl-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!ask.trim()) return;
-            navigate(`/tutor?q=${encodeURIComponent(ask.trim())}`);
-          }}
-        >
-          <Sparkles className="size-5 shrink-0 text-ink-muted" />
-          <input
-            value={ask}
-            onChange={(e) => setAsk(e.target.value)}
-            placeholder={tr('Frag den Tutor – „Wann benutzt man ‚seit‘?“')}
-            className="h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink-muted"
-          />
-          <button type="submit" disabled={!ask.trim()} aria-label={tr('Fragen')} className="flex size-11 items-center justify-center rounded-md bg-paper-sunk text-ink disabled:opacity-40">
-            <Send className="size-5" />
-          </button>
-        </form>
-      )}
-
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="t-heading">{tr('Übungen')}</h2>
@@ -361,15 +345,6 @@ export function Today({ due }: { due: number }) {
         </Panel>
       </section>
 
-      {!hub && (
-        <Panel className="mt-6 flex flex-wrap items-center gap-4 p-4">
-          <div className="min-w-0 flex-1">
-            <div className="t-label">{tr('Mit deinem Mac verbinden')}</div>
-            <div className="t-caption text-ink-muted">{tr('Decks zwischen Geräten synchronisieren und den KI-Tutor nutzen (Claude & Codex).')}</div>
-          </div>
-          <Button onClick={() => navigate('/connect')}>{tr('Verbinden')}</Button>
-        </Panel>
-      )}
       <MissionSheet open={missionOpen} onClose={() => setMissionOpen(false)} missions={missions} />
     </div>
   );

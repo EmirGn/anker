@@ -15,13 +15,13 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/mac-today-v2.png" width="820" alt="Anker on the Mac — Today">
+  <img src="docs/screenshots/mac-today-v3.png" width="820" alt="Anker on the Mac — Today">
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/android-today-v2.png" width="230" alt="Android — Today">
+  <img src="docs/screenshots/android-today-v3.png" width="230" alt="Android — Today">
   <img src="docs/screenshots/android-study-v2.png" width="230" alt="Android — reviewing a card">
-  <img src="docs/screenshots/android-tutor-v2.png" width="230" alt="Android — AI tutor">
+  <img src="docs/screenshots/android-otto-v3.png" width="230" alt="Android — Otto">
 </p>
 
 *Anker* is German for *anchor* — it anchors words in your memory. (And yes, it sounds like Anki.)
@@ -58,22 +58,23 @@
   <img src="docs/screenshots/mac-kasus-v2.png" width="410" alt="Kasus-Trainer">
 </p>
 
-## The AI tutor — Claude & Codex on your subscriptions
+## Otto — your AI tutor, on your own subscriptions
 
-<p align="center"><img src="docs/screenshots/mac-tutor-v2.png" width="820" alt="Tutor"></p>
+<p align="center"><img src="docs/screenshots/mac-otto-v3.png" width="820" alt="Chatting with Otto"></p>
 
-Anker doesn't use API keys. It drives the **official command-line tools** on your Mac — [Claude Code](https://docs.claude.com/en/docs/claude-code) (`claude -p`) for Claude Pro/Max and [Codex CLI](https://github.com/openai/codex) (`codex exec`) for ChatGPT Plus/Pro — so requests count against the subscriptions you already have. Sign-in happens in each CLI's own browser flow (`claude auth login`, `codex login`); **Anker never reads, stores or forwards your credentials.**
+Otto, the octopus, is the other half of Anker. He greets you on the Today screen with something personal, sits in the middle of the phone's tab bar, and you can type to him or just start talking.
+
+- **He knows you.** Every chat and call includes your level, your progress, the words you added recently, the ones you keep getting wrong and your recent conversations. When you tell him something lasting (your job, that you're moving to Berlin) he remembers it; you can see and edit that under *Settings → What Otto knows about you*.
+- **Suggestions from your own data**: quiz the words you keep missing, a story with this week's new words, a role play for your level, or pick up the last conversation.
+- **Voice chat**: speak German out loud and Otto answers in real time, using Codex's speech-to-speech voice model on your ChatGPT plan. Role plays (café, bakery, doctor, job interview…) start with Otto in character. Say "Speicher das Wort Bahnhof" and it becomes a card. The conversation is kept as a chat afterwards.
+- **He does the work**: explanations, corrections, quizzes, and he creates or fixes cards and whole decks while you chat ("Make me 25 A2 kitchen words", "Add mnemonics to my 10 hardest cards").
+- On any card: **Explain · More examples · Mnemonic**, streamed live. From the Mac's menu bar or with **⌘⌥K** anywhere: **Quick add** a word, and the AI fills in the rest.
+
+Anker doesn't use API keys. It drives the **official command-line tools** on your Mac — [Claude Code](https://docs.claude.com/en/docs/claude-code) (`claude -p`) for Claude Pro/Max and [Codex CLI](https://github.com/openai/codex) (`codex exec`) for ChatGPT Plus/Pro — so requests count against the subscriptions you already have. Sign-in happens in each CLI's own browser flow (`claude auth login`, `codex login`); **Anker never reads, stores or forwards your credentials.** Which one Otto uses, and which model (Claude Sonnet by default), is set once in *Settings*; the model list shows the versions your installed CLI has.
 
 Every agent run gets Anker's MCP server attached and **nothing else**: Claude runs with built-in tools disabled (`--tools ""`), Codex with a read-only sandbox, both isolated from your personal CLI config. They can manage your decks but can't touch your files or shell.
 
-- **Tutor** — explanations, examples, quizzes; it can create or fix cards while you chat.
-- **Deck builder** — "Make me 25 A2 kitchen words", "Turn this article into cards", "Add mnemonics to my 10 hardest cards".
-- **Gespräch** — conversation practice in German. Mistakes get a ✏️ *Korrektur*, and useful words can be saved to a deck.
-- **Voice chat with Otto** — speak German out loud and Otto answers in real time, using Codex's speech-to-speech voice model on your ChatGPT plan. Say "Speicher das Wort Bahnhof" and it becomes a card. The conversation is kept as a chat afterwards.
-- On any card: **Explain · More examples · Mnemonic**, streamed live.
-- From the Mac's menu bar or with **⌘⌥K** anywhere: **Quick add** a word — the AI fills in the rest.
-
-The phone uses the tutor through your Mac (see *Sync*), so your subscriptions stay on your computer.
+The phone uses Otto through your Mac (see *Sync*), so your subscriptions stay on your computer.
 
 Voice chat runs through Codex's experimental realtime API (`codex app-server`, realtime v3 over WebRTC). Your Mac only sets up the call with your Codex login; the audio then streams directly between your phone or Mac and OpenAI. The Codex agent behind Otto has Anker's MCP tools and nothing else: your own MCP servers, plugins and apps are switched off for these sessions.
 

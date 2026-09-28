@@ -84,6 +84,8 @@
   --shadow-card: 0 1px 2px #1414140d;
   --shadow-sheet: 0 -8px 32px #1414141f;
   --focus-ring: 0 0 0 2px #fbf6ee, 0 0 0 4px #1f5bff;
+  --field-focus-edge: color-mix(in oklab, var(--hafen) 55%, transparent);
+  --field-focus-halo: color-mix(in oklab, var(--hafen) 12%, transparent);
   --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
   --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
   color-scheme: light;
@@ -114,6 +116,8 @@
   --shadow-card: 0 1px 2px #00000066;
   --shadow-sheet: 0 -8px 32px #000000b3;
   --focus-ring: 0 0 0 2px #16140f, 0 0 0 4px #6e93ff;
+  --field-focus-edge: color-mix(in oklab, var(--hafen) 50%, transparent);
+  --field-focus-halo: color-mix(in oklab, var(--hafen) 14%, transparent);
   color-scheme: dark;
 }
 
@@ -251,9 +255,22 @@ button:disabled {
   cursor: default;
 }
 
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+/* Keyboard focus on buttons and links gets a ring; a mouse click or tap never does. */
+:where(a, button, summary, [tabindex]):focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+/* Text fields and selects show focus themselves (.field-focus), no ring on top. */
+:where(input, select, textarea):focus-visible {
+  outline: none;
+}
+
+/* Focused text field: a quiet hafen edge with a soft halo. */
+.field-focus:focus,
+.field-focus:focus-within {
+  border-color: var(--field-focus-edge);
+  background-color: var(--paper-raised);
+  box-shadow: 0 0 0 3px var(--field-focus-halo);
 }
 
 ::selection {
@@ -274,9 +291,13 @@ button:disabled {
   padding-bottom: var(--safe-bottom);
 }
 
-/* Electron: draggable title area (macOS traffic lights live at top-left) */
+/* Electron: draggable title area (macOS traffic lights live at top-left).
+   Anything you can click inside it stays clickable. */
 .drag {
   -webkit-app-region: drag;
+}
+.drag :where(a, button, input, select, textarea, label, summary, [role='button'], [tabindex]) {
+  -webkit-app-region: no-drag;
 }
 .no-drag {
   -webkit-app-region: no-drag;

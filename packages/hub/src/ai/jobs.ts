@@ -1,5 +1,6 @@
 import { newId, truncate, type AIProvider, type Chat, type ChatMessage, type ChatMode } from '@anker/core';
 import type { Repo } from '../repo';
+import { learnerContext } from './context';
 import { systemPrompt, taskSpec, type TaskKind } from './prompts';
 import { runAgent, type AgentRun, type AIEvent, type DoneEvent } from './runner';
 
@@ -112,7 +113,8 @@ export class JobManager {
     const prefs = this.repo.prefs();
     const now = Date.now();
     const existing = input.chatId ? this.repo.store.get('chats', input.chatId) : undefined;
-    const provider = input.provider ?? existing?.provider ?? prefs.defaultProvider;
+    // Otto runs on whatever Settings says; a chat started elsewhere carries its transcript over.
+    const provider = input.provider ?? prefs.defaultProvider;
     const model = input.model ?? (provider === 'claude' ? prefs.claudeModel : prefs.codexModel) ?? undefined;
     const mode = input.mode ?? existing?.mode ?? 'tutor';
 
@@ -217,7 +219,7 @@ export class JobManager {
       {
         provider,
         prompt,
-        systemPrompt: systemPrompt(mode, prefs),
+        systemPrompt: systemPrompt(mode, prefs, learnerContext(this.repo)),
         model: model || undefined,
         resumeSessionId: chat.sessionId,
         mcp: { url: this.opts.mcpUrl(), token: this.opts.token },
@@ -239,7 +241,7 @@ export class JobManager {
     const provider = input.provider ?? prefs.defaultProvider;
     const spec = taskSpec(input.kind, input.input, prefs);
     const job = this.createJob('task', provider);
-    const model = input.model || spec.fastModel[provider] || undefined;
+    const model = input.model || (provider === 'claude' ? prefs.claudeModel : prefs.codexModel) || spec.fastModel[provider] || undefined;
     job.run = await runAgent(
       {
         provider,

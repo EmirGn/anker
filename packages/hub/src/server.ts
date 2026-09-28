@@ -6,6 +6,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { SYNC_TABLES, type AIProvider, type AnyRecord, type SyncChange, type SyncRequest, type SyncResponse, type TableName } from '@anker/core';
 import type { JobManager } from './ai/jobs';
 import type { TaskKind } from './ai/prompts';
+import type { VoiceActivity } from './ai/prompts';
 import type { VoiceManager } from './ai/voice';
 import { logout, providerStatuses, startLogin } from './ai/providers';
 import { hashToken, randomToken, saveConfig, type HubConfig } from './config';
@@ -390,7 +391,7 @@ export function createServer(deps: ServerDeps) {
 
   // ---- Voice chat (Codex realtime) ------------------------------------------------
   add('POST', '/api/voice/start', 'any', async (ctx) => {
-    const body = await ctx.body<{ sdp: string; voice?: string; chatId?: string }>();
+    const body = await ctx.body<{ sdp: string; voice?: string; chatId?: string; activity?: VoiceActivity }>();
     if (!body.sdp?.startsWith('v=')) throw new HttpError(400, 'sdp (a WebRTC offer) is required');
     try {
       return await voice.start(body);

@@ -159,7 +159,7 @@ export function Zahlen() {
             readOnly={checked !== null}
             className={cx(
               'h-16 w-full rounded-md border-2 bg-paper-raised text-center font-display text-[28px] tabular-nums outline-none',
-              checked === null ? 'border-line focus:border-hafen' : checked ? 'border-wiese text-wiese' : 'anim-shake border-koralle-ink text-koralle-ink',
+              checked === null ? 'border-line field-focus' : checked ? 'border-wiese text-wiese' : 'anim-shake border-koralle-ink text-koralle-ink',
             )}
           />
           <Button type="submit" variant="primary" size="lg" className="mt-3 w-full">

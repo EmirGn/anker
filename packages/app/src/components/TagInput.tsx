@@ -17,7 +17,7 @@ export function TagInput({ value, onChange, placeholder = tr('Tags hinzuf√ºgen ‚
   return (
     <div
       className={cx(
-        'flex min-h-11 flex-wrap items-center gap-1.5 rounded-md border border-transparent bg-paper-sunk px-2.5 py-1.5 focus-within:border-hafen focus-within:bg-paper-raised',
+        'flex min-h-11 flex-wrap items-center gap-1.5 rounded-md border border-transparent bg-paper-sunk px-2.5 py-1.5 field-focus',
         className,
       )}
     >

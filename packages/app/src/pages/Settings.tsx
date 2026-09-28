@@ -2,8 +2,8 @@ import type { AIProvider, Prefs } from '@anker/core';
 import { CheckCircle2, Code2, Copy, ExternalLink, Laptop, Loader2, LogIn, Monitor, Moon, Plug, RefreshCw, Smartphone, Sun, Trash2, Volume2, XCircle } from '../components/icons';
 import QRCode from 'qrcode';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Chip, cx, Input, Label, Modal, PageHeader, Panel, Section, Segmented, Select, Spinner, toast, Toggle, useConfirm } from '../components/ui';
-import { aiLogin, aiStatus, type ProviderStatus } from '../lib/ai';
+import { Button, Chip, cx, Input, Label, Modal, PageHeader, Panel, Section, Segmented, Select, Spinner, Textarea, toast, Toggle, useConfirm } from '../components/ui';
+import { aiLogin, aiStatus, rememberProviders, type ProviderStatus } from '../lib/ai';
 import { db } from '../lib/db';
 import { uhrzeit } from '../lib/format';
 import { desktop } from '../lib/desktop';
@@ -150,6 +150,31 @@ function VoicePrefs() {
   );
 }
 
+// ------------------------------------------------------------------ Otto's memory
+function OttoMemory({ prefs }: { prefs: Prefs }) {
+  const [text, setText] = useState(prefs.ottoNotes ?? '');
+  useEffect(() => setText(prefs.ottoNotes ?? ''), [prefs.ottoNotes]);
+  const save = () => {
+    const next = text.trim();
+    if (next !== (prefs.ottoNotes ?? '').trim()) void savePrefs({ ottoNotes: next || undefined }).then(() => toast(tr('Gespeichert')));
+  };
+  return (
+    <Panel className="space-y-3 p-4">
+      <p className="text-[13px] leading-relaxed text-ink-muted">
+        {tr('Otto merkt sich, was du ihm über dich erzählst (Beruf, Interessen, Ziele), und kennt dein Niveau, deine neuen Wörter, deine Problemwörter und eure letzten Gespräche. So werden Beispiele und Vorschläge persönlich. Hier kannst du alles ändern oder löschen.')}
+      </p>
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={save}
+        rows={3}
+        placeholder={tr('- Ich arbeite als Softwareentwickler.\n- Ich ziehe nächstes Jahr nach Berlin.')}
+        aria-label={tr('Was Otto über dich weiß')}
+      />
+    </Panel>
+  );
+}
+
 // ------------------------------------------------------------------ AI providers
 function ProviderCard({ p, prefs, admin, onLogin }: { p: ProviderStatus; prefs: Prefs; admin: boolean; onLogin: () => void }) {
   const model = p.id === 'claude' ? prefs.claudeModel ?? '' : prefs.codexModel ?? '';
@@ -163,7 +188,7 @@ function ProviderCard({ p, prefs, admin, onLogin }: { p: ProviderStatus; prefs: 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="t-label">{p.name}</span>
-            {isDefault && <Chip color="var(--hafen)">{tr('Standard')}</Chip>}
+            {isDefault && <Chip color="var(--hafen)">{tr('Otto nutzt das')}</Chip>}
           </div>
           <div className="mt-0.5 text-[13px] text-ink-muted">
             {!p.installed ? (
@@ -197,7 +222,7 @@ function ProviderCard({ p, prefs, admin, onLogin }: { p: ProviderStatus; prefs: 
           <Select
             value={model}
             onChange={(e) => void savePrefs(p.id === 'claude' ? { claudeModel: e.target.value || undefined } : { codexModel: e.target.value || undefined })}
-            className="h-9 w-44 text-[13px]"
+            className="h-9 w-52 text-[13px]"
           >
             {p.models.map((m) => (
               <option key={m.id} value={m.id}>
@@ -215,7 +240,7 @@ function ProviderCard({ p, prefs, admin, onLogin }: { p: ProviderStatus; prefs: 
             </Select>
           )}
           {!isDefault && (
-            <Button size="sm" variant="ghost" onClick={() => void savePrefs({ defaultProvider: p.id })}>{tr('Als Standard')}</Button>
+            <Button size="sm" variant="ghost" onClick={() => void savePrefs({ defaultProvider: p.id })}>{tr('Für Otto nutzen')}</Button>
           )}
         </div>
       )}
@@ -315,6 +340,7 @@ function AISection({ prefs, admin }: { prefs: Prefs; admin: boolean }) {
     aiStatus(refresh)
       .then((r) => {
         setProviders(r.providers);
+        rememberProviders(r.providers);
         setError(null);
       })
       .catch((e) => setError((e as Error).message));
@@ -330,7 +356,7 @@ function AISection({ prefs, admin }: { prefs: Prefs; admin: boolean }) {
 
   if (!hub) {
     return (
-      <Panel className="p-5 text-[15px] text-ink-muted">{tr('Der KI-Tutor läuft auf deinem Mac über deine eigenen Claude- und ChatGPT-Abos. Verbinde dieses Gerät zuerst mit deinem Mac.')}<div className="mt-3">
+      <Panel className="p-5 text-[15px] text-ink-muted">{tr('Otto läuft auf deinem Mac über deine eigenen Claude- und ChatGPT-Abos. Verbinde dieses Gerät zuerst mit deinem Mac.')}<div className="mt-3">
           <Button size="sm" onClick={() => navigate('/connect')}>{tr('Verbinden')}</Button>
         </div>
       </Panel>
@@ -609,8 +635,12 @@ export function Settings() {
         <StudyPrefs prefs={prefs} />
       </Section>
 
-      <Section title={tr('KI-Tutor · Claude & Codex')}>
+      <Section title={tr('Otto · Claude & Codex')}>
         <AISection prefs={prefs} admin={admin} />
+      </Section>
+
+      <Section title={tr('Was Otto über dich weiß')}>
+        <OttoMemory prefs={prefs} />
       </Section>
 
       <Section title={admin ? tr('Sync & Geräte') : tr('Sync')}>{admin ? <HubAdmin /> : <SyncClient />}</Section>

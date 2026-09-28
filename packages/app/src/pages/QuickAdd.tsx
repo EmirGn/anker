@@ -83,14 +83,14 @@ export function QuickAdd() {
           onChange={(e) => setWord(e.target.value)}
           placeholder={tr('Deutsches Wort oder Ausdruck …')}
           lang="de"
-          className="h-12 w-full rounded-md border border-transparent bg-paper-sunk px-3.5 font-display text-[20px] font-semibold outline-none placeholder:font-sans placeholder:text-[17px] placeholder:font-normal placeholder:text-ink-muted focus:border-hafen focus:bg-paper-raised"
+          className="h-12 w-full rounded-md border border-transparent bg-paper-sunk px-3.5 font-display text-[20px] font-semibold outline-none placeholder:font-sans placeholder:text-[17px] placeholder:font-normal placeholder:text-ink-muted field-focus"
         />
         <div className="flex gap-2">
           <input
             value={meaning}
             onChange={(e) => setMeaning(e.target.value)}
             placeholder={hub ? tr('Bedeutung (optional – die KI füllt sie aus)') : tr('Bedeutung')}
-            className="h-11 min-w-0 flex-1 rounded-md border border-transparent bg-paper-sunk px-3 text-[15px] outline-none placeholder:text-ink-muted focus:border-hafen focus:bg-paper-raised"
+            className="h-11 min-w-0 flex-1 rounded-md border border-transparent bg-paper-sunk px-3 text-[15px] outline-none placeholder:text-ink-muted field-focus"
           />
           <button type="submit" disabled={busy || !word.trim()} className="flex h-11 items-center gap-1.5 rounded-md bg-hafen px-4 text-[15px] font-semibold text-on-hafen disabled:opacity-45">
             {busy ? <Loader2 className="size-5 animate-spin" /> : <Sparkles className="size-5" />}{' '}{tr('Hinzufügen')}</button>

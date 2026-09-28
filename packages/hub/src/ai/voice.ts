@@ -13,7 +13,8 @@ import { newId, truncate, type Chat, type ChatMessage, type ChatToolCall } from 
 import type { Repo } from '../repo';
 import { VERSION } from '../version';
 import { childEnv, findBinary } from './env';
-import { voiceBackendPrompt, voiceGreeting, voicePrompt } from './prompts';
+import { learnerContext } from './context';
+import { voiceBackendPrompt, voiceGreeting, voicePrompt, type VoiceActivity } from './prompts';
 import { defaultCodexModel } from './providers';
 import { toolOutputText } from './runner';
 
@@ -122,6 +123,7 @@ interface Session {
   id: string;
   /** The chat this voice chat continues, if any */
   chatId?: string;
+  activity?: VoiceActivity;
   messages: ChatMessage[];
   /** Transcript turns still being spoken */
   open: Partial<Record<Role, ChatMessage>>;
@@ -155,7 +157,7 @@ export class VoiceManager {
   }
 
   /** Answer a device's WebRTC offer with a new realtime session. */
-  async start(input: { sdp: string; voice?: string; chatId?: string }): Promise<{ sessionId: string; sdp: string }> {
+  async start(input: { sdp: string; voice?: string; chatId?: string; activity?: VoiceActivity }): Promise<{ sessionId: string; sdp: string }> {
     const prefs = this.repo.prefs();
     const server = await this.appServer();
     const chat = input.chatId ? this.repo.store.get('chats', input.chatId) : undefined;
@@ -167,9 +169,13 @@ export class VoiceManager {
       model: prefs.codexModel || defaultCodexModel() || null,
       developerInstructions: voiceBackendPrompt(prefs),
     });
+    const activity = input.activity?.brief
+      ? { title: String(input.activity.title).slice(0, 80), brief: String(input.activity.brief).slice(0, 600), opener: String(input.activity.opener ?? '').slice(0, 200) }
+      : undefined;
     const s: Session = {
       id: thread.id,
       chatId: chat?.id,
+      activity,
       messages: [],
       open: {},
       working: false,
@@ -189,7 +195,7 @@ export class VoiceManager {
         version: 'v3',
         transport: { type: 'webrtc', sdp: input.sdp },
         voice: VOICES.find((v) => v === (input.voice || prefs.voice)) ?? null,
-        prompt: voicePrompt(prefs),
+        prompt: voicePrompt(prefs, learnerContext(this.repo), activity),
         includeStartupContext: false,
         initialItems: history(chat),
       });
@@ -238,7 +244,7 @@ export class VoiceManager {
     if (!s || s.closed || s.greeted || !this.server) return;
     s.greeted = true;
     await this.server
-      .request('thread/realtime/appendSpeech', { threadId: id, text: voiceGreeting(this.repo.prefs(), !!s.chatId) })
+      .request('thread/realtime/appendSpeech', { threadId: id, text: s.activity?.opener || voiceGreeting(this.repo.prefs(), !!s.chatId) })
       .catch(() => {});
   }
 
@@ -426,7 +432,7 @@ export class VoiceManager {
         { ...existing, messages: [...existing.messages, ...messages].slice(-400), sessionId: undefined, updatedAt: now }
       : {
           id: newId(),
-          title: truncate(firstUser.text.replace(/\s+/g, ' '), 48),
+          title: truncate(s.activity?.title ?? firstUser.text.replace(/\s+/g, ' '), 48),
           provider: 'codex',
           mode: 'conversation',
           messages,

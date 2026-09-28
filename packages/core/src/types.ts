@@ -162,6 +162,10 @@ export interface Prefs extends BaseRecord {
   codexModel?: string;
   /** Otto's voice in voice chats (a Codex realtime voice) */
   voice?: string;
+  /** What Otto remembers about the learner, one fact per line (Otto adds to it; editable in Settings) */
+  ottoNotes?: string;
+  /** Version of one-time preference upgrades already applied */
+  schema?: number;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   nativeLanguage: string;
   name?: string;

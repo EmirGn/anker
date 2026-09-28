@@ -431,8 +431,8 @@ export function Grammar({ topic }: { topic: string | null }) {
               </Button>
             )}
             {hub && (
-              <Button variant="primary" onClick={() => navigate(`/tutor?q=${encodeURIComponent(t.ask)}`)} icon={<Sparkles className="size-5" />}>
-                {tr('Tutor fragen')}
+              <Button variant="primary" onClick={() => navigate(`/otto?go=1&q=${encodeURIComponent(t.ask)}`)} icon={<Sparkles className="size-5" />}>
+                {tr('Otto fragen')}
               </Button>
             )}
           </>

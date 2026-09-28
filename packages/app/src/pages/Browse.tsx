@@ -171,7 +171,7 @@ export function Browse() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder={tr('Suchen …  z. B. haus deck:"Deutsch::A1" gender:die is:due')}
-                className="h-11 w-full rounded-md border border-transparent bg-paper-sunk pr-10 pl-11 text-[15px] outline-none placeholder:text-ink-muted focus:border-hafen focus:bg-paper-raised"
+                className="h-11 w-full rounded-md border border-transparent bg-paper-sunk pr-10 pl-11 text-[15px] outline-none placeholder:text-ink-muted field-focus"
               />
               {q && (
                 <button onClick={() => setQ('')} className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-xs p-1 text-ink-muted hover:text-ink" aria-label={tr('Suche leeren')}>

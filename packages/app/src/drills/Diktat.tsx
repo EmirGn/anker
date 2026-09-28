@@ -110,7 +110,7 @@ export function Diktat() {
             lang="de"
             className={cx(
               'h-14 w-full rounded-md border-2 bg-paper-raised px-4 font-display text-[20px] font-semibold outline-none',
-              !verdict ? 'border-line focus:border-hafen' : verdict === 'exact' ? 'border-wiese' : verdict === 'close' ? 'border-sonne-ink' : 'border-koralle-ink',
+              !verdict ? 'border-line field-focus' : verdict === 'exact' ? 'border-wiese' : verdict === 'close' ? 'border-sonne-ink' : 'border-koralle-ink',
             )}
           />
           {!isNative && !verdict && <UmlautBar className="mt-2" onInsert={(ch) => insertAtCaret(ref.current, ch, setText)} />}

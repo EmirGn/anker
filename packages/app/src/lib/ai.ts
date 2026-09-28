@@ -1,4 +1,5 @@
 import type { AIProvider, ChatMode } from '@anker/core';
+import { useEffect, useState } from 'react';
 import { hub, hubFetch, sseStream } from './hub';
 import { tr } from './i18n';
 
@@ -36,6 +37,41 @@ export async function aiStatus(refresh = false) {
     `/api/ai/status${refresh ? '?refresh=1' : ''}`,
     { timeoutMs: 45_000 },
   );
+}
+
+let providersCache: { at: number; value: ProviderStatus[] } | null = null;
+
+/** Claude/Codex status on the Mac, shared between screens (refreshed after a minute). */
+export function useProviders(): ProviderStatus[] | null {
+  const [list, setList] = useState<ProviderStatus[] | null>(providersCache?.value ?? null);
+  useEffect(() => {
+    if (!hub() || (providersCache && Date.now() - providersCache.at < 60_000)) return;
+    let alive = true;
+    aiStatus()
+      .then((r) => {
+        providersCache = { at: Date.now(), value: r.providers };
+        if (alive) setList(r.providers);
+      })
+      .catch(() => alive && setList([]));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return list;
+}
+
+/** Keep the shared status fresh after Settings reloaded it. */
+export function rememberProviders(list: ProviderStatus[]) {
+  providersCache = { at: Date.now(), value: list };
+}
+
+/** "Claude Sonnet 5", from the provider list and the model picked in Settings. */
+export function modelLabel(providers: ProviderStatus[] | null, provider: AIProvider, model: string | undefined): string {
+  const p = providers?.find((x) => x.id === provider);
+  if (!p) return provider === 'claude' ? 'Claude' : 'Codex';
+  const m = p.models.find((x) => x.id === (model ?? ''));
+  const name = m?.label.replace(/^Default \((.*)\)$/, '$1').replace(/ \(.*\)$/, '');
+  return name && name !== 'Default' ? `${p.name} ${name}` : p.name;
 }
 
 export function aiAvailable(): boolean {

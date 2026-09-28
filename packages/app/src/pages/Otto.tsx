@@ -1,47 +1,22 @@
 import { noteTitle, type AIProvider, type Chat, type ChatMessage, type ChatMode, type Note } from '@anker/core';
-import { ArrowLeft, ArrowUp, GraduationCap, Hammer, Loader2, MessagesSquare, Mic, Plus, Square, Trash2, X } from '../components/icons';
+// Otto's page: chats with Otto (formerly the Tutor). Provider and model come from Settings.
+import { ArrowLeft, ArrowUp, Loader2, Mic, Plus, Square, Trash2, X } from '../components/icons';
 import { OttoBadge } from '../components/Otto';
 import { relativ } from '../lib/format';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cardContext, Markdown } from '../components/AISheet';
+import { runSuggestion, SuggestionIcon } from '../components/OttoHome';
 import { ToolChip } from '../components/ToolChip';
-import { VoiceChat } from '../components/VoiceChat';
-import { Button, cx, Empty, IconButton, Select, Spinner, toast } from '../components/ui';
-import { aiStatus, cancelJob, startChat, streamJob, type AIEvent, type ProviderStatus } from '../lib/ai';
+import { useVoiceLauncher } from '../components/VoiceChat';
+import { Button, cx, Empty, IconButton, Spinner, toast } from '../components/ui';
+import { aiStatus, cancelJob, modelLabel, rememberProviders, startChat, streamJob, type AIEvent, type ProviderStatus } from '../lib/ai';
 import { db } from '../lib/db';
 import { useHub, useIsWide, useLiveQuery, usePrefs } from '../lib/hooks';
 import { deleteChat } from '../lib/repo';
 import { Link, navigate, useRoute } from '../lib/router';
 import { syncNow } from '../lib/sync';
 import { tr } from '../lib/i18n';
-import { voiceSupported } from '../lib/voice';
-
-const MODES: { id: ChatMode; label: string; icon: typeof GraduationCap; blurb: string }[] = [
-  { id: 'tutor', label: tr('Tutor'), icon: GraduationCap, blurb: tr('Grammatik, Bedeutungen, Beispiele – und er kann deine Decks bearbeiten.') },
-  { id: 'builder', label: tr('Deck-Bauer'), icon: Hammer, blurb: tr('Erstellt und verbessert Karten für dich und sagt dir dann Bescheid.') },
-  { id: 'conversation', label: tr('Gespräch'), icon: MessagesSquare, blurb: tr('Chatte auf Deutsch. Fehler werden korrigiert, neue Wörter kannst du speichern.') },
-];
-
-const STARTERS: Record<ChatMode, string[]> = {
-  tutor: [
-    tr('Was ist der Unterschied zwischen „seit“ und „vor“? Mit Beispielen, bitte.'),
-    tr('Wann nehmen Wechselpräpositionen den Dativ, wann den Akkusativ?'),
-    tr('Frag mich 5 Wörter ab, die ich neu hinzugefügt habe.'),
-    tr('Warum heißt es „das Mädchen“ und nicht „die Mädchen“?'),
-  ],
-  builder: [
-    tr('Erstelle ein Deck „Deutsch::Küche“ mit 25 A2-Wörtern rund ums Kochen.'),
-    tr('Füge die 15 häufigsten trennbaren Verben mit Beispielen hinzu.'),
-    tr('Finde meine schwierigsten Karten und ergänze zu jeder eine kurze Eselsbrücke.'),
-    tr('Mach 10 Lückentext-Karten zum Dativ nach mit, bei, nach, von, zu.'),
-  ],
-  conversation: [
-    'Hallo! Lass uns über mein Wochenende sprechen.',
-    'Wir sind in einem Café in Berlin. Du bist der Kellner.',
-    'Ich suche eine Wohnung. Spielen wir die Besichtigung durch?',
-    'Frag mich etwas über meine Hobbys.',
-  ],
-};
+import { ottoLine, ottoSuggestions, useOttoData } from '../lib/otto';
 
 type LiveItem = { kind: 'text'; text: string; open: boolean } | { kind: 'tool'; id: string; name: string; input?: unknown; output?: string; status: 'running' | 'ok' | 'error' };
 
@@ -82,13 +57,13 @@ function ChatList({ chats, active }: { chats: Chat[]; active: string | null }) {
       {chats.map((c) => (
         <Link
           key={c.id}
-          to={`/tutor/${c.id}`}
+          to={`/otto/${c.id}`}
           className={cx('flex min-h-14 items-center gap-2 rounded-md px-3 py-2', c.id === active ? 'bg-hafen-soft' : 'hover:bg-paper-sunk')}
         >
           <div className="min-w-0 flex-1">
             <div className="t-label truncate">{c.title}</div>
             <div className="truncate text-[13px] text-ink-muted">
-              {c.provider === 'claude' ? tr('Claude') : tr('Codex')} · {MODES.find((m) => m.id === c.mode)?.label} · {relativ(c.updatedAt)}
+              {relativ(c.updatedAt)}
             </div>
           </div>
           {c.messages.some((m) => m.voice) && <Mic className="size-4 shrink-0 text-ink-muted" aria-label={tr('Sprachchat')} />}
@@ -99,7 +74,7 @@ function ChatList({ chats, active }: { chats: Chat[]; active: string | null }) {
   );
 }
 
-export function Tutor({ chatId }: { chatId: string | null }) {
+export function OttoPage({ chatId, due }: { chatId: string | null; due: number }) {
   const hub = useHub();
   const wide = useIsWide();
   const prefs = usePrefs();
@@ -108,12 +83,12 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   const chat = useLiveQuery(() => (chatId ? db.chats.get(chatId) : undefined), [chatId]);
   const [providers, setProviders] = useState<ProviderStatus[] | null>(null);
   const [provider, setProvider] = useState<AIProvider>(prefs.defaultProvider);
-  const [model, setModel] = useState<string>('');
   const [mode, setMode] = useState<ChatMode>('tutor');
   const [text, setText] = useState('');
   const [live, setLive] = useState<Live | null>(null);
   const [contextNote, setContextNote] = useState<Note | null>(null);
-  const [voice, setVoice] = useState(false);
+  const voice = useVoiceLauncher(chatId ?? undefined);
+  const otto = useOttoData();
   const stopStream = useRef<(() => void) | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -125,6 +100,8 @@ export function Tutor({ chatId }: { chatId: string | null }) {
     aiStatus()
       .then((r) => {
         setProviders(r.providers);
+        rememberProviders(r.providers);
+        // Settings picks Otto's AI; fall back to the other one if it isn't signed in.
         const ok = r.providers.filter((p) => p.installed && p.loggedIn);
         if (!ok.some((p) => p.id === prefs.defaultProvider) && ok[0]) setProvider(ok[0].id);
         const running = chatId ? r.running.find((j) => j.chatId === chatId) : undefined;
@@ -135,16 +112,8 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   }, [hub, chatId]);
 
   useEffect(() => {
-    if (chat) {
-      setProvider(chat.provider);
-      setMode(chat.mode);
-      setModel(chat.model ?? '');
-    }
+    setMode(chat?.mode ?? 'tutor');
   }, [chat?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!chat) setModel((provider === 'claude' ? prefs.claudeModel : prefs.codexModel) ?? '');
-  }, [provider, prefs.claudeModel, prefs.codexModel, chat]);
 
   useEffect(() => {
     const noteId = query.get('note');
@@ -152,7 +121,9 @@ export function Tutor({ chatId }: { chatId: string | null }) {
     const q = query.get('q');
     if (q && !autoSent.current && !chatId) {
       autoSent.current = true;
-      setText(q);
+      // ?go=1: asked from elsewhere (Today, a card, Grammar), so send it right away.
+      if (query.get('go') === '1') void send(q);
+      else setText(q);
     }
   }, [query, chatId]);
 
@@ -224,10 +195,10 @@ export function Tutor({ chatId }: { chatId: string | null }) {
     setText('');
     try {
       const context = contextNote ? `The learner is asking about this flashcard from their collection (note id ${contextNote.id}):\n${cardContext(contextNote)}` : undefined;
-      const r = await startChat({ chatId: chatId ?? undefined, provider, model: model || undefined, mode, message: msg, context });
+      const r = await startChat({ chatId: chatId ?? undefined, provider, mode, message: msg, context });
       setContextNote(null);
       attach(r.jobId, r.chatId, msg);
-      if (r.chatId !== chatId) navigate(`/tutor/${r.chatId}`, { replace: !!chatId });
+      if (r.chatId !== chatId) navigate(`/otto/${r.chatId}`, { replace: !!chatId });
       void syncNow();
     } catch (e) {
       setText(msg);
@@ -236,15 +207,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   };
 
   const running = !!live && !live.done;
-  const activeProvider = providers?.find((p) => p.id === provider);
   const noAI = providers && !providers.some((p) => p.installed && p.loggedIn);
-
-  const openVoice = () => {
-    const codex = providers?.find((p) => p.id === 'codex');
-    if (providers && !(codex?.installed && codex.loggedIn)) return toast.error(tr('Sprachchat läuft über Codex. Melde Codex unter Einstellungen → KI-Tutor an.'));
-    if (!voiceSupported()) return toast.error(tr('Hier gibt es kein Mikrofon. Nutze die Anker-App auf dem Mac oder auf Android.'));
-    setVoice(true);
-  };
 
   if (!hub) {
     return (
@@ -259,38 +222,27 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   }
 
   const empty = shown.length === 0 && !live;
+  const brain = modelLabel(providers, provider, provider === 'claude' ? prefs.claudeModel : prefs.codexModel);
   const header = (
-    <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5 md:px-6">
+    <div className="drag flex items-center gap-2 border-b border-line px-4 py-2.5 md:px-6">
       {!wide && !!chats?.length && (
-        <IconButton label={tr('Chats')} onClick={() => navigate('/tutor')}>
+        <IconButton label={tr('Chats')} onClick={() => navigate('/otto')}>
           <ArrowLeft className="size-5" />
         </IconButton>
       )}
-      {!empty && <OttoBadge size={36} mood={running ? 'listening' : 'neutral'} />}
-      <div className="t-label min-w-0 flex-1 truncate">{chat?.title ?? tr('Neues Gespräch')}</div>
-      <Select value={provider} onChange={(e) => setProvider(e.target.value as AIProvider)} className="h-9 w-32 text-[13px]" disabled={running}>
-        {(providers ?? [{ id: 'claude', name: 'Claude' } as ProviderStatus, { id: 'codex', name: 'Codex' } as ProviderStatus]).map((p) => (
-          <option key={p.id} value={p.id} disabled={providers ? !(p.installed && p.loggedIn) : false}>
-            {p.name}
-            {providers && !(p.installed && p.loggedIn) ? tr(' (aus)') : ''}
-          </option>
-        ))}
-      </Select>
-      {activeProvider && activeProvider.models.length > 1 && (
-        <Select value={model} onChange={(e) => setModel(e.target.value)} className="h-9 w-36 text-[13px]" disabled={running}>
-          {activeProvider.models.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-        </Select>
+      <OttoBadge size={36} mood={running ? 'thinking' : 'neutral'} />
+      <div className="t-label min-w-0 flex-1 truncate">{chat?.title ?? 'Otto'}</div>
+      {!running && (
+        <IconButton label={tr('Mit Otto sprechen')} onClick={() => voice.open()}>
+          <Mic className="size-5" />
+        </IconButton>
       )}
       {chat && (
         <IconButton
           label={tr('Chat löschen')}
           onClick={async () => {
             await deleteChat(chat.id);
-            navigate('/tutor');
+            navigate('/otto');
           }}
         >
           <Trash2 className="size-5" />
@@ -301,48 +253,35 @@ export function Tutor({ chatId }: { chatId: string | null }) {
 
   const view = (
     <div className="flex h-full min-w-0 flex-1 flex-col">
-      {voice && (
-        <VoiceChat
-          chatId={chatId ?? undefined}
-          onClose={(id) => {
-            setVoice(false);
-            void syncNow();
-            if (id && id !== chatId) navigate(`/tutor/${id}`);
-          }}
-        />
-      )}
+      {voice.element}
       {header}
       <div ref={scroller} className="thin-scroll min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl space-y-3 px-5 py-6 md:px-6">
           {empty && (
             <div className="anim-in">
-              <div className="mb-6 flex flex-col items-center text-center">
-                <OttoBadge size={104} mood="listening" />
-                <h2 className="t-title mt-4">{tr('Worüber sprechen wir?')}</h2>
-                <Button variant="secondary" size="sm" icon={<Mic className="size-4" />} onClick={openVoice} className="mt-3">
+              <div className="mb-7 flex flex-col items-center text-center">
+                <OttoBadge size={104} mood="happy" />
+                <h2 className="t-title mt-4">{prefs.name ? tr('Hallo {0}, ich bin Otto.', prefs.name) : tr('Hallo, ich bin Otto.')}</h2>
+                {otto && <p className="t-body-lg mt-2 max-w-md text-ink-muted">{ottoLine(otto, due)}</p>}
+                <Button variant="primary" size="lg" icon={<Mic className="size-5" />} onClick={() => voice.open()} disabled={!!noAI} className="mt-5">
                   {tr('Mit Otto sprechen')}
                 </Button>
               </div>
-              <div className="mb-5 grid gap-2 sm:grid-cols-3">
-                {MODES.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setMode(m.id)}
-                    className={cx('rounded-md border p-3.5 text-left transition-colors duration-[120ms]', mode === m.id ? 'border-hafen bg-hafen-soft' : 'border-line bg-paper-raised hover:bg-paper-sunk')}
-                  >
-                    <m.icon className={cx('size-6', mode === m.id ? 'text-hafen' : 'text-ink')} />
-                    <div className="t-label mt-2">{m.label}</div>
-                    <div className="t-caption mt-0.5 text-ink-muted">{m.blurb}</div>
-                  </button>
-                ))}
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {STARTERS[mode].map((s) => (
-                  <button key={s} onClick={() => void send(s)} disabled={!!noAI} className="rounded-md border border-line bg-paper-raised px-4 py-3 text-left text-[15px] hover:bg-paper-sunk disabled:opacity-50">
-                    {s}
-                  </button>
-                ))}
-              </div>
+              {otto && (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {ottoSuggestions(otto, 4).map((sg) => (
+                    <button
+                      key={sg.id}
+                      onClick={() => runSuggestion(sg, voice.open)}
+                      disabled={!!noAI}
+                      className="flex items-start gap-2.5 rounded-md border border-line bg-paper-raised px-4 py-3 text-left text-[15px] transition-colors duration-[120ms] hover:bg-paper-sunk disabled:opacity-50"
+                    >
+                      <SuggestionIcon s={sg} className="mt-0.5 size-5" />
+                      <span>{sg.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               {noAI && (
                 <div className="mt-5 rounded-md bg-sonne px-4 py-3 text-[15px] text-on-sonne">{tr('Weder Claude noch Codex ist auf deinem Mac angemeldet.')}{' '}
                   <Link to="/settings" className="font-bold underline">{tr('Einstellungen → KI öffnen')}</Link>
@@ -365,7 +304,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
                 <span className="size-1.5 animate-bounce rounded-full bg-krake-deep [animation-delay:-0.15s]" />
                 <span className="size-1.5 animate-bounce rounded-full bg-krake-deep" />
               </span>
-              {activeProvider?.name ?? tr('Die KI')}{' '}{tr('denkt nach …')}</div>
+              {tr('Otto denkt nach …')}</div>
           )}
           {live?.error && live.chatId === chatId && <div className="rounded-md bg-koralle-soft px-4 py-3 text-[15px] text-koralle-ink">{live.error}</div>}
         </div>
@@ -379,7 +318,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
               </button>
             </div>
           )}
-          <div className="flex items-end gap-2 rounded-md border border-line bg-paper-raised p-1.5 focus-within:border-hafen">
+          <div className="flex items-end gap-2 rounded-md border border-line bg-paper-raised p-1.5 field-focus">
             <textarea
               ref={inputRef}
               value={text}
@@ -395,11 +334,11 @@ export function Tutor({ chatId }: { chatId: string | null }) {
                 }
               }}
               rows={1}
-              placeholder={mode === 'conversation' ? tr('Schreib auf Deutsch …') : tr('Frag etwas oder sag, welche Karten du brauchst …')}
+              placeholder={mode === 'conversation' ? tr('Schreib auf Deutsch …') : tr('Schreib Otto …')}
               className="max-h-56 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[17px] leading-6 outline-none placeholder:text-ink-muted"
             />
             {!running && (
-              <Button variant="ghost" onClick={openVoice} aria-label={tr('Sprachchat')} title={tr('Sprachchat mit Otto')} className="size-11 !px-0">
+              <Button variant="ghost" onClick={() => voice.open()} aria-label={tr('Sprachchat')} title={tr('Sprachchat mit Otto')} className="size-11 !px-0">
                 <Mic className="size-5" />
               </Button>
             )}
@@ -415,7 +354,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
           </div>
           <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-ink-muted">
             <span>
-              {MODES.find((m) => m.id === mode)?.label} · {activeProvider?.plan ?? ''}
+              Otto · {brain}
             </span>
             {live?.rate !== undefined && <span>{Math.round((live.rate ?? 0) * 100)}{' '}{tr('% deines 5-Stunden-Limits bei Claude verbraucht')}</span>}
           </div>
@@ -429,8 +368,8 @@ export function Tutor({ chatId }: { chatId: string | null }) {
     return (
       <div className="mx-auto max-w-xl px-5 pt-8 pb-10">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="t-title">{tr('Tutor')}</h1>
-          <Button variant="primary" icon={<Plus className="size-5" />} onClick={() => navigate('/tutor?new=1')}>{tr('Neuer Chat')}</Button>
+          <h1 className="t-title">Otto</h1>
+          <Button variant="primary" icon={<Plus className="size-5" />} onClick={() => navigate('/otto?new=1')}>{tr('Neuer Chat')}</Button>
         </div>
         {!chats ? <Spinner /> : <ChatList chats={chats} active={null} />}
       </div>
@@ -440,7 +379,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   return (
     <div className="flex h-full">
       <aside className="thin-scroll flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-r border-line p-3 pt-10">
-        <Button variant="secondary" icon={<Plus className="size-5" />} onClick={() => navigate('/tutor')} className="w-full">{tr('Neuer Chat')}</Button>
+        <Button variant="secondary" icon={<Plus className="size-5" />} onClick={() => navigate('/otto')} className="w-full">{tr('Neuer Chat')}</Button>
         {chats && <ChatList chats={chats} active={chatId} />}
       </aside>
       {view}

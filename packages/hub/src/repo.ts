@@ -70,6 +70,26 @@ export class Repo {
     return withPrefDefaults(this.store.get('prefs', 'global'));
   }
 
+  /** One-time preference upgrades, applied once per install. */
+  upgradePrefs() {
+    const p = this.prefs();
+    if ((p.schema ?? 0) >= 1) return;
+    // 0.4: Otto runs on Claude Sonnet (the newest one Claude Code has) for everything.
+    this.store.put('prefs', [{ ...p, schema: 1, defaultProvider: 'claude', claudeModel: 'sonnet' }]);
+  }
+
+  /** Otto's memory: one lasting fact about the learner per line. */
+  remember(fact: string) {
+    const p = this.prefs();
+    const clean = fact.replace(/\s+/g, ' ').trim().replace(/^[-•]\s*/, '');
+    if (!clean) throw new Error('fact is empty');
+    const lines = (p.ottoNotes ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.some((l) => l.replace(/^[-•]\s*/, '').toLowerCase() === clean.toLowerCase())) return { saved: false, reason: 'Already remembered.' };
+    const next = [...lines, `- ${clean}`].slice(-40);
+    this.store.put('prefs', [{ ...p, ottoNotes: next.join('\n') }]);
+    return { saved: true, facts: next.length };
+  }
+
   pathOf(deckId: string, byId = this.deckMap()): string {
     const d = byId.get(deckId);
     return d ? deckPath(d, byId) : '(missing deck)';

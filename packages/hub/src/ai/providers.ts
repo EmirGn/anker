@@ -31,13 +31,59 @@ export interface ProviderStatus {
 
 const loginProcs = new Map<AIProvider, number>();
 
-const CLAUDE_MODELS: ModelOption[] = [
-  { id: '', label: 'Default' },
-  { id: 'sonnet', label: 'Sonnet' },
-  { id: 'opus', label: 'Opus' },
-  { id: 'haiku', label: 'Haiku (fastest)' },
-  { id: 'fable', label: 'Fable' },
+/** Claude Code's model aliases always run the newest model of each family. */
+const CLAUDE_FAMILIES = [
+  { id: 'sonnet', name: 'Sonnet' },
+  { id: 'opus', name: 'Opus' },
+  { id: 'fable', name: 'Fable' },
+  { id: 'haiku', name: 'Haiku', note: 'fastest' },
 ];
+
+let claudeVersions: { key: string; versions: Promise<Record<string, string>> } | null = null;
+
+/** Newest version per family among the model ids a Claude Code build contains, e.g. { sonnet: '5', opus: '5.5' }. */
+function detectClaudeVersions(bin: string): Promise<Record<string, string>> {
+  let key: string;
+  try {
+    const real = fs.realpathSync(bin);
+    const st = fs.statSync(real);
+    key = `${real}:${st.size}:${st.mtimeMs}`;
+    bin = real;
+  } catch {
+    return Promise.resolve({});
+  }
+  if (claudeVersions?.key === key) return claudeVersions.versions;
+  const versions = new Promise<Record<string, string>>((resolve) => {
+    const best: Record<string, [number, number]> = {};
+    const re = /claude-(sonnet|opus|haiku|fable)-(\d{1,2})(?:-(\d{1,2}))?(?!\d)/g;
+    let tail = '';
+    fs.createReadStream(bin, { highWaterMark: 8 << 20 })
+      .on('data', (chunk) => {
+        const text = tail + (chunk as Buffer).toString('latin1');
+        for (const m of text.matchAll(re)) {
+          const v: [number, number] = [Number(m[2]), Number(m[3] ?? 0)];
+          const cur = best[m[1]!];
+          if (!cur || v[0] > cur[0] || (v[0] === cur[0] && v[1] > cur[1])) best[m[1]!] = v;
+        }
+        tail = text.slice(-64);
+      })
+      .on('error', () => resolve({}))
+      .on('end', () => resolve(Object.fromEntries(Object.entries(best).map(([f, [a, b]]) => [f, b ? `${a}.${b}` : `${a}`]))));
+  });
+  claudeVersions = { key, versions };
+  return versions;
+}
+
+async function claudeModels(bin: string | null): Promise<ModelOption[]> {
+  const versions = bin ? await detectClaudeVersions(bin) : {};
+  return CLAUDE_FAMILIES.map((f) => ({
+    id: f.id,
+    label: `${f.name}${versions[f.id] ? ` ${versions[f.id]}` : ''}${f.note ? ` (${f.note})` : ''}`,
+  }));
+}
+
+/** "GPT-6-Astra" → "GPT-6 Astra" */
+const prettyCodex = (name: string) => name.replace(/-(?=[A-Z][a-z])/g, ' ');
 
 function codexModels(): ModelOption[] {
   const out: ModelOption[] = [{ id: '', label: 'Default' }];
@@ -47,11 +93,13 @@ function codexModels(): ModelOption[] {
     const list: unknown[] = Array.isArray(data) ? data : (data.models ?? []);
     for (const m of list) {
       const o = m as { slug?: string; display_name?: string; visibility?: string };
-      if (o.slug && o.visibility !== 'hide') out.push({ id: o.slug, label: o.display_name ?? o.slug });
+      if (o.slug && o.visibility !== 'hide') out.push({ id: o.slug, label: prettyCodex(o.display_name ?? o.slug) });
     }
   } catch {
     // no cache yet — Codex picks its default
   }
+  const top = out.find((m) => m.id && m.id === defaultCodexModel());
+  if (top) out[0] = { id: '', label: `Default (${top.label})` };
   return out;
 }
 
@@ -75,7 +123,7 @@ async function claudeStatus(): Promise<ProviderStatus> {
     name: 'Claude',
     installed: false,
     loggedIn: false,
-    models: CLAUDE_MODELS,
+    models: await claudeModels(null),
     installHint: 'Install Claude Code: curl -fsSL https://claude.ai/install.sh | bash',
     loginInProgress: loginProcs.has('claude'),
   };
@@ -86,7 +134,7 @@ async function claudeStatus(): Promise<ProviderStatus> {
     runCapture(bin, ['--version'], { env, timeoutMs: 15_000 }),
     runCapture(bin, ['auth', 'status'], { env, timeoutMs: 20_000 }),
   ]);
-  const status: ProviderStatus = { ...base, installed: true, path: bin, version: ver.stdout.trim().split(/\s/)[0] };
+  const status: ProviderStatus = { ...base, installed: true, path: bin, version: ver.stdout.trim().split(/\s/)[0], models: await claudeModels(bin) };
   try {
     const j = JSON.parse(auth.stdout);
     status.loggedIn = !!j.loggedIn;

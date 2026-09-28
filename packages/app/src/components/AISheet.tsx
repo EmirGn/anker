@@ -82,9 +82,9 @@ export function AISheet({ note, open, onClose, initial = 'explain' }: { note: No
             icon={<MessageCircle className="size-4" />}
             onClick={() => {
               onClose();
-              navigate(`/tutor?note=${note.id}`);
+              navigate(`/otto?note=${note.id}`);
             }}
-          >{tr('Mit dem Tutor besprechen')}</Button>
+          >{tr('Mit Otto besprechen')}</Button>
         )
       }
     >

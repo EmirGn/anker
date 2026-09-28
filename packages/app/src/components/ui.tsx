@@ -86,9 +86,9 @@ export function IconButton({
 }
 
 // ------------------------------------------------------------------ Inputs
-// Input wells sit on paper-sunk; focus shows the hafen ring.
+// Input wells sit on paper-sunk; focus is the calm .field-focus style from styles.css.
 const field =
-  'rounded-md border border-transparent bg-paper-sunk px-3.5 text-[15px] text-ink placeholder:text-ink-muted outline-none transition-[border,background] duration-[120ms] focus:border-hafen focus:bg-paper-raised';
+  'rounded-md border border-transparent bg-paper-sunk px-3.5 text-[15px] text-ink placeholder:text-ink-muted outline-none transition-[border,background,box-shadow] duration-[120ms] field-focus';
 
 /** Full width unless the caller sets an explicit width (Tailwind can't reliably override w-full). */
 const width = (className?: string) => (className && /(^|\s)(w-|min-w-|max-w-|flex-1)/.test(className) ? '' : 'w-full');

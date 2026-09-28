@@ -5,18 +5,20 @@ import { uhrzeit } from '../lib/format';
 import { isDesktop } from '../lib/platform';
 import { Link, useRoute } from '../lib/router';
 import { syncNow } from '../lib/sync';
-import { BarChart3, BookOpen, CloudOff, Flame, Layers, LayoutGrid, Loader2, MessageCircle, RefreshCw, Search, Settings, Sparkles, Sun, Zap } from './icons';
+import { BarChart3, BookOpen, CloudOff, Flame, Layers, LayoutGrid, Loader2, RefreshCw, Search, Settings, Sun, Zap } from './icons';
+import { OttoBadge } from './Otto';
 import { Wordmark } from './Logo';
 import { cx } from './ui';
 import { lang, tr } from '../lib/i18n';
 
+// Otto (the AI) sits right under Today: he's half of the app, not an extra.
 export const NAV = [
   { to: '/', label: tr('Heute'), icon: Sun },
+  { to: '/otto', label: 'Otto', icon: null },
   { to: '/decks', label: tr('Decks'), icon: Layers },
   { to: '/add', label: tr('Neue Karte'), icon: PlusCircleIcon },
   { to: '/browse', label: tr('Karten suchen'), icon: Search },
   { to: '/practice', label: tr('Üben'), icon: Zap },
-  { to: '/tutor', label: tr('Tutor'), icon: Sparkles },
   { to: '/stats', label: tr('Statistik'), icon: BarChart3 },
   { to: '/grammar', label: tr('Grammatik'), icon: BookOpen },
   { to: '/settings', label: tr('Einstellungen'), icon: Settings },
@@ -24,6 +26,7 @@ export const NAV = [
 
 function isActive(to: string, path: string) {
   if (to === '/') return path === '/';
+  if (to === '/otto' && (path === '/tutor' || path.startsWith('/tutor/'))) return true;
   return path === to || path.startsWith(`${to}/`);
 }
 
@@ -91,7 +94,11 @@ function Sidebar({ due, streak }: { due: number; streak: number }) {
                 active ? 'bg-hafen-soft text-hafen' : 'text-ink hover:bg-paper-sunk',
               )}
             >
-              <Icon className={cx('size-6', active ? 'text-hafen' : 'text-ink-muted')} weight={active ? 'fill' : 'regular'} />
+              {Icon ? (
+                <Icon className={cx('size-6', active ? 'text-hafen' : 'text-ink-muted')} weight={active ? 'fill' : 'regular'} />
+              ) : (
+                <OttoBadge size={28} mood={active ? 'happy' : 'neutral'} className="-mx-0.5" />
+              )}
               <span className="flex-1">{item.label}</span>
               {item.to === '/' && due > 0 && <span className="rounded-full bg-ink px-2 text-[13px] leading-6 font-bold text-paper tabular-nums">{due}</span>}
             </Link>
@@ -111,8 +118,8 @@ function BottomNav({ due }: { due: number }) {
   const items = [
     { to: '/', label: tr('Heute'), icon: Sun },
     { to: '/decks', label: tr('Decks'), icon: Layers },
+    { to: '/otto', label: 'Otto', icon: null },
     { to: '/add', label: tr('Neu'), icon: PlusCircleIcon },
-    { to: '/tutor', label: tr('Tutor'), icon: MessageCircle },
     { to: '/more', label: tr('Mehr'), icon: LayoutGrid },
   ];
   const moreActive = ['/more', '/browse', '/practice', '/stats', '/grammar', '/settings', '/import'].some((p) => isActive(p, path));
@@ -122,6 +129,22 @@ function BottomNav({ due }: { due: number }) {
         {items.map((item) => {
           const active = item.to === '/more' ? moreActive : isActive(item.to, path);
           const Icon = item.icon;
+          if (!Icon) {
+            // Otto: the raised button in the middle.
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-label={tr('Otto, dein KI-Tutor')}
+                className={cx('relative flex flex-1 flex-col items-center justify-end gap-0.5 pb-1.5 text-[13px] leading-4', active ? 'font-bold text-hafen' : 'font-medium text-ink-muted')}
+              >
+                <span className={cx('absolute -top-5 rounded-full border-4 border-paper-raised transition-transform duration-[120ms] active:scale-95', active && 'ring-2 ring-hafen')}>
+                  <OttoBadge size={52} mood={active ? 'happy' : 'neutral'} />
+                </span>
+                {item.label}
+              </Link>
+            );
+          }
           return (
             <Link
               key={item.to}
@@ -149,16 +172,13 @@ export function Layout({ children, due, streak }: { children: ReactNode; due: nu
     return (
       <div className="flex h-full" lang={lang}>
         {!immersive && <Sidebar due={due} streak={streak} />}
-        <main className="thin-scroll relative min-w-0 flex-1 overflow-y-auto">
-          {isDesktop && <div className="drag sticky top-0 z-20 -mb-8 h-8" />}
-          {children}
-        </main>
+        <main className="thin-scroll relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
       </div>
     );
   }
   return (
     <div className="flex h-full flex-col" lang={lang}>
-      <main className="thin-scroll pt-safe relative min-h-0 flex-1 overflow-y-auto">{children}</main>
+      <main className="thin-scroll pt-safe relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
       {!immersive && <BottomNav due={due} />}
     </div>
   );

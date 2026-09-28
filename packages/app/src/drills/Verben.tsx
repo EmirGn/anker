@@ -128,7 +128,7 @@ export function Verben() {
                   lang="de"
                   className={cx(
                     'h-12 w-full rounded-md border-2 bg-paper-raised px-4 pr-10 text-[17px] font-semibold outline-none',
-                    !result ? 'border-line focus:border-hafen' : result[i] ? 'border-wiese' : 'border-koralle-ink',
+                    !result ? 'border-line field-focus' : result[i] ? 'border-wiese' : 'border-koralle-ink',
                   )}
                 />
                 {result && (

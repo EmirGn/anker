@@ -396,6 +396,17 @@ Empty query returns everything (newest first).`,
   );
 
   server.registerTool(
+    'remember',
+    {
+      title: 'Remember about the learner',
+      description:
+        'Save one lasting fact about the learner (job, interests, where they live, goals, exam dates, what they find hard) so future conversations can use it. One short sentence per call; skip trivia and facts already remembered.',
+      inputSchema: { fact: z.string().min(3).max(300) },
+    },
+    guard((a: { fact: string }) => repo.remember(a.fact)),
+  );
+
+  server.registerTool(
     'get_study_stats',
     {
       title: 'Study statistics',

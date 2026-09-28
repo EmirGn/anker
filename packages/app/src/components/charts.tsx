@@ -90,9 +90,12 @@ export function Bars({
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...values);
+  const n = values.length;
+  // A year of days has to fit the same card as a week: thinner gaps, then none.
+  const gap = n > 120 ? 0 : n > 45 ? 1 : 3;
   return (
-    <div>
-      <div className="flex items-end gap-[3px]" style={{ height }}>
+    <div className="min-w-0">
+      <div className="flex items-end" style={{ height, gap }}>
         {values.map((v, i) => (
           <div
             key={i}
@@ -102,7 +105,7 @@ export function Bars({
             onMouseLeave={() => setHover(null)}
           >
             <div
-              className="w-full rounded-t-[4px] transition-opacity"
+              className={cx('w-full transition-opacity', n > 120 ? 'rounded-t-[1px]' : 'rounded-t-[4px]')}
               style={{
                 height: `${Math.max(v ? 3 : 1, (v / max) * 100)}%`,
                 background: v ? color : 'var(--line)',
@@ -113,12 +116,22 @@ export function Bars({
         ))}
       </div>
       {labels && (
-        <div className="mt-1.5 flex gap-[3px] text-[11px] text-ink-muted">
-          {labels.map((l, i) => (
-            <div key={i} className="flex-1 text-center whitespace-nowrap">
-              {l ?? ''}
-            </div>
-          ))}
+        <div className="relative mt-1.5 h-4 text-[11px] text-ink-muted">
+          {labels.map((l, i) => {
+            if (!l) return null;
+            const x = (i + 0.5) / n;
+            // Edge labels hug the edge instead of hanging out of the card.
+            const edge = x < 0.1 ? 'left' : x > 0.9 ? 'right' : null;
+            return (
+              <span
+                key={i}
+                className="absolute top-0 whitespace-nowrap"
+                style={edge === 'left' ? { left: 0 } : edge === 'right' ? { right: 0 } : { left: `${x * 100}%`, transform: 'translateX(-50%)' }}
+              >
+                {l}
+              </span>
+            );
+          })}
         </div>
       )}
       <div className="mt-1 h-4 text-[11px] text-ink-muted">{hover !== null ? `${labels?.[hover] ?? `#${hover + 1}`}: ${format(values[hover]!)}` : ''}</div>

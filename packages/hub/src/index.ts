@@ -51,6 +51,7 @@ export async function startHub(opts: HubOptions = {}): Promise<HubHandle> {
   const config = loadConfig(dataDir, opts.port ? { port: opts.port } : {});
   const store = new Store(path.join(dataDir, 'collection')).open();
   const repo = new Repo(store);
+  repo.upgradePrefs();
   const workDir = path.join(dataDir, 'agent-workspace');
   fs.mkdirSync(workDir, { recursive: true });
   void resolvedPath(); // warm up the login-shell PATH lookup for the AI CLIs
