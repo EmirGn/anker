@@ -1,7 +1,7 @@
 {
   "name": "anker",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "description": "Anker — a spaced-repetition flashcard app for learning German, with Claude & Codex agents that manage your decks over MCP.",
   "license": "MIT",

@@ -1,7 +1,7 @@
 {
   "name": "@anker/desktop",
   "productName": "Anker",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "description": "Anker — German spaced-repetition flashcards",
   "author": "EmirGn",
@@ -14,7 +14,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@anker/hub": "0.2.1",
+    "@anker/hub": "0.3.0",
     "electron": "44.4.5",
     "electron-builder": "^26.15.3"
   },
@@ -73,7 +73,8 @@
       "darkModeSupport": true,
       "extendInfo": {
         "LSApplicationCategoryType": "public.app-category.education",
-        "NSHumanReadableCopyright": "© 2026 EmirGn"
+        "NSHumanReadableCopyright": "© 2026 EmirGn",
+        "NSMicrophoneUsageDescription": "Anker uses the microphone for voice chats with Otto, your German tutor."
       }
     },
     "dmg": {

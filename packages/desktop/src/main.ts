@@ -2,7 +2,7 @@
 // Claude/Codex bridge) plus native niceties — menu bar item, dock badge,
 // global quick-add shortcut and daily reminders.
 import { startHub, type HubHandle } from '@anker/hub';
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, nativeTheme, Notification, screen, shell, Tray } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, nativeTheme, Notification, screen, shell, systemPreferences, Tray } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { dayKey } from '@anker/core';
@@ -300,6 +300,13 @@ function ipc() {
     saveSettings();
     appMenu();
     refreshStatus();
+  });
+  // Voice chat: macOS asks once for the microphone; afterwards it's System Settings' call.
+  ipcMain.handle('anker:mic', async () => {
+    if (process.platform !== 'darwin') return true;
+    const status = systemPreferences.getMediaAccessStatus('microphone');
+    if (status === 'not-determined') return systemPreferences.askForMediaAccess('microphone');
+    return status === 'granted';
   });
   ipcMain.handle('anker:login-item', (_e, open: boolean) => app.setLoginItemSettings({ openAtLogin: open }));
   ipcMain.handle('anker:shortcut', (_e, accel: string) => {

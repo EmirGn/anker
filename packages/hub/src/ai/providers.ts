@@ -55,6 +55,20 @@ function codexModels(): ModelOption[] {
   return out;
 }
 
+/** The model Codex lists first for this account (its default when the user's config is ignored). */
+export function defaultCodexModel(): string | undefined {
+  try {
+    const home = process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex');
+    const data = JSON.parse(fs.readFileSync(path.join(home, 'models_cache.json'), 'utf8'));
+    const list = (Array.isArray(data) ? data : (data.models ?? [])) as { slug?: string; visibility?: string; priority?: number }[];
+    return list
+      .filter((m) => m.slug && m.visibility !== 'hide')
+      .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))[0]?.slug;
+  } catch {
+    return undefined;
+  }
+}
+
 async function claudeStatus(): Promise<ProviderStatus> {
   const base: ProviderStatus = {
     id: 'claude',

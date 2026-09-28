@@ -1,9 +1,11 @@
 import { noteTitle, type AIProvider, type Chat, type ChatMessage, type ChatMode, type Note } from '@anker/core';
-import { ArrowLeft, ArrowUp, Check, ChevronDown, GraduationCap, Hammer, Loader2, MessagesSquare, Plus, Square, Trash2, Wrench, X } from '../components/icons';
+import { ArrowLeft, ArrowUp, GraduationCap, Hammer, Loader2, MessagesSquare, Mic, Plus, Square, Trash2, X } from '../components/icons';
 import { OttoBadge } from '../components/Otto';
 import { relativ } from '../lib/format';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cardContext, Markdown } from '../components/AISheet';
+import { ToolChip } from '../components/ToolChip';
+import { VoiceChat } from '../components/VoiceChat';
 import { Button, cx, Empty, IconButton, Select, Spinner, toast } from '../components/ui';
 import { aiStatus, cancelJob, startChat, streamJob, type AIEvent, type ProviderStatus } from '../lib/ai';
 import { db } from '../lib/db';
@@ -12,6 +14,7 @@ import { deleteChat } from '../lib/repo';
 import { Link, navigate, useRoute } from '../lib/router';
 import { syncNow } from '../lib/sync';
 import { tr } from '../lib/i18n';
+import { voiceSupported } from '../lib/voice';
 
 const MODES: { id: ChatMode; label: string; icon: typeof GraduationCap; blurb: string }[] = [
   { id: 'tutor', label: tr('Tutor'), icon: GraduationCap, blurb: tr('Grammatik, Bedeutungen, Beispiele – und er kann deine Decks bearbeiten.') },
@@ -53,86 +56,6 @@ interface Live {
   rate?: number;
 }
 
-function tryJson(s?: string): any {
-  if (!s) return null;
-  try {
-    return JSON.parse(s);
-  } catch {
-    return null;
-  }
-}
-
-function toolLabel(name: string, input: any, output?: string, status?: string): string {
-  const out = tryJson(output);
-  const running = status === 'running';
-  const n = (x: unknown) => (Array.isArray(x) ? x.length : 0);
-  switch (name) {
-    case 'get_overview':
-      return running ? tr('Schaut sich deine Decks an …') : tr('Deine Decks angesehen');
-    case 'list_decks':
-      return tr('Decks aufgelistet');
-    case 'create_deck':
-      return tr('Deck {0} {1}', out?.path ?? input?.path ?? '', running ? tr('wird erstellt') : tr('erstellt'));
-    case 'update_deck':
-      return tr('Deck {0} aktualisiert', out?.path ?? input?.deck ?? '');
-    case 'delete_deck':
-      return tr('Deck {0} gelöscht', input?.deck ?? '');
-    case 'add_words':
-    case 'add_notes': {
-      const count = out?.added ?? n(input?.words ?? input?.notes);
-      const words = name === 'add_words';
-      const deck = out?.deck ?? input?.deck ?? '…';
-      if (running) return words ? tr('Fügt {0} Wörter zu {1} hinzu', count, deck) : tr('Fügt {0} Notizen zu {1} hinzu', count, deck);
-      const skipped = out?.skippedDuplicates?.length ? tr(' · {0} Duplikate übersprungen', out.skippedDuplicates.length) : '';
-      return words ? tr('{0} Wörter zu {1} hinzugefügt{2}', count, deck, skipped) : tr('{0} Notizen zu {1} hinzugefügt{2}', count, deck, skipped);
-    }
-    case 'find_notes':
-      return tr('„{0}“ gesucht{1}', input?.query ?? '', out ? tr(' · {0} gefunden', out.total) : '');
-    case 'get_notes':
-      return tr('{0} Notizen gelesen', n(input?.ids));
-    case 'lookup_words':
-      return tr('{0} Wörter auf Duplikate geprüft', n(input?.words));
-    case 'update_notes':
-      return tr('{0} Notizen {1}', out?.updated ?? n(input?.updates), running ? tr('werden aktualisiert') : tr('aktualisiert'));
-    case 'move_notes':
-      return tr('{0} Notizen nach {1} verschoben', out?.moved ?? n(input?.ids), out?.deck ?? input?.deck ?? '');
-    case 'delete_notes':
-      return tr('{0} Notizen gelöscht', out?.deleted ?? n(input?.ids));
-    case 'set_card_state':
-      return tr('Kartenstatus von {0} Notizen geändert{1}', n(input?.note_ids), input?.action ? ` (${String(input.action)})` : '');
-    case 'get_study_stats':
-      return running ? tr('Analysiert deine Statistik …') : tr('Deine Statistik analysiert');
-    default:
-      return name;
-  }
-}
-
-function ToolChip({ name, input, output, status }: { name: string; input?: unknown; output?: string; status: 'running' | 'ok' | 'error' }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="my-1.5">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={cx(
-          'inline-flex min-h-9 max-w-full items-center gap-2 rounded-md border px-3 py-1.5 text-left text-[13px] font-medium',
-          status === 'error' ? 'border-transparent bg-koralle-soft text-koralle-ink' : 'border-line bg-paper-raised text-ink-muted',
-        )}
-      >
-        {status === 'running' ? <Loader2 className="size-3.5 shrink-0 animate-spin" /> : status === 'ok' ? <Check className="size-3.5 shrink-0 text-wiese" /> : <X className="size-3.5 shrink-0" />}
-        <Wrench className="size-3 shrink-0 opacity-50" />
-        <span className="truncate">{toolLabel(name, input, output, status)}</span>
-        <ChevronDown className={cx('size-3.5 shrink-0 opacity-50 transition-transform', open && 'rotate-180')} />
-      </button>
-      {open && (
-        <pre className="thin-scroll mt-1.5 max-h-72 overflow-auto rounded-md bg-paper-sunk p-3 text-[11px] leading-relaxed text-ink-muted">
-          {input ? `→ ${JSON.stringify(input, null, 1)}\n\n` : ''}
-          {output ? `← ${output}` : ''}
-        </pre>
-      )}
-    </div>
-  );
-}
-
 function MessageView({ m }: { m: ChatMessage }) {
   if (m.role === 'user')
     return (
@@ -168,6 +91,7 @@ function ChatList({ chats, active }: { chats: Chat[]; active: string | null }) {
               {c.provider === 'claude' ? tr('Claude') : tr('Codex')} · {MODES.find((m) => m.id === c.mode)?.label} · {relativ(c.updatedAt)}
             </div>
           </div>
+          {c.messages.some((m) => m.voice) && <Mic className="size-4 shrink-0 text-ink-muted" aria-label={tr('Sprachchat')} />}
           {c.status === 'running' && <Loader2 className="size-3.5 animate-spin text-hafen" />}
         </Link>
       ))}
@@ -189,6 +113,7 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   const [text, setText] = useState('');
   const [live, setLive] = useState<Live | null>(null);
   const [contextNote, setContextNote] = useState<Note | null>(null);
+  const [voice, setVoice] = useState(false);
   const stopStream = useRef<(() => void) | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -314,6 +239,13 @@ export function Tutor({ chatId }: { chatId: string | null }) {
   const activeProvider = providers?.find((p) => p.id === provider);
   const noAI = providers && !providers.some((p) => p.installed && p.loggedIn);
 
+  const openVoice = () => {
+    const codex = providers?.find((p) => p.id === 'codex');
+    if (providers && !(codex?.installed && codex.loggedIn)) return toast.error(tr('Sprachchat läuft über Codex. Melde Codex unter Einstellungen → KI-Tutor an.'));
+    if (!voiceSupported()) return toast.error(tr('Hier gibt es kein Mikrofon. Nutze die Anker-App auf dem Mac oder auf Android.'));
+    setVoice(true);
+  };
+
   if (!hub) {
     return (
       <div className="mx-auto max-w-xl px-5 pt-10">
@@ -369,6 +301,16 @@ export function Tutor({ chatId }: { chatId: string | null }) {
 
   const view = (
     <div className="flex h-full min-w-0 flex-1 flex-col">
+      {voice && (
+        <VoiceChat
+          chatId={chatId ?? undefined}
+          onClose={(id) => {
+            setVoice(false);
+            void syncNow();
+            if (id && id !== chatId) navigate(`/tutor/${id}`);
+          }}
+        />
+      )}
       {header}
       <div ref={scroller} className="thin-scroll min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl space-y-3 px-5 py-6 md:px-6">
@@ -377,6 +319,9 @@ export function Tutor({ chatId }: { chatId: string | null }) {
               <div className="mb-6 flex flex-col items-center text-center">
                 <OttoBadge size={104} mood="listening" />
                 <h2 className="t-title mt-4">{tr('Worüber sprechen wir?')}</h2>
+                <Button variant="secondary" size="sm" icon={<Mic className="size-4" />} onClick={openVoice} className="mt-3">
+                  {tr('Mit Otto sprechen')}
+                </Button>
               </div>
               <div className="mb-5 grid gap-2 sm:grid-cols-3">
                 {MODES.map((m) => (
@@ -453,6 +398,11 @@ export function Tutor({ chatId }: { chatId: string | null }) {
               placeholder={mode === 'conversation' ? tr('Schreib auf Deutsch …') : tr('Frag etwas oder sag, welche Karten du brauchst …')}
               className="max-h-56 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[17px] leading-6 outline-none placeholder:text-ink-muted"
             />
+            {!running && (
+              <Button variant="ghost" onClick={openVoice} aria-label={tr('Sprachchat')} title={tr('Sprachchat mit Otto')} className="size-11 !px-0">
+                <Mic className="size-5" />
+              </Button>
+            )}
             {running ? (
               <Button variant="secondary" onClick={() => live && void cancelJob(live.jobId)} aria-label={tr('Stopp')} className="size-11 !px-0">
                 <Square className="size-4 fill-current" />

@@ -15,6 +15,8 @@ export interface AnkerDesktop {
   setShortcut(accelerator: string): Promise<boolean>;
   /** Menu, tray and notification language (older builds lack it). */
   setLanguage?(lang: 'en' | 'de'): Promise<void>;
+  /** Microphone access for voice chat (asks macOS the first time; older builds lack it). */
+  askMicrophone?(): Promise<boolean>;
 }
 
 declare global {

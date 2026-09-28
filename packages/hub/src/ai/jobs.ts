@@ -134,9 +134,10 @@ export class JobManager {
       throw new Error('This chat is still answering. Wait or stop it first.');
     }
 
-    // Switching provider means the old CLI session can't be resumed: carry a short transcript instead.
+    // Switching provider means the old CLI session can't be resumed, and a voice chat has none:
+    // carry a short transcript instead.
     let transcript = '';
-    if (existing && (existing.provider !== provider || existing.mode !== mode)) {
+    if (existing && (existing.provider !== provider || existing.mode !== mode || (!existing.sessionId && existing.messages.length > 0))) {
       transcript = existing.messages
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .slice(-12)

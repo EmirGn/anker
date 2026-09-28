@@ -136,6 +136,8 @@ export interface ChatMessage {
   text: string;
   tool?: ChatToolCall;
   at: number;
+  /** Spoken in a voice chat (transcribed) */
+  voice?: boolean;
 }
 
 export interface Chat extends BaseRecord {
@@ -158,6 +160,8 @@ export interface Prefs extends BaseRecord {
   defaultProvider: AIProvider;
   claudeModel?: string;
   codexModel?: string;
+  /** Otto's voice in voice chats (a Codex realtime voice) */
+  voice?: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   nativeLanguage: string;
   name?: string;

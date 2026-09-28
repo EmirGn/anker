@@ -69,10 +69,13 @@ Every agent run gets Anker's MCP server attached and **nothing else**: Claude ru
 - **Tutor** — explanations, examples, quizzes; it can create or fix cards while you chat.
 - **Deck builder** — "Make me 25 A2 kitchen words", "Turn this article into cards", "Add mnemonics to my 10 hardest cards".
 - **Gespräch** — conversation practice in German. Mistakes get a ✏️ *Korrektur*, and useful words can be saved to a deck.
+- **Voice chat with Otto** — speak German out loud and Otto answers in real time, using Codex's speech-to-speech voice model on your ChatGPT plan. Say "Speicher das Wort Bahnhof" and it becomes a card. The conversation is kept as a chat afterwards.
 - On any card: **Explain · More examples · Mnemonic**, streamed live.
 - From the Mac's menu bar or with **⌘⌥K** anywhere: **Quick add** a word — the AI fills in the rest.
 
 The phone uses the tutor through your Mac (see *Sync*), so your subscriptions stay on your computer.
+
+Voice chat runs through Codex's experimental realtime API (`codex app-server`, realtime v3 over WebRTC). Your Mac only sets up the call with your Codex login; the audio then streams directly between your phone or Mac and OpenAI. The Codex agent behind Otto has Anker's MCP tools and nothing else: your own MCP servers, plugins and apps are switched off for these sessions.
 
 ## MCP: let Claude Code, Codex & co. manage your decks
 

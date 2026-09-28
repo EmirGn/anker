@@ -6,6 +6,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { SYNC_TABLES, type AIProvider, type AnyRecord, type SyncChange, type SyncRequest, type SyncResponse, type TableName } from '@anker/core';
 import type { JobManager } from './ai/jobs';
 import type { TaskKind } from './ai/prompts';
+import type { VoiceManager } from './ai/voice';
 import { logout, providerStatuses, startLogin } from './ai/providers';
 import { hashToken, randomToken, saveConfig, type HubConfig } from './config';
 import { configSnippets, installIntegration, integrationStatus, removeIntegration, type IntegrationTarget, type StdioCommand } from './integrations';
@@ -40,6 +41,7 @@ export interface ServerDeps {
   store: Store;
   repo: Repo;
   jobs: JobManager;
+  voice: VoiceManager;
   version: string;
   webRoot: string | null;
   stdioProxy: StdioCommand | null;
@@ -134,7 +136,7 @@ function startSse(res: ServerResponse) {
 }
 
 export function createServer(deps: ServerDeps) {
-  const { config, store, repo, jobs, dataDir } = deps;
+  const { config, store, repo, jobs, voice, dataDir } = deps;
   const routes: Route[] = [];
   const add = (method: string, p: string, auth: AuthLevel, handler: Route['handler']) => {
     const keys: string[] = [];
@@ -385,6 +387,34 @@ export function createServer(deps: ServerDeps) {
     jobs.cancel(ctx.params.id!);
     return { ok: true };
   });
+
+  // ---- Voice chat (Codex realtime) ------------------------------------------------
+  add('POST', '/api/voice/start', 'any', async (ctx) => {
+    const body = await ctx.body<{ sdp: string; voice?: string; chatId?: string }>();
+    if (!body.sdp?.startsWith('v=')) throw new HttpError(400, 'sdp (a WebRTC offer) is required');
+    try {
+      return await voice.start(body);
+    } catch (e) {
+      throw new HttpError(502, (e as Error).message);
+    }
+  });
+
+  add('GET', '/api/voice/:id/events', 'any', (ctx) => {
+    const send = startSse(ctx.res);
+    const off = voice.subscribe(ctx.params.id!, (e) => {
+      send('voice', e);
+      if (e.type === 'closed') setTimeout(() => ctx.res.end(), 50);
+    });
+    ctx.res.on('close', off);
+    return KEEP_OPEN;
+  });
+
+  add('POST', '/api/voice/:id/ready', 'any', async (ctx) => {
+    await voice.ready(ctx.params.id!);
+    return { ok: true };
+  });
+
+  add('POST', '/api/voice/:id/stop', 'any', (ctx) => voice.stop(ctx.params.id!));
 
   // ---- MCP client integrations -------------------------------------------------
   add('GET', '/api/integrations', 'admin', async () => ({

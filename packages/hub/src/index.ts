@@ -4,6 +4,7 @@ import path from 'node:path';
 import { dayKey } from '@anker/core';
 import { JobManager } from './ai/jobs';
 import { resolvedPath } from './ai/env';
+import { VoiceManager } from './ai/voice';
 import { defaultDataDir, loadConfig, saveConfig, writeDiscovery, type HubConfig } from './config';
 import type { StdioCommand } from './integrations';
 import { Repo } from './repo';
@@ -56,6 +57,7 @@ export async function startHub(opts: HubOptions = {}): Promise<HubHandle> {
 
   let port = config.port;
   const jobs = new JobManager(repo, { mcpUrl: () => `http://127.0.0.1:${port}/mcp`, token: config.adminToken, workDir });
+  const voice = new VoiceManager(repo, { mcpUrl: () => `http://127.0.0.1:${port}/mcp`, token: config.adminToken, workDir });
 
   const server = createServer({
     config,
@@ -63,6 +65,7 @@ export async function startHub(opts: HubOptions = {}): Promise<HubHandle> {
     store,
     repo,
     jobs,
+    voice,
     version,
     webRoot: opts.webRoot ?? null,
     stdioProxy: opts.stdioProxy ?? null,
@@ -137,6 +140,7 @@ export async function startHub(opts: HubOptions = {}): Promise<HubHandle> {
     stop: () =>
       new Promise<void>((resolve) => {
         clearInterval(backupTimer);
+        void voice.shutdown();
         server.closeAllConnections?.();
         server.close(() => {
           store.compact();

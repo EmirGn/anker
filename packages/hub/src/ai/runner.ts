@@ -48,7 +48,7 @@ export interface AgentRun {
 
 const TOOL_OUTPUT_MAX = 4000;
 
-function toolOutputText(content: unknown): string {
+export function toolOutputText(content: unknown): string {
   if (typeof content === 'string') return content.slice(0, TOOL_OUTPUT_MAX);
   if (Array.isArray(content)) {
     return content

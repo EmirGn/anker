@@ -16,6 +16,7 @@ import { resetSyncState, syncNow } from '../lib/sync';
 import { getThemePref, setThemePref, type ThemePref } from '../lib/theme';
 import { germanVoices, preferredVoice, setPreferredVoice, setSpeechRate, speak, speechRate, ttsAvailable } from '../lib/tts';
 import { lang, LOCALE, setLang, tr, type Lang } from '../lib/i18n';
+import { VOICES } from '../lib/voice';
 
 const LANGS: { value: Lang; label: string }[] = [
   { value: 'en', label: 'English' },
@@ -204,6 +205,15 @@ function ProviderCard({ p, prefs, admin, onLogin }: { p: ProviderStatus; prefs: 
               </option>
             ))}
           </Select>
+          {p.id === 'codex' && (
+            <Select value={prefs.voice ?? VOICES[0]} onChange={(e) => void savePrefs({ voice: e.target.value })} aria-label={tr('Ottos Stimme im Sprachchat')} className="h-9 w-48 text-[13px]">
+              {VOICES.map((v) => (
+                <option key={v} value={v}>
+                  {tr('Ottos Stimme: {0}', v[0]!.toUpperCase() + v.slice(1))}
+                </option>
+              ))}
+            </Select>
+          )}
           {!isDefault && (
             <Button size="sm" variant="ghost" onClick={() => void savePrefs({ defaultProvider: p.id })}>{tr('Als Standard')}</Button>
           )}

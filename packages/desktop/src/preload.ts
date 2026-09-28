@@ -21,4 +21,5 @@ contextBridge.exposeInMainWorld('ankerDesktop', {
   setOpenAtLogin: (open: boolean) => ipcRenderer.invoke('anker:login-item', open),
   setShortcut: (accelerator: string) => ipcRenderer.invoke('anker:shortcut', accelerator),
   setLanguage: (lang: string) => ipcRenderer.invoke('anker:lang', lang),
+  askMicrophone: () => ipcRenderer.invoke('anker:mic'),
 });
