@@ -18,6 +18,8 @@
     "build": "npm run build -w @anker/app && npm run build -w @anker/hub && npm run build -w @anker/desktop",
     "build:mac": "npm run build && npm run dist -w @anker/desktop",
     "build:android": "npm run build -w @anker/app && cd packages/app && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "build:ios": "bash scripts/build-ios.sh",
+    "ios": "npm run build -w @anker/app && npm run ios:open -w @anker/app",
     "hub": "npm run build -w @anker/app && npm run build -w @anker/hub && node packages/hub/dist/cli.cjs",
     "icons": "node scripts/icons.mjs"
   },

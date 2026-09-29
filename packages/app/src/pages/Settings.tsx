@@ -1,5 +1,5 @@
 import type { AIProvider, Prefs } from '@anker/core';
-import { CheckCircle2, Code2, Copy, ExternalLink, Laptop, Loader2, LogIn, Monitor, Moon, Plug, RefreshCw, Smartphone, Sun, Trash2, Volume2, XCircle } from '../components/icons';
+import { CheckCircle2, Code2, Copy, ExternalLink, Laptop, Loader2, LogIn, Monitor, Moon, Plug, RefreshCw, Smartphone, Sun, Tablet, Trash2, Volume2, XCircle } from '../components/icons';
 import QRCode from 'qrcode';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Chip, cx, Input, Label, Modal, PageHeader, Panel, Section, Segmented, Select, Spinner, Textarea, toast, Toggle, useConfirm } from '../components/ui';
@@ -9,7 +9,7 @@ import { uhrzeit } from '../lib/format';
 import { desktop } from '../lib/desktop';
 import { useIsAdmin, usePrefs, useHub, useSyncState, useTheme } from '../lib/hooks';
 import { hubFetch, setHub } from '../lib/hub';
-import { isDesktop, isNative, openExternal, scheduleDailyReminder } from '../lib/platform';
+import { isDesktop, isIOS, isIPad, isNative, openExternal, scheduleDailyReminder } from '../lib/platform';
 import { savePrefs } from '../lib/repo';
 import { navigate } from '../lib/router';
 import { resetSyncState, syncNow } from '../lib/sync';
@@ -72,7 +72,7 @@ function StudyPrefs({ prefs }: { prefs: Prefs }) {
           ))}
         </Select>
       </Row>
-      <Row title={tr('Tägliche Erinnerung')} desc={isNative || isDesktop ? tr('Eine sanfte Mitteilung, wenn Karten fällig sind.') : tr('In der Mac- und Android-App verfügbar.')}>
+      <Row title={tr('Tägliche Erinnerung')} desc={isNative || isDesktop ? tr('Eine sanfte Mitteilung, wenn Karten fällig sind.') : tr('In den Apps für Mac, iPad, iPhone und Android verfügbar.')}>
         <Toggle
           checked={!!prefs.reminderTime}
           disabled={!isNative && !isDesktop}
@@ -705,8 +705,11 @@ export function Settings() {
             <Button size="sm" variant="ghost" icon={<Code2 className="size-4" />} onClick={() => openExternal(REPO_URL)}>{tr('GitHub')}{' '}<ExternalLink className="size-3.5" />
             </Button>
           </Row>
-          <Row title={tr('Plattform')} desc={isDesktop ? tr('Mac-App (Hub)') : isNative ? tr('Android-App') : tr('Web')}>
-            {isDesktop ? <Laptop className="size-5 text-ink-muted" /> : <Smartphone className="size-5 text-ink-muted" />}
+          <Row
+            title={tr('Plattform')}
+            desc={isDesktop ? tr('Mac-App (Hub)') : isIPad ? tr('iPad-App') : isIOS ? tr('iPhone-App') : isNative ? tr('Android-App') : tr('Web')}
+          >
+            {isDesktop ? <Laptop className="size-5 text-ink-muted" /> : isIPad ? <Tablet className="size-5 text-ink-muted" /> : <Smartphone className="size-5 text-ink-muted" />}
           </Row>
         </Panel>
       </Section>

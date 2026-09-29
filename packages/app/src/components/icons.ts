@@ -29,6 +29,7 @@ export {
   CoffeeIcon as Coffee,
   CopyIcon as Copy,
   DeviceMobileIcon as Smartphone,
+  DeviceTabletIcon as Tablet,
   DotsThreeIcon as MoreHorizontal,
   DownloadSimpleIcon as Download,
   EyeIcon as Eye,

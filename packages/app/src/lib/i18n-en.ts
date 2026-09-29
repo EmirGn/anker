@@ -588,7 +588,7 @@ export const EN: Record<string, string> = {
   'Späte Wiederholungen zählen noch zum Vortag.': 'Late-night reviews still count for the previous day.',
   'Tägliche Erinnerung': 'Daily reminder',
   'Eine sanfte Mitteilung, wenn Karten fällig sind.': 'A gentle notification when cards are due.',
-  'In der Mac- und Android-App verfügbar.': 'Available in the Mac and Android apps.',
+  'In den Apps für Mac, iPad, iPhone und Android verfügbar.': 'Available in the Mac, iPad, iPhone and Android apps.',
   'Anker darf keine Mitteilungen senden.': 'Notifications are not allowed for Anker.',
   'Sprachausgabe ist auf diesem Gerät nicht verfügbar.': "Text-to-speech isn't available on this device.",
   'Deutsche Stimme': 'German voice',
@@ -686,6 +686,8 @@ export const EN: Record<string, string> = {
   Plattform: 'Platform',
   'Mac-App (Hub)': 'Mac app (hub)',
   'Android-App': 'Android app',
+  'iPad-App': 'iPad app',
+  'iPhone-App': 'iPhone app',
 
   // Welcome
   Anfänger: 'Beginner',
@@ -718,7 +720,7 @@ export const EN: Record<string, string> = {
   'Sprachchat mit Otto': 'Voice chat with Otto',
   'Mit Otto sprechen': 'Talk with Otto',
   'Sprachchat läuft über Codex. Melde Codex unter Einstellungen → KI-Tutor an.': 'Voice chat runs on Codex. Sign in to Codex under Settings → AI tutor.',
-  'Hier gibt es kein Mikrofon. Nutze die Anker-App auf dem Mac oder auf Android.': 'The microphone isn\'t available here. Use the Anker app on your Mac or Android.',
+  'Hier gibt es kein Mikrofon. Nutze die Anker-App auf dem Mac, iPad, iPhone oder Android.': 'The microphone isn\'t available here. Use the Anker app on your Mac, iPad, iPhone or Android.',
   'Anker darf das Mikrofon nicht benutzen. Erlaube es unter Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon.': 'Anker isn\'t allowed to use the microphone. Allow it in System Settings → Privacy & Security → Microphone.',
   'Kein Zugriff aufs Mikrofon. Erlaube es in den Einstellungen deines Geräts.': 'No access to the microphone. Allow it in your device\'s settings.',
   'Kein Mikrofon gefunden.': 'No microphone found.',

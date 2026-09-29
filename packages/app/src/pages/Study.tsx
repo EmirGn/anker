@@ -32,7 +32,7 @@ import { db } from '../lib/db';
 import { anzahl, dauer, intervall } from '../lib/format';
 import { diffAnswer, judgeAnswer, type DiffSeg, type Verdict } from '../lib/diff';
 import { useHotkeys, useHub, useIsWide } from '../lib/hooks';
-import { haptic, isNative } from '../lib/platform';
+import { haptic, isPhoneApp } from '../lib/platform';
 import { buryCards, deleteNotes, getPrefs, recordAnswer, setCardsSuspended, undoAnswer } from '../lib/repo';
 import { navigate, useRoute } from '../lib/router';
 import { speak, stopSpeaking } from '../lib/tts';
@@ -642,7 +642,7 @@ export function Study({ deckId }: { deckId: string | null }) {
                 lang="de"
                 className="h-14 w-full rounded-md border border-transparent bg-paper-sunk px-4 font-display text-[20px] font-semibold outline-none placeholder:font-sans placeholder:text-[17px] placeholder:font-normal placeholder:text-ink-muted field-focus"
               />
-              {!isNative && <UmlautBar className="mt-2" onInsert={(ch) => insertAtCaret(inputRef.current, ch, setTyped)} />}
+              {!isPhoneApp && <UmlautBar className="mt-2" onInsert={(ch) => insertAtCaret(inputRef.current, ch, setTyped)} />}
             </form>
           )}
           {diff && (
