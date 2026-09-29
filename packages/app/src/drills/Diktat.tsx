@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { UmlautBar, insertAtCaret } from '../components/UmlautBar';
 import { Button, cx } from '../components/ui';
 import { diffAnswer, judgeAnswer } from '../lib/diff';
-import { haptic, isNative } from '../lib/platform';
+import { haptic, isPhoneApp } from '../lib/platform';
 import { speak } from '../lib/tts';
 import { GameShell, Results, saveBest, sentencePool, shuffle, StartScreen, useBest } from './shared';
 import { tr } from '../lib/i18n';
@@ -113,7 +113,7 @@ export function Diktat() {
               !verdict ? 'border-line field-focus' : verdict === 'exact' ? 'border-wiese' : verdict === 'close' ? 'border-sonne-ink' : 'border-koralle-ink',
             )}
           />
-          {!isNative && !verdict && <UmlautBar className="mt-2" onInsert={(ch) => insertAtCaret(ref.current, ch, setText)} />}
+          {!isPhoneApp && !verdict && <UmlautBar className="mt-2" onInsert={(ch) => insertAtCaret(ref.current, ch, setText)} />}
           {diff && (
             <div className="anim-in mt-4 space-y-2 rounded-md bg-paper-raised px-4 py-3">
               <div className="font-mono text-[15px] leading-relaxed">

@@ -76,7 +76,7 @@ export function StreakBadge({ days }: { days: number }) {
 function Sidebar({ due, streak }: { due: number; streak: number }) {
   const { path } = useRoute();
   return (
-    <aside className={cx('thin-scroll flex w-[240px] shrink-0 flex-col overflow-y-auto border-r border-line bg-paper px-3 pb-4', isDesktop ? 'pt-11' : 'pt-6')}>
+    <aside className={cx('thin-scroll flex w-[240px] shrink-0 flex-col overflow-y-auto border-r border-line bg-paper px-3 pb-[calc(var(--safe-bottom)+1rem)]', isDesktop ? 'pt-11' : 'pt-[calc(var(--safe-top)+1.5rem)]')}>
       {isDesktop && <div className="drag fixed top-0 left-0 h-10 w-[240px]" />}
       <Link to="/" className="no-drag mb-7 flex items-center px-2">
         <Wordmark size={34} />
@@ -168,17 +168,20 @@ export function Layout({ children, due, streak }: { children: ReactNode; due: nu
   const wide = useIsWide();
   const { path } = useRoute();
   const immersive = path.startsWith('/study') || path.startsWith('/practice/') || path === '/quick-add' || path === '/connect' || path === '/welcome';
+  // Immersive pages clear the status bar themselves (their sticky headers need it).
+  const safeTop = !immersive && 'pt-safe';
   if (wide) {
     return (
       <div className="flex h-full" lang={lang}>
         {!immersive && <Sidebar due={due} streak={streak} />}
-        <main className="thin-scroll relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
+        {/* Safe areas are zero on the Mac; on the iPad they clear the status bar and home indicator. */}
+        <main className={cx('thin-scroll pb-safe relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto', safeTop)}>{children}</main>
       </div>
     );
   }
   return (
     <div className="flex h-full flex-col" lang={lang}>
-      <main className="thin-scroll pt-safe relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
+      <main className={cx('thin-scroll relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto', safeTop)}>{children}</main>
       {!immersive && <BottomNav due={due} />}
     </div>
   );

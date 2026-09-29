@@ -1,4 +1,4 @@
-// Android integration: back button, deep links (anker://pair?...), status bar.
+// Mobile integration: Android back button, deep links (anker://pair?...) on Android and iOS, keyboard.
 import { desktop } from './desktop';
 import { isNative } from './platform';
 import { navigate } from './router';

@@ -26,7 +26,7 @@ import { relativ } from '../lib/format';
 import { runTask } from '../lib/ai';
 import { db } from '../lib/db';
 import { useDecks, useHotkeys, useHub, useIsWide, useLiveQuery } from '../lib/hooks';
-import { isNative, modKey } from '../lib/platform';
+import { isNative, isPhoneApp, modKey } from '../lib/platform';
 import { addNote, createDeckPath, deleteNotes, forgetNotes, suspendNotes, updateNote } from '../lib/repo';
 import { goBack, navigate, useRoute } from '../lib/router';
 import { lang, tr } from '../lib/i18n';
@@ -388,7 +388,7 @@ export function NoteEditor({ noteId, embedded, onSaved, defaults }: NoteEditorPr
           <TagInput value={tags} onChange={setTags} placeholder={tr('A2, küche, verb-trennbar…')} />
         </div>
 
-        {!isNative && (
+        {!isPhoneApp && (
           <UmlautBar
             className="mt-4"
             onInsert={(ch) => {

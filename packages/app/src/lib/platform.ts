@@ -4,8 +4,14 @@ import { tr } from './i18n';
 
 export const isNative = Capacitor.isNativePlatform();
 export const isAndroid = Capacitor.getPlatform() === 'android';
+export const isIOS = Capacitor.getPlatform() === 'ios';
+// iPadOS web views report a Mac user agent; a touch screen gives them away.
+export const isIPad =
+  isIOS && typeof navigator !== 'undefined' && (/iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
+/** Phone apps leave umlauts to the on-screen keyboard; the iPad often has a hardware one. */
+export const isPhoneApp = isNative && !isIPad;
 export const isDesktop = !!desktop;
-export const platformName: 'mac' | 'android' | 'web' = isDesktop ? 'mac' : isAndroid ? 'android' : 'web';
+export const platformName: 'mac' | 'android' | 'ios' | 'web' = isDesktop ? 'mac' : isAndroid ? 'android' : isIOS ? 'ios' : 'web';
 export const isMacLike = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 export const modKey = isMacLike ? '⌘' : 'Ctrl';
 
@@ -70,6 +76,9 @@ export function deviceName(): string {
     const m = navigator.userAgent.match(/Android[^;]*;\s*([^;)]+?)(?:\s+Build|\))/);
     return m?.[1]?.trim() ? `${m[1].trim()} (Android)` : 'Android phone';
   }
-  if (/iPhone|iPad/.test(navigator.userAgent)) return 'iPhone';
+  if (isIPad) return 'iPad';
+  if (isIOS) return 'iPhone';
+  if (/iPad/.test(navigator.userAgent)) return 'iPad browser';
+  if (/iPhone/.test(navigator.userAgent)) return 'iPhone browser';
   return `${isMacLike ? 'Mac' : 'Computer'} browser`;
 }

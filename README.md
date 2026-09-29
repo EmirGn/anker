@@ -5,13 +5,13 @@
 <h1 align="center">Anker</h1>
 
 <p align="center">
-  <b>Spaced-repetition flashcards built for learning German — on your Mac and Android phone.</b><br>
+  <b>Spaced-repetition flashcards built for learning German — on your Mac, iPad and Android phone.</b><br>
   FSRS scheduling like modern Anki, a German-aware card design, practice games,<br>
   and an AI tutor that runs on <b>your own Claude and ChatGPT subscriptions</b> and edits your decks over <b>MCP</b>.
 </p>
 
 <p align="center">
-  <a href="../../releases/latest">Download for Mac (Apple Silicon) · Android</a>
+  <a href="../../releases/latest">Download for Mac (Apple Silicon) · iPad · Android</a>
 </p>
 
 <p align="center">
@@ -37,7 +37,7 @@
 **Made for German**
 - Nouns are colour-coded by gender everywhere: **der** blue, **die** red, **das** green, plural in grey — and the colour only appears after you answer on EN→DE cards, so it never gives the answer away.
 - Word cards show the plural, **Stammformen** (*fährt · fuhr · ist gefahren*), comparative forms and an example sentence with translation.
-- **Pronunciation**: every German word and sentence can be read aloud (macOS voices on the Mac, the Android TTS engine on the phone), automatically if you like.
+- **Pronunciation**: every German word and sentence can be read aloud (macOS voices on the Mac, iOS voices on the iPad, the Android TTS engine on the phone), automatically if you like.
 - Type **"der Tisch"** in the editor and the article is split off into the gender field; get a gender guess from the ending (*-ung → die*); one-tap **AI auto-fill** of gender, plural, forms and an example.
 - **394 hand-made starter notes**: *Grundwortschatz A1–A2* (236), *Starke Verben* (62), *Fälle, Präpositionen & Satzbau* cloze drills (44) and *Redemittel* incl. idioms (52).
 - A **grammar reference** with declension tables, prepositions by case, gender rules (with a live "guess the gender" box), adjective endings, pronouns, numbers & time converters and word order — each with a "Practice" and "Ask the tutor" button.
@@ -74,7 +74,7 @@ Anker doesn't use API keys. It drives the **official command-line tools** on you
 
 Every agent run gets Anker's MCP server attached and **nothing else**: Claude runs with built-in tools disabled (`--tools ""`), Codex with a read-only sandbox, both isolated from your personal CLI config. They can manage your decks but can't touch your files or shell.
 
-The phone uses Otto through your Mac (see *Sync*), so your subscriptions stay on your computer.
+The phone and iPad use Otto through your Mac (see *Sync*), so your subscriptions stay on your computer.
 
 Voice chat runs through Codex's experimental realtime API (`codex app-server`, realtime v3 over WebRTC). Your Mac only sets up the call with your Codex login; the audio then streams directly between your phone or Mac and OpenAI. The Codex agent behind Otto has Anker's MCP tools and nothing else: your own MCP servers, plugins and apps are switched off for these sessions.
 
@@ -97,13 +97,13 @@ That command is a tiny stdio proxy bundled with the app: it finds the running An
 > *"Add the 20 most common separable verbs to Anker under Deutsch::Verben, with examples."*
 > *"Look at my Anker stats and tell me which grammar topics I keep failing."*
 
-## Sync between Mac and phone
+## Sync between Mac, phone and iPad
 
 The Mac app is the **hub**: it keeps the master copy, runs the sync server, the MCP server and the AI bridge. Every device keeps a full local copy and works **offline**; changes sync in both directions (last writer wins per record, review logs are append-only).
 
 1. On the Mac: *Settings → Sync & devices → Pair a phone* shows a QR code and a 6-digit code.
-2. Scan it with the phone's camera and tap *Open in the Anker app* — or type the address and code under *Connect to your Mac*.
-3. Same Wi-Fi at home. Away from home, install [Tailscale](https://tailscale.com) on both devices and pair using the `100.x` address — the phone tries every known address automatically.
+2. Scan it with the phone's or iPad's camera and tap *Open in the Anker app* — or type the address and code under *Connect to your Mac*.
+3. Same Wi-Fi at home. Away from home, install [Tailscale](https://tailscale.com) on both devices and pair using the `100.x` address — the phone or iPad tries every known address automatically.
 
 Each paired device gets its own revocable token (only a hash is stored). The Mac keeps daily backups in `~/Library/Application Support/Anker/collection/backups`.
 
@@ -112,6 +112,8 @@ Each paired device gets its own revocable token (only a hash is stored). The Mac
 **Mac** (Apple Silicon): download the `.dmg` from [Releases](../../releases/latest) and drag Anker to *Applications*. The build is not notarized, so the first time right-click → *Open* (or run `xattr -cr /Applications/Anker.app`). Turn on *Settings → Mac app → Open at login* to keep sync and MCP available.
 
 **Android**: download the `.apk` from [Releases](../../releases/latest) on your phone, allow installing from your browser, and open it. Choose starter decks or connect to your Mac.
+
+**iPad** (also runs on iPhone): the `.ipa` on [Releases](../../releases/latest) is unsigned, so install it with [AltStore](https://altstore.io) or [Sideloadly](https://sideloadly.io), which sign it with your Apple ID (with a free Apple ID the app has to be refreshed every 7 days; AltStore does that for you). Or build it straight onto your iPad from Xcode: `npm run ios`, pick your team under *Signing & Capabilities*, and press Run. On first launch allow *Local Network* access so Anker can find your Mac. On the iPad you get the sidebar layout in landscape, the tab bar in portrait and Split View, and an umlaut bar for hardware keyboards.
 
 **AI (optional)**: install [Claude Code](https://docs.claude.com/en/docs/claude-code) and/or [Codex CLI](https://github.com/openai/codex) on the Mac, then sign in from *Settings → AI tutor*.
 
@@ -126,6 +128,8 @@ npm test             # FSRS/queue/German helpers/content tests
 npm run typecheck
 npm run build:mac    # → packages/desktop/release/Anker-<version>-arm64.dmg
 npm run build:android  # needs JDK 21 + Android SDK → packages/app/android/app/build/outputs/apk/release/
+npm run ios            # opens the iPad/iPhone app in Xcode (macOS + Xcode 16)
+npm run build:ios      # unsigned .ipa → packages/app/ios/App/output/
 ```
 
 ```
@@ -135,12 +139,12 @@ packages/
   hub/      Node server: append-only record store, sync API, MCP server (stdio + HTTP),
             Claude/Codex bridge, device pairing — runs inside the Mac app or standalone
   app/      React 19 + Tailwind 4 UI (IndexedDB via Dexie, offline-first sync engine);
-            also the Capacitor 8 Android app (packages/app/android)
+            also the Capacitor 8 Android and iPad/iPhone apps (packages/app/android, packages/app/ios)
   desktop/  Electron shell: embedded hub, menu-bar item, dock badge, quick-add window,
             reminders, packaging
 ```
 
-Release builds for macOS and Android run in GitHub Actions for every `v*` tag. Android release signing uses the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD` repository secrets; without them CI signs with a debug key.
+Release builds for macOS, iPad/iPhone and Android run in GitHub Actions for every `v*` tag. Android release signing uses the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD` repository secrets; without them CI signs with a debug key.
 
 ## License
 

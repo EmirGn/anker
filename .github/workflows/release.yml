@@ -75,8 +75,27 @@ jobs:
           path: ${{ runner.temp }}/apk/*.apk
           if-no-files-found: error
 
+  ios:
+    runs-on: macos-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Unsigned: AltStore / Sideloadly sign it with the installer's Apple ID.
+      - run: scripts/build-ios.sh "$RUNNER_TEMP/ipa"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: ${{ runner.temp }}/ipa/*.ipa
+          if-no-files-found: error
+
   publish:
-    needs: [mac, android]
+    needs: [mac, android, ios]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:

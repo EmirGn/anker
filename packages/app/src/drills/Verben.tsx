@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { UmlautBar, insertAtCaret } from '../components/UmlautBar';
 import { Button, cx } from '../components/ui';
 import { judgeAnswer } from '../lib/diff';
-import { haptic, isNative } from '../lib/platform';
+import { haptic, isPhoneApp } from '../lib/platform';
 import { speak } from '../lib/tts';
 import { GameShell, missedItems, recordItem, Results, saveBest, shuffle, StartScreen, useBest, verbPool } from './shared';
 import { tr } from '../lib/i18n';
@@ -140,7 +140,7 @@ export function Verben() {
               {result && !result[i] && <div className="anim-in mt-1 text-[15px] font-semibold text-wiese">{expected[i]}</div>}
             </div>
           ))}
-          {!isNative && !result && (
+          {!isPhoneApp && !result && (
             <UmlautBar
               onInsert={(ch) => {
                 const i = focused.current;

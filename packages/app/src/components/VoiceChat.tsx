@@ -302,7 +302,7 @@ export function useVoiceLauncher(chatId?: string) {
   const open = (activity?: OttoActivity) => {
     const codex = providers?.find((p) => p.id === 'codex');
     if (providers && !(codex?.installed && codex.loggedIn)) return void toast.error(tr('Sprachchat läuft über Codex. Melde Codex unter Einstellungen → Otto an.'));
-    if (!voiceSupported()) return void toast.error(tr('Hier gibt es kein Mikrofon. Nutze die Anker-App auf dem Mac oder auf Android.'));
+    if (!voiceSupported()) return void toast.error(tr('Hier gibt es kein Mikrofon. Nutze die Anker-App auf dem Mac, iPad, iPhone oder Android.'));
     setCall({ activity });
   };
   const element = call ? (
