@@ -1,10 +1,11 @@
-import { BarChart3, BookOpen, ChevronRight, Import, Search, Settings, Zap } from '../components/icons';
+import { BarChart3, BookOpen, ChevronRight, GraduationCap, Import, Search, Settings, Zap } from '../components/icons';
 import { SyncPill } from '../components/Layout';
 import { PageHeader, Panel } from '../components/ui';
 import { Link } from '../lib/router';
 import { tr } from '../lib/i18n';
 
 const ITEMS = [
+  { to: '/plan', label: tr('Lernplan'), desc: tr('Dein Weg zur Prüfung, Tag für Tag'), icon: GraduationCap },
   { to: '/browse', label: tr('Karten suchen'), desc: tr('Alle Karten finden und bearbeiten'), icon: Search },
   { to: '/practice', label: tr('Üben'), desc: tr('Artikel-Blitz, Zahlen, Uhrzeit, Fälle …'), icon: Zap },
   { to: '/stats', label: tr('Statistik'), desc: tr('Kalender, Trefferquote, Prognose'), icon: BarChart3 },

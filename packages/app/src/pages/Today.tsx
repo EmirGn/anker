@@ -9,10 +9,11 @@ import { StreakBadge } from '../components/Layout';
 import { Wordmark } from '../components/Logo';
 import { OttoBadge } from '../components/Otto';
 import { OttoHome } from '../components/OttoHome';
+import { PlanCard } from '../components/PlanCard';
 import { Button, cx, Modal, Panel } from '../components/ui';
 import { db } from '../lib/db';
 import { anzahl, dauer } from '../lib/format';
-import { useDeckCounts, useDecks, useLiveQuery, usePrefs, useTodayLogs } from '../lib/hooks';
+import { useDeckCounts, useDecks, useLiveQuery, usePlan, usePlanClock, usePrefs, useTodayLogs } from '../lib/hooks';
 import { Link, navigate } from '../lib/router';
 import { renderField } from '../lib/sanitize';
 import { LOCALE, tr } from '../lib/i18n';
@@ -132,6 +133,8 @@ export function Today({ due }: { due: number }) {
   const counts = useDeckCounts();
   const todayLogs = useTodayLogs();
   const [missionOpen, setMissionOpen] = useState(false);
+  const plan = usePlan();
+  const planClock = usePlanClock(plan, due);
   const now = Date.now();
   const since = now - 371 * DAY;
   const yearLogs = useLiveQuery(() => db.revlog.where('review').above(since).toArray(), [Math.floor(since / DAY)]);
@@ -281,6 +284,12 @@ export function Today({ due }: { due: number }) {
                 <span className="font-bold text-hafen">{totals.new}</span>{' '}{tr('neu ·')}{' '}<span className="font-bold text-koralle-ink">{totals.learn}</span>{' '}{tr('in Arbeit ·')}{' '}
                 <span className="font-bold text-wiese">{totals.review}</span>{' '}{tr('fällig')}</p>
             </div>
+          )}
+
+          {plan && (
+            <section className="mt-8">
+              <PlanCard plan={plan} today={planClock.today} auto={planClock.auto} />
+            </section>
           )}
         </>
       )}

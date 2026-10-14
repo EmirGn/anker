@@ -18,6 +18,7 @@ import { Settings } from './pages/Settings';
 import { Study } from './pages/Study';
 import { Today } from './pages/Today';
 import { OttoPage } from './pages/Otto';
+import { PlanPage } from './pages/Plan';
 import { Welcome } from './pages/Welcome';
 
 const Stats = lazy(() => import('./pages/Stats').then((m) => ({ default: m.Stats })));
@@ -80,6 +81,7 @@ export function App() {
   else if ((m = match('/practice/:game', path))) page = <Drill game={m.game!} />;
   else if (path === '/otto' || path === '/tutor') page = <OttoPage chatId={null} due={due} />;
   else if ((m = match('/otto/:id', path) ?? match('/tutor/:id', path))) page = <OttoPage chatId={m.id!} due={due} />;
+  else if (path === '/plan') page = <PlanPage due={due} />;
   else if (path === '/stats') page = <Stats />;
   else if (path === '/grammar') page = <Grammar topic={null} />;
   else if ((m = match('/grammar/:topic', path))) page = <Grammar topic={m.topic!} />;

@@ -1,12 +1,17 @@
 import {
+  activePlan,
   allDeckCounts,
   buildDeckTree,
+  cardsAutoDone,
+  dayKey,
   dayStartMs,
   DEFAULT_PREFS,
+  reviewsByDay,
   withPrefDefaults,
   type Deck,
   type DeckCounts,
   type Prefs,
+  type StudyPlan,
 } from '@anker/core';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -63,6 +68,28 @@ export function useDeckCounts(): Map<string, DeckCounts> | undefined {
     ]);
     return allDeckCounts({ decks, cards, todayLogs: logs, now: Date.now(), rolloverHour: prefs.rolloverHour });
   }, [prefs.rolloverHour, start, minute]);
+}
+
+/** The active study plan; null when there is none, undefined while loading. */
+export function usePlan(): StudyPlan | null | undefined {
+  return useLiveQuery(async () => activePlan(await db.plans.toArray()) ?? null, []);
+}
+
+/** Today's study-day key and the rule that ticks a plan's 'cards' tasks. */
+export function usePlanClock(plan: StudyPlan | null | undefined, due: number) {
+  const prefs = usePrefs();
+  const start = useDayStart();
+  const first = plan?.days[0]?.date;
+  const from = useMemo(() => {
+    if (!first) return 0;
+    const [y, m, d] = first.split('-').map(Number) as [number, number, number];
+    return new Date(y, m - 1, d, prefs.rolloverHour).getTime();
+  }, [first, prefs.rolloverHour]);
+  const logs = useLiveQuery(() => (from ? db.revlog.where('review').aboveOrEqual(from).toArray() : []), [from, start]);
+  return useMemo(() => {
+    const today = dayKey(start + 3_600_000, prefs.rolloverHour);
+    return { today, auto: cardsAutoDone(reviewsByDay(logs ?? [], prefs.rolloverHour), prefs.dailyGoal, today, due === 0) };
+  }, [logs, prefs.rolloverHour, prefs.dailyGoal, start, due]);
 }
 
 export function useSyncState() {
