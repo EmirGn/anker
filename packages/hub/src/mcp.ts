@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { NOTE_TYPES, isNoteType, type NoteInput, type NoteType } from '@anker/core';
+import { NOTE_TYPES, PLAN_TASK_KINDS, isNoteType, type NoteInput, type NoteType, type PlanInput, type PlanTaskKind } from '@anker/core';
 import { z } from 'zod';
 import type { Repo } from './repo';
 
@@ -21,6 +21,9 @@ German conventions for word notes:
 - forms: verbs → "3rd person present · Präteritum · Perfekt", e.g. "fährt · fuhr · ist gefahren"; adjectives → "größer · am größten"; prepositions → "+ Dativ".
 - example: one natural sentence at the learner's level (see get_overview → learner.level), exampleTranslation in the learner's native language.
 - english: short meaning(s) in the learner's native language (field name is historical).
+
+Study plan: the learner may have one active dated plan (e.g. towards an exam) with daily tasks. Read it with get_study_plan,
+write or rewrite it with set_study_plan, and tick tasks with tick_plan_task when the learner says they did one.
 
 Good practice: call get_overview first; use lookup_words or find_notes to avoid duplicates (add_words skips duplicates automatically);
 batch many words in one add_words call; keep examples short; use tags like "A2", "thema-küche", "verb-trennbar".
@@ -175,9 +178,13 @@ export function createMcpServer(repo: Repo, version: string): McpServer {
         words: z.array(wordShape).min(1).max(200),
         tags: z.array(z.string()).optional().describe('Tags added to every word'),
         allow_duplicates: z.boolean().optional(),
+        recognition_only: z
+          .boolean()
+          .optional()
+          .describe('Only the DE→EN card is studied; the EN→DE card is created suspended (unsuspend it later to practise production)'),
       },
     },
-    guard((a: { deck: string; words: z.infer<typeof wordShape>[]; tags?: string[]; allow_duplicates?: boolean }) => {
+    guard((a: { deck: string; words: z.infer<typeof wordShape>[]; tags?: string[]; allow_duplicates?: boolean; recognition_only?: boolean }) => {
       const deck = repo.resolveDeck(a.deck, { create: true });
       const inputs: NoteInput[] = a.words.map(({ tags, ...fields }) => ({
         deckId: deck.id,
@@ -186,7 +193,7 @@ export function createMcpServer(repo: Repo, version: string): McpServer {
         tags: [...(a.tags ?? []), ...(tags ?? [])],
         source: 'ai',
       }));
-      const r = repo.addNotes(inputs, { allowDuplicates: a.allow_duplicates });
+      const r = repo.addNotes(inputs, { allowDuplicates: a.allow_duplicates, recognitionOnly: a.recognition_only });
       return {
         deck: repo.pathOf(deck.id),
         added: r.created.length,
@@ -416,6 +423,76 @@ Empty query returns everything (newest first).`,
       annotations: { readOnlyHint: true },
     },
     guard((a: { days: number }) => repo.stats(a.days)),
+  );
+
+  const taskShape = z.object({
+    id: z.string().optional().describe('Stable id within the day, e.g. "cards", "grammar". Keep ids when rewriting a plan so ticks carry over.'),
+    kind: z.enum(PLAN_TASK_KINDS as [PlanTaskKind, ...PlanTaskKind[]]).describe("'cards' ticks itself once the day's reviews are done"),
+    title: z.string().describe('Short task, e.g. "Perfekt with haben"'),
+    detail: z.string().optional().describe('How to do it; light markdown'),
+    link: z.string().optional().describe('In-app route to open, e.g. "/study", "/grammar", "/practice/kasus", "/otto"'),
+  });
+
+  server.registerTool(
+    'get_study_plan',
+    {
+      title: 'Get study plan',
+      description: "The learner's active study plan: goal and date, phases, every day's tasks with done flags and progress. Null if there is none.",
+      inputSchema: {},
+      annotations: { readOnlyHint: true },
+    },
+    guard(() => repo.planDetails() ?? 'There is no active study plan.'),
+  );
+
+  server.registerTool(
+    'set_study_plan',
+    {
+      title: 'Create or replace study plan',
+      description:
+        'Write the active study plan. Replaces the current one; ticks on tasks with the same date and id are kept. Days are YYYY-MM-DD in local time. Write task text in the language the learner asked for.',
+      inputSchema: {
+        title: z.string(),
+        goal: z.string().optional().describe('e.g. "Goethe-Zertifikat A2"'),
+        goal_date: z.string().optional().describe('YYYY-MM-DD'),
+        facts: z.array(z.object({ value: z.string(), label: z.string() })).max(6).optional().describe('Headline numbers, e.g. {value: "60 / 100", label: "points to pass"}'),
+        phases: z.array(z.object({ name: z.string(), summary: z.string().optional(), from: z.string(), to: z.string() })).optional(),
+        days: z
+          .array(
+            z.object({
+              date: z.string(),
+              focus: z.string().optional(),
+              type: z.enum(['study', 'light', 'test', 'exam']).optional(),
+              tasks: z.array(taskShape).max(12),
+            }),
+          )
+          .min(1)
+          .max(400),
+        sections: z.array(z.object({ title: z.string(), body: z.string().describe('Light markdown: **bold**, lists with "- "') })).max(12).optional(),
+      },
+    },
+    guard((a: { title: string; goal?: string; goal_date?: string; facts?: PlanInput['facts']; phases?: PlanInput['phases']; days: PlanInput['days']; sections?: PlanInput['sections'] }) =>
+      repo.setPlan({ title: a.title, goal: a.goal, goalDate: a.goal_date, facts: a.facts, phases: a.phases, days: a.days, sections: a.sections }),
+    ),
+  );
+
+  server.registerTool(
+    'tick_plan_task',
+    {
+      title: 'Tick plan task',
+      description: 'Mark a task of the active study plan as done (or not done).',
+      inputSchema: { date: z.string().describe('YYYY-MM-DD'), task_id: z.string(), done: z.boolean().default(true) },
+    },
+    guard((a: { date: string; task_id: string; done: boolean }) => repo.tickPlanTask(a.date, a.task_id, a.done)),
+  );
+
+  server.registerTool(
+    'archive_study_plan',
+    {
+      title: 'Archive study plan',
+      description: 'Stop showing the active study plan (it is kept, not deleted). Only when the learner asks.',
+      inputSchema: {},
+    },
+    guard(() => repo.removePlan()),
   );
 
   return server;

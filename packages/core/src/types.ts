@@ -1,8 +1,8 @@
 // Shared data model for Anker. Every synced record carries `id` + `updatedAt`
 // and is replicated between devices with last-writer-wins semantics.
 
-export type TableName = 'decks' | 'notes' | 'cards' | 'revlog' | 'chats' | 'prefs';
-export const SYNC_TABLES: readonly TableName[] = ['decks', 'notes', 'cards', 'revlog', 'chats', 'prefs'];
+export type TableName = 'decks' | 'notes' | 'cards' | 'revlog' | 'chats' | 'prefs' | 'plans';
+export const SYNC_TABLES: readonly TableName[] = ['decks', 'notes', 'cards', 'revlog', 'chats', 'prefs', 'plans'];
 
 export interface BaseRecord {
   id: string;
@@ -171,7 +171,60 @@ export interface Prefs extends BaseRecord {
   name?: string;
 }
 
-export type AnyRecord = Deck | Note | Card | ReviewLog | Chat | Prefs;
+/** What a plan task is about; picks its icon and lets 'cards' tick itself off. */
+export type PlanTaskKind = 'cards' | 'grammar' | 'listening' | 'reading' | 'writing' | 'speaking' | 'vocab' | 'test' | 'other';
+
+export interface PlanTask {
+  /** Unique within its day */
+  id: string;
+  kind: PlanTaskKind;
+  title: string;
+  detail?: string;
+  /** In-app route to open for this task, e.g. "/grammar/perfekt" or "/practice/kasus" */
+  link?: string;
+}
+
+export interface PlanDay {
+  /** Local calendar day, YYYY-MM-DD */
+  date: string;
+  /** One line on what the day is about */
+  focus?: string;
+  type?: 'study' | 'light' | 'test' | 'exam';
+  tasks: PlanTask[];
+}
+
+export interface PlanPhase {
+  name: string;
+  summary?: string;
+  from: string;
+  to: string;
+}
+
+/** Free-text block shown on the plan page (exam format, daily routine, materials). Light markdown. */
+export interface PlanSection {
+  title: string;
+  body: string;
+}
+
+/** A dated study plan towards a goal such as an exam. Only one is active at a time. */
+export interface StudyPlan extends BaseRecord {
+  title: string;
+  /** What the plan leads to, e.g. "Goethe-Zertifikat A2" */
+  goal?: string;
+  /** YYYY-MM-DD of the exam or deadline */
+  goalDate?: string;
+  /** Headline numbers, e.g. { value: "60 / 100", label: "points to pass" } */
+  facts?: { value: string; label: string }[];
+  phases: PlanPhase[];
+  days: PlanDay[];
+  sections?: PlanSection[];
+  /** Ticked tasks: "YYYY-MM-DD/taskId" → epoch ms when ticked */
+  done: Record<string, number>;
+  active: boolean;
+  createdAt: number;
+}
+
+export type AnyRecord = Deck | Note | Card | ReviewLog | Chat | Prefs | StudyPlan;
 
 export interface TableRecordMap {
   decks: Deck;
@@ -180,4 +233,5 @@ export interface TableRecordMap {
   revlog: ReviewLog;
   chats: Chat;
   prefs: Prefs;
+  plans: StudyPlan;
 }

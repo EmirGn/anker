@@ -57,6 +57,8 @@ export function learnerContext(repo: Repo, now = Date.now()): string {
         .join('; ')}.`,
     );
   }
+  const plan = repo.planSummary(now);
+  if (plan) lines.push(`- Their study plan (help them follow it; you can tick tasks with tick_plan_task):\n${plan.text.replace(/^/gm, '  ')}`);
   const notesText = (prefs.ottoNotes ?? '').trim();
   lines.push(notesText ? `- Things you remember about them:\n${notesText.replace(/^(?![-•])/gm, '- ').replace(/^/gm, '  ')}` : '- You have not saved anything about them yet.');
   return lines.join('\n');

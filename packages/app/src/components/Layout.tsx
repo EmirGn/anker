@@ -5,7 +5,7 @@ import { uhrzeit } from '../lib/format';
 import { isDesktop } from '../lib/platform';
 import { Link, useRoute } from '../lib/router';
 import { syncNow } from '../lib/sync';
-import { BarChart3, BookOpen, CloudOff, Flame, Layers, LayoutGrid, Loader2, RefreshCw, Search, Settings, Sun, Zap } from './icons';
+import { BarChart3, BookOpen, CloudOff, Flame, GraduationCap, Layers, LayoutGrid, Loader2, RefreshCw, Search, Settings, Sun, Zap } from './icons';
 import { OttoBadge } from './Otto';
 import { Wordmark } from './Logo';
 import { cx } from './ui';
@@ -15,6 +15,7 @@ import { lang, tr } from '../lib/i18n';
 export const NAV = [
   { to: '/', label: tr('Heute'), icon: Sun },
   { to: '/otto', label: 'Otto', icon: null },
+  { to: '/plan', label: tr('Lernplan'), icon: GraduationCap },
   { to: '/decks', label: tr('Decks'), icon: Layers },
   { to: '/add', label: tr('Neue Karte'), icon: PlusCircleIcon },
   { to: '/browse', label: tr('Karten suchen'), icon: Search },
@@ -122,7 +123,7 @@ function BottomNav({ due }: { due: number }) {
     { to: '/add', label: tr('Neu'), icon: PlusCircleIcon },
     { to: '/more', label: tr('Mehr'), icon: LayoutGrid },
   ];
-  const moreActive = ['/more', '/browse', '/practice', '/stats', '/grammar', '/settings', '/import'].some((p) => isActive(p, path));
+  const moreActive = ['/more', '/plan', '/browse', '/practice', '/stats', '/grammar', '/settings', '/import'].some((p) => isActive(p, path));
   return (
     <nav className="pb-safe z-30 border-t border-line bg-paper-raised">
       <div className="mx-auto flex h-16 max-w-lg items-stretch justify-around px-2">

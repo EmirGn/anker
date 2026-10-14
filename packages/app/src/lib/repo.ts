@@ -9,6 +9,7 @@ import {
   nextDayStartMs,
   patchNote,
   planDeckPath,
+  planTaskKey,
   reconcileCards,
   resolveDeckConfig,
   subtreeIds,
@@ -23,6 +24,7 @@ import {
   type Prefs,
   type Rating,
   type ReviewLog,
+  type StudyPlan,
   type TableName,
 } from '@anker/core';
 import { db, tableOf, TABLES } from './db';
@@ -67,6 +69,21 @@ export async function getPrefs(): Promise<Prefs> {
 export async function savePrefs(patch: Partial<Prefs>) {
   const cur = await getPrefs();
   await commit([{ table: 'prefs', put: [stamp({ ...cur, ...patch, id: 'global' })] }]);
+}
+
+// ---------------------------------------------------------------- study plan
+export async function setPlanTaskDone(planId: string, date: string, taskId: string, done: boolean) {
+  const cur = await db.plans.get(planId);
+  if (!cur) return;
+  const next = { ...cur.done };
+  if (done) next[planTaskKey(date, taskId)] = Date.now();
+  else delete next[planTaskKey(date, taskId)];
+  await commit([{ table: 'plans', put: [stamp<StudyPlan>({ ...cur, done: next })] }]);
+}
+
+export async function archivePlan(planId: string) {
+  const cur = await db.plans.get(planId);
+  if (cur) await commit([{ table: 'plans', put: [stamp<StudyPlan>({ ...cur, active: false })] }]);
 }
 
 // ---------------------------------------------------------------- decks

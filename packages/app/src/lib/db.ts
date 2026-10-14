@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { AnyRecord, Card, Chat, Deck, Note, Prefs, ReviewLog, TableName } from '@anker/core';
+import type { AnyRecord, Card, Chat, Deck, Note, Prefs, ReviewLog, StudyPlan, TableName } from '@anker/core';
 
 export interface OutboxEntry {
   key: string;
@@ -37,6 +37,7 @@ export class AnkerDB extends Dexie {
   revlog!: Table<ReviewLog, string>;
   chats!: Table<Chat, string>;
   prefs!: Table<Prefs, string>;
+  plans!: Table<StudyPlan, string>;
   outbox!: Table<OutboxEntry, string>;
   tombstones!: Table<Tombstone, string>;
   meta!: Table<MetaEntry, string>;
@@ -56,6 +57,11 @@ export class AnkerDB extends Dexie {
       meta: 'key',
       drillStats: 'key, game, lastAt',
     });
+    // 0.6: study plans
+    // Older versions dropped plan records they didn't know, so pull everything once more.
+    this.version(2)
+      .stores({ plans: 'id, updatedAt' })
+      .upgrade((tx) => tx.table('meta').delete('syncSince'));
   }
 }
 
@@ -68,6 +74,7 @@ export const TABLES = {
   revlog: () => db.revlog,
   chats: () => db.chats,
   prefs: () => db.prefs,
+  plans: () => db.plans,
 } satisfies Record<TableName, () => Table<any, string>>;
 
 /** Untyped access to a synced table (the union of table types isn't callable). */

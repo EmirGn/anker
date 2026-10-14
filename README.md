@@ -42,6 +42,10 @@
 - **394 hand-made starter notes**: *Grundwortschatz A1–A2* (236), *Starke Verben* (62), *Fälle, Präpositionen & Satzbau* cloze drills (44) and *Redemittel* incl. idioms (52).
 - A **grammar reference** with declension tables, prepositions by case, gender rules (with a live "guess the gender" box), adjective endings, pronouns, numbers & time converters and word order — each with a "Practice" and "Ask the tutor" button.
 
+**A study plan towards your exam**
+- A dated, day-by-day plan (for example 36 days to the Goethe A2) with a countdown, phases and each day's tasks on the Today screen; tick tasks off on any device. The cards task ticks itself once your reviews are done.
+- Otto knows the plan and can tick tasks; Claude Code or Codex can write or rewrite it over MCP (`set_study_plan`), keeping your ticks.
+
 **Six practice games** (they don't touch your review schedule)
 
 | | |
@@ -80,7 +84,7 @@ Voice chat runs through Codex's experimental realtime API (`codex app-server`, r
 
 ## MCP: let Claude Code, Codex & co. manage your decks
 
-Anker exposes 15 tools over [MCP](https://modelcontextprotocol.io): `get_overview`, `list_decks`, `create_deck`, `update_deck`, `delete_deck`, `add_words`, `add_notes`, `find_notes`, `get_notes`, `lookup_words`, `update_notes`, `move_notes`, `delete_notes`, `set_card_state`, `get_study_stats`. The server also ships instructions that teach the model Anker's conventions (article/gender split, `fährt · fuhr · ist gefahren`, duplicate checks …).
+Anker exposes 20 tools over [MCP](https://modelcontextprotocol.io): `get_overview`, `list_decks`, `create_deck`, `update_deck`, `delete_deck`, `add_words`, `add_notes`, `find_notes`, `get_notes`, `lookup_words`, `update_notes`, `move_notes`, `delete_notes`, `set_card_state`, `remember`, `get_study_stats`, `get_study_plan`, `set_study_plan`, `tick_plan_task`, `archive_study_plan`. `add_words` can add recognition-only words (the EN→DE card starts suspended). The server also ships instructions that teach the model Anker's conventions (article/gender split, `fährt · fuhr · ist gefahren`, duplicate checks …).
 
 **One click:** *Settings → AI tutor → Use Anker from Claude Code & Codex → Connect.* Or by hand:
 

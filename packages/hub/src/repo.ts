@@ -1,5 +1,12 @@
 import {
+  activePlan,
   allDeckCounts,
+  buildPlan,
+  cardsAutoDone,
+  describePlan,
+  planDay,
+  planProgress,
+  planTaskKey,
   buildDeckTree,
   cardBreakdown,
   CardState,
@@ -35,7 +42,9 @@ import {
   type Note,
   type NoteInput,
   type Prefs,
+  type PlanInput,
   type ReviewLog,
+  type StudyPlan,
 } from '@anker/core';
 import type { Store } from './store';
 
@@ -88,6 +97,81 @@ export class Repo {
     const next = [...lines, `- ${clean}`].slice(-40);
     this.store.put('prefs', [{ ...p, ottoNotes: next.join('\n') }]);
     return { saved: true, facts: next.length };
+  }
+
+  // ---------------------------------------------------------------- study plan
+  plan(): StudyPlan | undefined {
+    return activePlan(this.store.all('plans'));
+  }
+
+  /** Ticks 'cards' plan tasks on days whose reviews are finished. */
+  planAutoCards(now = Date.now()) {
+    const prefs = this.prefs();
+    const days = reviewsByDay(this.store.all('revlog'), prefs.rolloverHour);
+    const counts = allDeckCounts({ decks: this.decks(), cards: this.store.all('cards'), todayLogs: this.todayLogs(now), now, rolloverHour: prefs.rolloverHour });
+    let due = 0;
+    for (const d of this.decks()) {
+      if (d.parentId) continue;
+      const c = counts.get(d.id);
+      if (c) due += c.new + c.learn + c.review;
+    }
+    return cardsAutoDone(days, prefs.dailyGoal, dayKey(now, prefs.rolloverHour), due === 0);
+  }
+
+  /** The active plan as text around today, or null. */
+  planSummary(now = Date.now()) {
+    const plan = this.plan();
+    if (!plan) return null;
+    const today = dayKey(now, this.prefs().rolloverHour);
+    return { id: plan.id, today, text: describePlan(plan, today, this.planAutoCards(now)) };
+  }
+
+  /** Full active plan with done flags per task. */
+  planDetails(now = Date.now()) {
+    const plan = this.plan();
+    if (!plan) return null;
+    const auto = this.planAutoCards(now);
+    const today = dayKey(now, this.prefs().rolloverHour);
+    const { done: _done, ...rest } = plan;
+    return {
+      ...rest,
+      today,
+      progress: planProgress(plan, auto),
+      days: plan.days.map((d) => ({ ...d, tasks: d.tasks.map((t) => ({ ...t, done: !!plan.done[planTaskKey(d.date, t.id)] || (t.kind === 'cards' && auto(d.date)) })) })),
+    };
+  }
+
+  /** Create the active plan, or replace it (ticks on unchanged tasks are kept). */
+  setPlan(input: PlanInput, opts: { replaceExisting?: boolean } = {}) {
+    const existing = this.plan();
+    const plan = buildPlan(input, opts.replaceExisting === false ? undefined : existing);
+    const others = this.store
+      .all('plans')
+      .filter((p) => p.active && p.id !== plan.id)
+      .map((p) => ({ ...p, active: false }));
+    this.store.batch([{ table: 'plans', put: [...others, plan] }]);
+    return { id: plan.id, title: plan.title, days: plan.days.length, from: plan.days[0]!.date, to: plan.days[plan.days.length - 1]!.date };
+  }
+
+  tickPlanTask(date: string, taskId: string, done: boolean) {
+    const plan = this.plan();
+    if (!plan) throw new Error('There is no active study plan.');
+    const day = planDay(plan, date);
+    if (!day) throw new Error(`The plan has no day ${date}.`);
+    if (!day.tasks.some((t) => t.id === taskId)) throw new Error(`Day ${date} has no task "${taskId}". Tasks: ${day.tasks.map((t) => t.id).join(', ')}`);
+    const key = planTaskKey(date, taskId);
+    const next = { ...plan.done };
+    if (done) next[key] = Date.now();
+    else delete next[key];
+    this.store.put('plans', [{ ...plan, done: next }]);
+    return { date, taskId, done };
+  }
+
+  removePlan() {
+    const plan = this.plan();
+    if (!plan) return { removed: false };
+    this.store.put('plans', [{ ...plan, active: false }]);
+    return { removed: true, title: plan.title };
   }
 
   pathOf(deckId: string, byId = this.deckMap()): string {
@@ -179,7 +263,8 @@ export class Repo {
     return m;
   }
 
-  addNotes(inputs: NoteInput[], opts: { allowDuplicates?: boolean } = {}) {
+  /** `recognitionOnly`: suspend the reverse (EN→DE) card of word and reversed notes; unsuspend later to practise production. */
+  addNotes(inputs: NoteInput[], opts: { allowDuplicates?: boolean; recognitionOnly?: boolean } = {}) {
     const now = Date.now();
     const seen = new Map<string, Note>();
     if (!opts.allowDuplicates) for (const n of this.store.all('notes')) seen.set(duplicateKey(n), n);
@@ -198,7 +283,8 @@ export class Repo {
         }
         if (key) seen.set(key, note);
         notes.push(note);
-        cards.push(...cs);
+        const twoWay = note.type === 'word' || note.type === 'reversed';
+        cards.push(...(opts.recognitionOnly && twoWay ? cs.map((c) => (c.ord === 1 ? { ...c, suspended: 1 as const } : c)) : cs));
       } catch (e) {
         errors.push({ index: i, error: (e as Error).message });
       }
