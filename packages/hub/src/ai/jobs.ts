@@ -236,12 +236,19 @@ export class JobManager {
     provider?: AIProvider;
     model?: string;
     input: Record<string, string>;
+    /** Prefer the provider's fast model (e.g. Haiku) over the one picked in Settings */
+    fast?: boolean;
   }): Promise<{ jobId: string; job: Job }> {
     const prefs = this.repo.prefs();
     const provider = input.provider ?? prefs.defaultProvider;
     const spec = taskSpec(input.kind, input.input, prefs);
     const job = this.createJob('task', provider);
-    const model = input.model || (provider === 'claude' ? prefs.claudeModel : prefs.codexModel) || spec.fastModel[provider] || undefined;
+    const model =
+      input.model ||
+      (input.fast && spec.fastModel[provider]) ||
+      (provider === 'claude' ? prefs.claudeModel : prefs.codexModel) ||
+      spec.fastModel[provider] ||
+      undefined;
     job.run = await runAgent(
       {
         provider,

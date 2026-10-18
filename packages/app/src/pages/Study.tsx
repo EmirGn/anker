@@ -26,6 +26,7 @@ import { AISheet } from '../components/AISheet';
 import { CheckIcon } from '@phosphor-icons/react';
 import { autoSpeech, cardTint, CardView } from '../components/CardView';
 import { OttoBadge } from '../components/Otto';
+import { TapWords } from '../components/WordLookup';
 import { UmlautBar, insertAtCaret } from '../components/UmlautBar';
 import { Button, cx, IconButton, Kbd, Modal, Ring, Spinner, toast, useConfirm } from '../components/ui';
 import { db } from '../lib/db';
@@ -618,9 +619,9 @@ export function Study({ deckId }: { deckId: string | null }) {
               {leech && <span className="rounded-full bg-koralle-soft px-2.5 py-0.5 text-[13px] font-bold text-koralle-ink">{tr('Oft vergessen')}</span>}
             </div>
           )}
-          <div className="anim-in w-full">
-            <CardView note={current.note} ord={current.card.ord} side={phase === 'answer' ? 'answer' : 'question'} hideProductionHint={typing} />
-          </div>
+          <TapWords className="anim-in w-full" resetKey={phase}>
+            <CardView note={current.note} ord={current.card.ord} side={phase === 'answer' ? 'answer' : 'question'} hideProductionHint={typing} tappable />
+          </TapWords>
           {typing && phase === 'question' && (
             <form
               className="mt-8 w-full"

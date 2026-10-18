@@ -352,6 +352,22 @@ button:disabled {
   text-underline-offset: 4px;
 }
 
+/* Tap-a-word on study cards: quiet until hovered or open. */
+.card-html .tw {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 120ms ease-out;
+  -webkit-touch-callout: none;
+}
+@media (hover: hover) {
+  .card-html .tw:hover {
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
+  }
+}
+.card-html .tw[data-open] {
+  background: var(--hafen-soft);
+  box-shadow: 0 0 0 2px var(--hafen-soft);
+}
 /* Markdown (AI answers) */
 .md {
   line-height: 1.6;
