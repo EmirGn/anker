@@ -96,7 +96,7 @@ export function voiceGreeting(prefs: Prefs, continuing: boolean): string {
   return continuing ? `${hi} Schön, dass wir weitersprechen. Wo waren wir?` : `${hi} Ich bin Otto. Worüber möchtest du heute sprechen?`;
 }
 
-export type TaskKind = 'fill-word' | 'explain' | 'check-sentence' | 'examples' | 'mnemonic';
+export type TaskKind = 'fill-word' | 'explain' | 'check-sentence' | 'examples' | 'mnemonic' | 'lookup';
 
 export interface TaskSpec {
   prompt: string;
@@ -122,6 +122,21 @@ const WORD_SCHEMA = {
     notes: { type: 'string' },
   },
   required: ['german', 'english', 'pos', 'gender', 'plural', 'forms', 'example', 'exampleTranslation', 'notes'],
+};
+
+const LOOKUP_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    found: { type: 'boolean', description: 'false if this is not a German word (then leave the other fields empty)' },
+    lemma: { type: 'string', description: 'Dictionary form: nouns capitalised without article, verbs in the infinitive' },
+    pos: { type: 'string', enum: ['noun', 'verb', 'adjective', 'adverb', 'preposition', 'conjunction', 'pronoun', 'phrase', 'other', ''] },
+    gender: { type: 'string', enum: ['der', 'die', 'das', 'pl', ''] },
+    plural: { type: 'string' },
+    forms: { type: 'string' },
+    english: { type: 'string' },
+  },
+  required: ['found', 'lemma', 'pos', 'gender', 'plural', 'forms', 'english'],
 };
 
 const CHECK_SCHEMA = {
@@ -155,6 +170,24 @@ Rules:
 - example: one natural, short German sentence at level ${prefs.level}; exampleTranslation in ${lang}.
 - notes: short usage note if genuinely useful (separable prefix, reflexive, case government, false friend), else "".`,
         schema: WORD_SCHEMA,
+        tools: false,
+        effort: 'low',
+        fastModel: fast,
+      };
+    case 'lookup':
+      return {
+        system: `You are a precise German lexicographer. ${learner(prefs)} Output only the requested JSON.`,
+        prompt: `The learner tapped the word "${input.word}" in this German text:
+"${input.sentence || input.word}"
+
+Give its dictionary entry as it is used here:
+- lemma: the dictionary form (nouns capitalised WITHOUT article, e.g. "Wochenende"; verbs in the infinitive, e.g. "schlafen"; a separable verb whose particle stands elsewhere in the sentence as the full verb, e.g. "aufstehen"; adjectives in the base form, e.g. "klein").
+- pos: part of speech. gender: der/die/das for nouns, "pl" for plural-only nouns, "" otherwise.
+- plural: nouns → plural without article ("-" if none); otherwise "".
+- forms: verbs → "er-form · Präteritum · Perfekt" (e.g. "schläft · schlief · hat geschlafen"); adjectives → "Komparativ · Superlativ"; prepositions → case (e.g. "+ Dativ"); otherwise "".
+- english: a short meaning in ${lang} that fits this sentence (at most about 6 words).
+- found: false only if it is not a German word at all (a name, an English word, a typo you can't resolve); then leave the other fields "".`,
+        schema: LOOKUP_SCHEMA,
         tools: false,
         effort: 'low',
         fastModel: fast,

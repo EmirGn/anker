@@ -1,4 +1,6 @@
 import { GENDER_ARTICLE, parseGender, parseVerbForms, pluralDisplay, renderCloze, withArticle, type Gender, type Note } from '@anker/core';
+import { useMemo } from 'react';
+import { useWordIndex, wrapWords, type TapMode } from '../lib/lookup';
 import { renderField } from '../lib/sanitize';
 import { speak } from '../lib/tts';
 import { Volume2 } from './icons';
@@ -76,8 +78,11 @@ export function SpeakButton({ text, className, slow, tint }: { text: string; cla
   );
 }
 
-function Html({ html, className }: { html: string; className?: string }) {
-  return <div className={cx('card-html', className)} dangerouslySetInnerHTML={{ __html: html }} />;
+/** Sanitized card HTML. With `tap`, its German words become tappable (see WordLookup). */
+function Html({ html, className, tap }: { html: string; className?: string; tap?: TapMode | false }) {
+  const index = useWordIndex(!!tap);
+  const out = useMemo(() => (tap ? wrapWords(html, tap, index) : html), [html, tap, index]);
+  return <div className={cx('card-html', className)} dangerouslySetInnerHTML={{ __html: out }} />;
 }
 
 /** German text to speak automatically when this side appears (null = nothing). */
@@ -101,7 +106,7 @@ export function autoSpeech(note: Note, ord: number, side: 'question' | 'answer')
   }
 }
 
-function WordDetails({ note }: { note: Note }) {
+function WordDetails({ note, tappable }: { note: Note; tappable?: boolean }) {
   const f = note.fields;
   const g = parseGender(f.gender);
   const pl = pluralDisplay(f.plural);
@@ -124,18 +129,33 @@ function WordDetails({ note }: { note: Note }) {
         <div className="mt-6 flex items-center gap-3 rounded-md bg-paper-raised px-4 py-3">
           <SpeakButton text={f.example} tint={g} className="size-10" />
           <div className="min-w-0 flex-1">
-            <Html html={renderField(f.example)} className="t-body-lg" />
+            <Html html={renderField(f.example)} className="t-body-lg" tap={tappable && 'de'} />
             {f.exampleTranslation && <Html html={renderField(f.exampleTranslation)} className="t-caption text-ink-muted" />}
           </div>
         </div>
       )}
-      {f.notes && <Html html={renderField(f.notes)} className="t-caption mt-4 text-ink-muted" />}
+      {f.notes && <Html html={renderField(f.notes)} className="t-caption mt-4 text-ink-muted" tap={tappable && 'mixed'} />}
     </>
   );
 }
 
-/** Renders one side of a card. The answer side includes the question (like Anki). */
-export function CardView({ note, ord, side, hideProductionHint }: { note: Note; ord: number; side: 'question' | 'answer'; hideProductionHint?: boolean }) {
+/**
+ * Renders one side of a card. The answer side includes the question (like Anki).
+ * `tappable` turns the German words into tap targets for the word lookup (study screen).
+ */
+export function CardView({
+  note,
+  ord,
+  side,
+  hideProductionHint,
+  tappable,
+}: {
+  note: Note;
+  ord: number;
+  side: 'question' | 'answer';
+  hideProductionHint?: boolean;
+  tappable?: boolean;
+}) {
   const f = note.fields;
   const answer = side === 'answer';
 
@@ -167,7 +187,7 @@ export function CardView({ note, ord, side, hideProductionHint }: { note: Note; 
         {answer && (
           <>
             <Html html={renderField(f.english)} className="t-body-lg mt-2" />
-            <WordDetails note={note} />
+            <WordDetails note={note} tappable={tappable} />
           </>
         )}
       </div>
@@ -179,10 +199,10 @@ export function CardView({ note, ord, side, hideProductionHint }: { note: Note; 
     return (
       <div className="w-full text-left">
         <div className="flex items-start gap-3">
-          <Html html={html} className="min-w-0 flex-1 text-[22px] leading-8 font-medium" />
+          <Html html={html} className="min-w-0 flex-1 text-[22px] leading-8 font-medium" tap={tappable && 'de'} />
           {answer && <SpeakButton text={renderCloze(f.text ?? '', ord + 1, 'answer')} />}
         </div>
-        {answer && f.extra && <Html html={renderField(f.extra)} className="t-body mt-5 text-ink-muted" />}
+        {answer && f.extra && <Html html={renderField(f.extra)} className="t-body mt-5 text-ink-muted" tap={tappable && 'mixed'} />}
       </div>
     );
   }
@@ -193,17 +213,17 @@ export function CardView({ note, ord, side, hideProductionHint }: { note: Note; 
   return (
     <div className="w-full text-left">
       <div className="flex items-start gap-3">
-        <Html html={renderField(front)} className="t-title min-w-0 flex-1" />
+        <Html html={renderField(front)} className="t-title min-w-0 flex-1" tap={tappable && 'mixed'} />
         {frontIsGerman && front && <SpeakButton text={front} />}
       </div>
       {answer && (
         <>
           <div className="my-5 h-px bg-line" />
           <div className="flex items-start gap-3">
-            <Html html={renderField(back)} className="min-w-0 flex-1 text-[20px] leading-7 font-medium" />
+            <Html html={renderField(back)} className="min-w-0 flex-1 text-[20px] leading-7 font-medium" tap={tappable && (note.type === 'typing' ? 'de' : 'mixed')} />
             {!frontIsGerman && back && <SpeakButton text={back} />}
           </div>
-          {note.type === 'typing' && f.extra && <Html html={renderField(f.extra)} className="t-body mt-4 text-ink-muted" />}
+          {note.type === 'typing' && f.extra && <Html html={renderField(f.extra)} className="t-body mt-4 text-ink-muted" tap={tappable && 'mixed'} />}
         </>
       )}
     </div>

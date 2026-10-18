@@ -5,6 +5,7 @@ import path from 'node:path';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SYNC_TABLES, type AIProvider, type AnyRecord, type SyncChange, type SyncRequest, type SyncResponse, type TableName } from '@anker/core';
 import type { JobManager } from './ai/jobs';
+import { LookupService } from './ai/lookup';
 import type { TaskKind } from './ai/prompts';
 import type { VoiceActivity } from './ai/prompts';
 import type { VoiceManager } from './ai/voice';
@@ -366,6 +367,25 @@ export function createServer(deps: ServerDeps) {
     if (!body.wait) return { jobId };
     const done = await jobs.waitFor(jobId);
     return { jobId, ...done };
+  });
+
+  // Tap-a-word: one cached AI lookup per word form (the app resolves most words locally).
+  const lookups = new LookupService(dataDir, async (word, sentence, provider) => {
+    const { jobId } = await jobs.startTask({ kind: 'lookup', provider, input: { word, sentence }, fast: true });
+    return jobs.waitFor(jobId);
+  });
+
+  add('POST', '/api/ai/lookup', 'any', async (ctx) => {
+    const body = await ctx.body<{ word?: string; sentence?: string; provider?: AIProvider; cacheOnly?: boolean }>();
+    const word = String(body.word ?? '').trim();
+    if (!word || word.length > 80) throw new HttpError(400, 'word is required (max 80 characters)');
+    if (body.cacheOnly) {
+      const answer = lookups.get(word);
+      return answer ? { cached: true, answer } : { cached: false };
+    }
+    const r = await lookups.lookup(word, String(body.sentence ?? ''), body.provider);
+    if (r.error) throw new HttpError(502, r.error);
+    return r;
   });
 
   add('GET', '/api/ai/jobs/:id', 'any', (ctx) => {
